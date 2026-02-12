@@ -62,4 +62,9 @@ public class User {
      * 状态: 1正常, 0冻结
      */
     private Integer status;
+    
+    /**
+     * 微信openid
+     */
+    private String openid;
 }

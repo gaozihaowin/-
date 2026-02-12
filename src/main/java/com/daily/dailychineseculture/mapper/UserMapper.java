@@ -32,8 +32,8 @@ public interface UserMapper {
     /**
      * 插入用户
      */
-    @Insert("INSERT INTO t_user(user_id, account, password, avatar, phone, region, birthday, profession, gender, create_time, status) " +
-            "VALUES(#{userId}, #{account}, #{password}, #{avatar}, #{phone}, #{region}, #{birthday}, #{profession}, #{gender}, #{createTime}, #{status})")
+    @Insert("INSERT INTO t_user(user_id, account, password, gender, create_time, status, openid) " +
+            "VALUES(#{userId}, #{account}, #{password}, #{gender}, #{createTime}, #{status}, '')")
     int insert(User user);
 
     /**

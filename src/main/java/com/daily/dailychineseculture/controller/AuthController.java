@@ -48,12 +48,6 @@ public class AuthController {
             }
         }
         
-        // 模拟数据库查询逻辑
-        // 如果是admin/123则返回成功，否则检查数据库中是否存在该用户
-        if ("admin".equals(username) && "123".equals(password)) {
-            return Result.success(buildSuccessLoginResult());
-        }
-
         // 检查数据库中是否存在该用户名
         boolean userExists = userService.checkUserExists(username);
         
@@ -66,12 +60,12 @@ public class AuthController {
                 return Result.error("用户名或密码错误");
             }
         } else {
-            // 用户不存在，创建新用户
+            // 用户不存在，自动注册
             boolean userCreated = userService.createUser(username, password);
             if (userCreated) {
-                return Result.build(200, "用户注册成功", buildSuccessLoginResult());
+                return Result.build(201, "用户注册成功", buildSuccessLoginResult());
             } else {
-                return Result.error("用户创建失败");
+                return Result.error("用户注册失败");
             }
         }
     }

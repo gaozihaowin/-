@@ -111,6 +111,7 @@ public class UserService {
             user.setCreateTime(new Date());
             user.setStatus(1);
             user.setGender(0);
+            user.setOpenid(""); // 微信openid设为空字符串
             
             // 生成用户ID
             Long userId = idGeneratorService.generateUserId();
