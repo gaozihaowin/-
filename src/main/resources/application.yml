@@ -13,7 +13,7 @@ spring:
     
     # ????
     username: root
-    password: password123 # ??
+    password: DailyChineseCultureCODE123. # ??
     
     # ???? (MySQL 8.0+ ???)
     driver-class-name: com.mysql.cj.jdbc.Driver
