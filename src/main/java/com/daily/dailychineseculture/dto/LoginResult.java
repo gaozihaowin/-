@@ -23,6 +23,11 @@ public class LoginResult {
     @Data
     public static class UserInfo {
         /**
+         * 用户ID
+         */
+        private Long userId;
+        
+        /**
          * 用户姓名
          */
         private String name;

@@ -124,4 +124,44 @@ public class UserService {
             return false;
         }
     }
+    
+    /**
+     * 根据用户名获取用户
+     * @param username 用户名
+     * @return 用户对象
+     */
+    public User getUserByUsername(String username) {
+        return userMapper.selectByAccount(username);
+    }
+    
+    /**
+     * 创建新用户并返回用户对象
+     * @param username 用户名
+     * @param password 密码
+     * @return 用户对象
+     */
+    public User createUserWithReturn(String username, String password) {
+        try {
+            User user = new User();
+            user.setAccount(username);
+            user.setPassword(password);
+            user.setCreateTime(new Date());
+            user.setStatus(1);
+            user.setGender(0);
+            user.setOpenid(""); // 微信openid设为空字符串
+            
+            // 生成用户ID
+            Long userId = idGeneratorService.generateUserId();
+            user.setUserId(userId);
+            
+            int result = userMapper.insert(user);
+            if (result > 0) {
+                return user;
+            }
+            return null;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
 }
