@@ -31,8 +31,8 @@ public class LoginFunctionTest {
         assertNotNull(result.getData());
         assertNotNull(result.getData().getToken());
         assertNotNull(result.getData().getUserInfo());
-        assertEquals("致良知学员", result.getData().getUserInfo().getName());
-        assertEquals("http://example.com/avatar.jpg", result.getData().getUserInfo().getAvatar());
+        assertNotNull(result.getData().getIsComplete());
+        assertEquals("admin", result.getData().getUserInfo().getUsername());
         
         System.out.println("✅ admin登录测试通过");
         System.out.println("返回token: " + result.getData().getToken());

@@ -4,6 +4,7 @@ import lombok.Data;
 
 /**
  * 登录结果DTO
+ * 包含token、信息完整性状态和用户基本信息
  */
 @Data
 public class LoginResult {
@@ -13,28 +14,14 @@ public class LoginResult {
     private String token;
     
     /**
-     * 用户信息
+     * 用户信息是否完整
+     * true: 信息已完善，无需跳转补全页
+     * false: 信息不完整，需要跳转到补全页面
      */
-    private UserInfo userInfo;
+    private Boolean isComplete;
     
     /**
-     * 用户信息内部类
+     * 用户基本信息
      */
-    @Data
-    public static class UserInfo {
-        /**
-         * 用户ID
-         */
-        private Long userId;
-        
-        /**
-         * 用户姓名
-         */
-        private String name;
-        
-        /**
-         * 用户头像URL
-         */
-        private String avatar;
-    }
+    private UserInfoDTO userInfo;
 }
