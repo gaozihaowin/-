@@ -1,17 +1,16 @@
 package com.daily.dailychineseculture.controller;
 
 import com.daily.dailychineseculture.common.Result;
-import com.daily.dailychineseculture.dto.LoginRequest;
-import com.daily.dailychineseculture.dto.LoginResult;
-import com.daily.dailychineseculture.dto.UserInfoDTO;
+import com.daily.dailychineseculture.dto.*;
 import com.daily.dailychineseculture.entity.User;
 import com.daily.dailychineseculture.service.UserService;
 import com.daily.dailychineseculture.util.JwtUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.client.RestTemplate;
+import java.util.*;
 
 /**
  * 认证控制器
@@ -22,30 +21,40 @@ public class AuthController {
 
     @Autowired
     private UserService userService;
-    
+
     @Autowired
     private JwtUtils jwtUtils;
+
+    @Autowired
+    private RestTemplate restTemplate;
+
+    @Value("${wx.appid:}")
+    private String wxAppid;
+
+    @Value("${wx.secret:}")
+    private String wxSecret;
 
     /**
      * 用户登录接口
      * 支持账号密码登录，包含信息完整性检查
+     *
      * @param loginRequest 登录请求参数 {"username": "student01", "password": "123456"}
      * @return 登录结果 {
-     *   "code": 200,
-     *   "msg": "登录成功",
-     *   "data": {
-     *     "token": "eyJhbGci...",
-     *     "isComplete": false,
-     *     "userInfo": {
-     *       "userid": "2026000001",
-     *       "username": "student01",
-     *       "avatar": "",
-     *       "phone": "13800138000",
-     *       "gender": 0,
-     *       "birthday": ""
-     *     }
-     *   }
-     * }
+     *         "code": 200,
+     *         "msg": "登录成功",
+     *         "data": {
+     *         "token": "eyJhbGci...",
+     *         "isComplete": false,
+     *         "userInfo": {
+     *         "userid": "2026000001",
+     *         "username": "student01",
+     *         "avatar": "",
+     *         "phone": "13800138000",
+     *         "gender": 0,
+     *         "birthday": ""
+     *         }
+     *         }
+     *         }
      */
     @PostMapping("/login")
     public Result<LoginResult> login(@RequestBody LoginRequest loginRequest) {
@@ -54,17 +63,17 @@ public class AuthController {
             if (loginRequest.getUsername() == null || loginRequest.getUsername().trim().isEmpty()) {
                 return Result.error("请输入账号");
             }
-            
+
             if (loginRequest.getPassword() == null || loginRequest.getPassword().trim().isEmpty()) {
                 return Result.error("请输入密码");
             }
 
             String username = loginRequest.getUsername().trim();
             String password = loginRequest.getPassword().trim();
-            
+
             // 步骤 2：用户信息查询与比对
             boolean userExists = userService.checkUserExists(username);
-            
+
             User user;
             if (userExists) {
                 // 用户存在，验证密码
@@ -85,13 +94,13 @@ public class AuthController {
                 // 新注册用户信息必然不完整
                 return Result.build(201, "注册并登录成功", buildLoginResult(user, false));
             }
-            
+
             // 步骤 3：判断信息完整度（核心关键）
             boolean isComplete = userService.isUserInfoComplete(user);
-            
+
             // 步骤 4：生成 Token 并返回
             return Result.success(buildLoginResult(user, isComplete));
-            
+
         } catch (Exception e) {
             // 异常捕获和处理
             return Result.error("登录过程中发生错误: " + e.getMessage());
@@ -100,24 +109,247 @@ public class AuthController {
 
     /**
      * 构建登录结果
-     * @param user 用户对象
+     *
+     * @param user       用户对象
      * @param isComplete 信息是否完整
      * @return LoginResult对象
      */
     private LoginResult buildLoginResult(User user, boolean isComplete) {
         LoginResult result = new LoginResult();
-        
+
         // 生成真实的JWT token
         String token = jwtUtils.generateToken(user.getUserId(), user.getAccount());
         result.setToken(token);
-        
+
         // 设置信息完整状态
         result.setIsComplete(isComplete);
-        
+
         // 转换并设置用户信息
         UserInfoDTO userInfoDTO = userService.convertToUserInfoDTO(user);
         result.setUserInfo(userInfoDTO);
-        
+
         return result;
+    }
+
+    /**
+     * 微信一键登录接口
+     */
+    @PostMapping("/wxLogin")
+    public Result<Map<String, Object>> wxLogin(@RequestBody WxLoginRequest wxLoginRequest) {
+        try {
+            String code = wxLoginRequest.getCode();
+            String nickname = wxLoginRequest.getNickname();
+            String avatar = wxLoginRequest.getAvatar();
+
+            if (code == null || code.trim().isEmpty()) {
+                return Result.error("缺少微信授权码");
+            }
+            if (nickname == null || nickname.trim().isEmpty() || avatar == null || avatar.trim().isEmpty()) {
+                return Result.error("请完善微信头像和昵称");
+            }
+
+            // 调用微信API获取openid
+            String openid = getWechatOpenid(code);
+            if (openid == null) {
+                return Result.error("微信授权失败");
+            }
+
+            // 查询或创建用户
+            User user = userService.findOrCreateWxUser(openid, nickname, avatar);
+            if (user == null) {
+                return Result.error("用户创建失败");
+            }
+
+            if (user.getStatus() != 1) {
+                return Result.error("账号已冻结");
+            }
+
+            // 生成token
+            String token = jwtUtils.generateToken(user.getUserId(), user.getAccount());
+
+            // 构造用户信息
+            UserInfoDTO userInfo = new UserInfoDTO();
+            userInfo.setUserid(user.getUserId().toString());
+            userInfo.setUsername(user.getNickname() != null ? user.getNickname() : user.getAccount());
+            userInfo.setAvatar(user.getAvatar() != null ? user.getAvatar() : "https://img.icons8.com/color/96/person-male.png");
+            userInfo.setPhone(user.getPhone() != null ? user.getPhone() : "");
+
+            Map<String, Object> result = new HashMap<>();
+            result.put("token", token);
+            result.put("userInfo", userInfo);
+
+            return Result.build(200, "微信登录成功", result);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return Result.error("服务器内部错误，请稍后重试");
+        }
+    }
+
+    /**
+     * 获取用户信息接口
+     */
+    @GetMapping("/user/info")
+    public Result<UserInfoDTO> getUserInfo(@RequestHeader("Authorization") String token) {
+        try {
+            Long userId = jwtUtils.getUserIdFromToken(token.replace("Bearer ", ""));
+            User user = userService.getUserById(userId);
+            if (user == null) {
+                return Result.error("用户不存在");
+            }
+
+            // 使用UserInfoDTO返回用户信息
+            UserInfoDTO userInfo = new UserInfoDTO();
+            userInfo.setUserid(user.getUserId().toString());
+            userInfo.setUsername(user.getNickname() != null ? user.getNickname() : user.getAccount());
+            userInfo.setAvatar(
+                    user.getAvatar() != null ? user.getAvatar() : "https://img.icons8.com/color/96/person-male.png");
+            userInfo.setPhone(user.getPhone() != null ? user.getPhone() : "");
+            userInfo.setGender(user.getGender());
+            userInfo.setBirthday(user.getBirthday() != null ? user.getBirthday().toString() : "");
+
+            return Result.success(userInfo);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return Result.error("服务器内部错误，请稍后重试");
+        }
+    }
+
+    /**
+     * 退出登录接口
+     */
+    @PostMapping("/user/logout")
+    public Result<Void> logout(@RequestHeader("Authorization") String token) {
+        try {
+            Long userId = jwtUtils.getUserIdFromToken(token.replace("Bearer ", ""));
+            System.out.println("用户 " + userId + " 退出登录");
+            return Result.successMsg("退出登录成功");
+        } catch (Exception e) {
+            e.printStackTrace();
+            return Result.error("服务器内部错误，请稍后重试");
+        }
+    }
+
+    /**
+     * 切换身份接口
+     */
+    @PostMapping("/user/switch-identity")
+    public Result<Map<String, String>> switchIdentity(@RequestHeader("Authorization") String token,
+                                                      @RequestBody SwitchIdentityRequest request) {
+        try {
+            Long userId = jwtUtils.getUserIdFromToken(token.replace("Bearer ", ""));
+            String identity = request.getIdentity();
+
+            if (identity == null || identity.trim().isEmpty()) {
+                return Result.error("请选择要切换的身份");
+            }
+
+            // 身份映射
+            Map<String, String> identityMap = new HashMap<>();
+            identityMap.put("学员端", "student");
+            identityMap.put("志愿者端", "volunteer");
+
+            String targetIdentity = identityMap.get(identity);
+            if (targetIdentity == null) {
+                return Result.error("身份类型无效");
+            }
+
+            // 校验志愿者权限
+            if ("volunteer".equals(targetIdentity)) {
+                boolean isVolunteer = userService.isVolunteer(userId);
+                if (!isVolunteer) {
+                    return Result.error("无志愿者权限，无法切换");
+                }
+            }
+
+            Map<String, String> result = new HashMap<>();
+            result.put("currentIdentity", identity);
+            return Result.build(200, "身份切换成功", result);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return Result.error("服务器内部错误，请稍后重试");
+        }
+    }
+
+    /**
+     * 更新用户信息接口
+     */
+    @PostMapping("/updateUserInfo")
+    public Result<Void> updateUserInfo(@RequestHeader("Authorization") String token,
+                                       @RequestBody Map<String, String> request) {
+        try {
+            Long userId = jwtUtils.getUserIdFromToken(token.replace("Bearer ", ""));
+            String nickname = request.get("nickname");
+            String avatar = request.get("avatar");
+
+            if ((nickname == null || nickname.trim().isEmpty()) &&
+                    (avatar == null || avatar.trim().isEmpty())) {
+                return Result.error("请传入要修改的信息");
+            }
+
+            boolean success = userService.updateUserInfo(userId, nickname, avatar);
+            if (success) {
+                return Result.successMsg("信息修改成功");
+            } else {
+                return Result.error("信息修改失败");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return Result.error("服务器内部错误，请稍后重试");
+        }
+    }
+
+    /**
+     * 获取微信openid
+     */
+    private String getWechatOpenid(String code) {
+        try {
+            String url = String.format(
+                    "https://api.weixin.qq.com/sns/jscode2session?appid=%s&secret=%s&js_code=%s&grant_type=authorization_code",
+                    wxAppid, wxSecret, code);
+
+            System.out.println("🔗 调用微信API: " + url);
+            ResponseEntity<String> response = restTemplate.getForEntity(url, String.class);
+            String responseBody = response.getBody();
+
+            System.out.println("📨 微信API响应: " + responseBody);
+
+            if (responseBody == null) {
+                System.err.println("❌ 微信API返回空响应");
+                return null;
+            }
+
+            String openid = extractOpenidFromResponse(responseBody);
+            if (openid == null) {
+                System.err.println("❌ 无法从响应中提取openid");
+                return null;
+            }
+
+            System.out.println("✅ 获取到openid: " + openid);
+            return openid;
+
+        } catch (Exception e) {
+            System.err.println("❌ 获取微信openid异常: " + e.getMessage());
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    /**
+     * 从微信响应中提取openid
+     */
+    private String extractOpenidFromResponse(String responseBody) {
+        try {
+            if (responseBody.contains("\"openid\"")) {
+                int startIndex = responseBody.indexOf("\"openid\":\"") + 10;
+                int endIndex = responseBody.indexOf("\"", startIndex);
+                if (startIndex > 9 && endIndex > startIndex) {
+                    return responseBody.substring(startIndex, endIndex);
+                }
+            }
+            return null;
+        } catch (Exception e) {
+            System.err.println("❌ 解析openid失败: " + e.getMessage());
+            return null;
+        }
     }
 }

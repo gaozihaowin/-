@@ -10,11 +10,11 @@ spring:
     # 替换 YOUR_DB_NAME 请在 DBeaver 中查看实际数据库名 (例如 course_db)
     # serverTimezone=Asia/Shanghai 设置东八区时区
     url: jdbc:mysql://47.120.31.133:3306/camp_system?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&useSSL=false
-    
+
     # 用户名
     username: root
     password: DailyChineseCultureCODE123. # 密码
-    
+
     # 驱动类 (MySQL 8.0+ 使用)
     driver-class-name: com.mysql.cj.jdbc.Driver
 
@@ -25,3 +25,7 @@ mybatis:
     map-underscore-to-camel-case: true
   # Mapper XML文件位置
   mapper-locations: classpath:mapper/*.xml
+# 微信小程序配置
+wx:
+  appid: wx58b4d74c673f584c
+  secret: 1ffaef2d4f60b39e18dea3e19f0c924b
