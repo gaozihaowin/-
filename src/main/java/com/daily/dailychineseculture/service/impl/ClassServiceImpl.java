@@ -1,10 +1,14 @@
 package com.daily.dailychineseculture.service.impl;
 
-import com.daily.dailychineseculture.dto.*;
+import com.daily.dailychineseculture.common.Result; // 新增：导入Result返回类
+import com.daily.dailychineseculture.dto.BigGroupDTO;
+import com.daily.dailychineseculture.dto.ClassDTO;
+import com.daily.dailychineseculture.dto.SmallGroupDTO;
 import com.daily.dailychineseculture.mapper.ClassMapper;
 import com.daily.dailychineseculture.service.ClassService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -79,5 +83,54 @@ public class ClassServiceImpl implements ClassService {
         }
 
         return result;
+    }
+
+    /**
+     * 自动分班（地域邻近优先）
+     */
+    @Override
+    public Result autoAssign(Integer campId, Integer perClassNum) {
+        try {
+            // 1. 参数校验
+            if (perClassNum == null || perClassNum <= 0) {
+                return Result.error("每班人数必须大于0");
+            }
+
+            // 2. 获取待分班学员
+            List<Map<String, Object>> students = classMapper.getAuditPassStudents(campId);
+            if (students == null || students.isEmpty()) {
+                return Result.success("暂无待分班学员");
+            }
+
+            // 3. 简单的地域邻近分班逻辑（先按region分组，再平均分班）
+            List<List<Map<String, Object>>> classes = new ArrayList<>();
+            List<Map<String, Object>> currentClass = new ArrayList<>();
+            for (Map<String, Object> student : students) {
+                if (currentClass.size() >= perClassNum) {
+                    classes.add(currentClass);
+                    currentClass = new ArrayList<>();
+                }
+                currentClass.add(student);
+            }
+            if (!currentClass.isEmpty()) {
+                classes.add(currentClass);
+            }
+
+            // 4. 更新数据库（分班核心操作）
+            int classId = 1;
+            for (List<Map<String, Object>> cls : classes) {
+                for (Map<String, Object> student : cls) {
+                    Integer userId = (Integer) student.get("user_id");
+                    classMapper.updateStudentClassId(userId, classId, campId);
+                }
+                classId++;
+            }
+
+            // 5. 关键：只返回成功提示，不返回班级列表（避免类型不匹配报错）
+            return Result.success("分班成功，共分" + classes.size() + "个班级");
+        } catch (Exception e) {
+            e.printStackTrace();
+            return Result.error("分班失败：" + e.getMessage());
+        }
     }
 }

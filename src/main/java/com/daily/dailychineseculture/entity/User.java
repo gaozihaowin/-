@@ -72,4 +72,16 @@ public class User {
      * 昵称
      */
     private String nickname;
+
+    // 在 User.java 中添加
+    private Long classId;
+
+    // 并生成 getter 和 setter 方法
+    public Long getClassId() {
+        return classId;
+    }
+
+    public void setClassId(Long classId) {
+        this.classId = classId;
+    }
 }
