@@ -18,14 +18,20 @@ spring:
     # 驱动类 (MySQL 8.0+ 使用)
     driver-class-name: com.mysql.cj.jdbc.Driver
 
-# MyBatis配置
+# MyBatis 配置
 mybatis:
-  # 开启驼峰命名转换 (数据库下划线字段自动映射到Java驼峰属性)
+  # 开启驼峰命名转换 (数据库下划线字段自动映射到 Java 驼峰属性)
   configuration:
     map-underscore-to-camel-case: true
-  # Mapper XML文件位置
+  # Mapper XML 文件位置
   mapper-locations: classpath:mapper/*.xml
+
 # 微信小程序配置
 wx:
   appid: wx58b4d74c673f584c
   secret: 1ffaef2d4f60b39e18dea3e19f0c924b
+
+# 文件上传配置
+file:
+  upload-dir: C:/camp_system/uploads/
+  max-size: 5242880

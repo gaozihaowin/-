@@ -187,28 +187,48 @@ public class AuthController {
 
     /**
      * 获取用户信息接口
+     * 返回用户基本信息及统计指标（地区、职业、年数、学时）
+     * 
+     * @param token JWT 令牌
+     * @return 用户个人信息 {
+     *         "code": 200,
+     *         "msg": "success",
+     *         "data": {
+     *         "userId": "2026000001",
+     *         "account": "student01",
+     *         "nickname": "微信昵称或默认昵称",
+     *         "avatar": "https://...",
+     *         "currentIdentity": "学员端",
+     *         "statsList": [
+     *         { "label": "地区", "value": "北京" },
+     *         { "label": "职业", "value": "IT 工程师" },
+     *         { "label": "年数", "value": "0" },
+     *         { "label": "学时", "value": "12h" }
+     *         ]
+     *         }
+     *         }
      */
     @GetMapping("/user/info")
-    public Result<UserInfoDTO> getUserInfo(@RequestHeader("Authorization") String token) {
+    public Result<com.daily.dailychineseculture.dto.UserProfileDTO> getUserInfo(@RequestHeader("Authorization") String token) {
         try {
+            // 1. 解析 Token 获取用户 ID
             Long userId = jwtUtils.getUserIdFromToken(token.replace("Bearer ", ""));
-            User user = userService.getUserById(userId);
-            if (user == null) {
+            if (userId == null) {
+                return Result.error("无效的 Token");
+            }
+    
+            // 2. 调用 Service 获取用户个人信息
+            com.daily.dailychineseculture.dto.UserProfileDTO userProfile = userService.getUserProfile(userId);
+            if (userProfile == null) {
                 return Result.error("用户不存在");
             }
-
-            // 使用UserInfoDTO返回用户信息
-            UserInfoDTO userInfo = new UserInfoDTO();
-            userInfo.setUserid(user.getUserId().toString());
-            userInfo.setUsername(user.getNickname() != null ? user.getNickname() : user.getAccount());
-            userInfo.setAvatar(
-                    user.getAvatar() != null ? user.getAvatar() : "https://img.icons8.com/color/96/person-male.png");
-            userInfo.setPhone(user.getPhone() != null ? user.getPhone() : "");
-            userInfo.setGender(user.getGender());
-            userInfo.setBirthday(user.getBirthday() != null ? user.getBirthday().toString() : "");
-
-            return Result.success(userInfo);
+    
+            // 3. 返回成功响应
+            return Result.success(userProfile);
         } catch (Exception e) {
+            System.err.println("=== 获取用户信息异常详情 ===");
+            System.err.println("异常类型：" + e.getClass().getSimpleName());
+            System.err.println("异常信息：" + e.getMessage());
             e.printStackTrace();
             return Result.error("服务器内部错误，请稍后重试");
         }

@@ -31,6 +31,12 @@ public interface UserMapper {
         User selectByAccount(String account);
 
         /**
+         * 根据手机号查询用户
+         */
+        @Select("SELECT * FROM t_user WHERE phone = #{phone}")
+        User selectByPhone(String phone);
+
+        /**
          * 插入用户
          */
         @Insert("INSERT INTO t_user(user_id, account, password, gender, create_time, status, openid, nickname, avatar) "
@@ -228,11 +234,19 @@ public interface UserMapper {
                 "WHERE e.camp_id = #{campId} AND e.class_id IS NULL")
         List<User> selectAuditPassStudents(@Param("campId") Long campId);
 
-        // ========== 完全修正后的更新班级ID SQL（操作报名表） ==========
+        // ========== 完全修正后的更新班级 ID SQL（操作报名表） ==========
         @Update("UPDATE t_camp_enrollment " +
                 "SET class_id = #{classId} " +
                 "WHERE user_id = #{userId} AND camp_id = #{campId}")
         int updateEnrollmentClassId(@Param("userId") Long userId,
                                     @Param("campId") Long campId,
                                     @Param("classId") Long classId);
+
+        /**
+         * 查询用户统计信息（作业提交次数）
+         * @param userId 用户 ID
+         * @return 作业提交次数
+         */
+        @Select("SELECT COUNT(*) AS homeworkCount FROM t_homework WHERE user_id = #{userId}")
+        Integer countUserHomework(Long userId);
 }

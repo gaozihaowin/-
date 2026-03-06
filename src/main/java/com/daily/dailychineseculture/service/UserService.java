@@ -1,12 +1,15 @@
 package com.daily.dailychineseculture.service;
 
 import com.daily.dailychineseculture.dto.UserInfoDTO;
+import com.daily.dailychineseculture.dto.UserUpdateRequest;
 import com.daily.dailychineseculture.dto.VolunteerStatsDTO;
 import com.daily.dailychineseculture.entity.User;
 import com.daily.dailychineseculture.mapper.UserMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 import java.text.SimpleDateFormat;
 import java.util.*;
@@ -602,7 +605,7 @@ public class UserService {
         try {
             System.out.println("开始平衡班级分布（仅做基础人数平衡）");
 
-            // 核心逻辑：确保每个班级人数差不超过1（避免个别班级人数过多）
+            // 核心逻辑：确保每个班级人数差不超过 1（避免个别班级人数过多）
             int maxClassSize = 0;
             int minClassSize = Integer.MAX_VALUE;
 
@@ -613,7 +616,7 @@ public class UserService {
                 if (size < minClassSize) minClassSize = size;
             }
 
-            // 2. 若人数差超过1，调整（从人数最多的班级转移学员到最少的）
+            // 2. 若人数差超过 1，调整（从人数最多的班级转移学员到最少的）
             if (maxClassSize - minClassSize > 1) {
                 // 找到人数最多的班级
                 List<User> largestClass = classList.stream()
@@ -625,13 +628,13 @@ public class UserService {
                         .orElse(null);
 
                 if (largestClass != null && smallestClass != null && !largestClass.isEmpty()) {
-                    // 转移1名学员（用迭代器避免并发修改）
+                    // 转移 1 名学员（用迭代器避免并发修改）
                     Iterator<User> it = largestClass.iterator();
                     if (it.hasNext()) {
                         User transferUser = it.next();
-                        it.remove(); // 用迭代器删除，避免ConcurrentModificationException
+                        it.remove(); // 用迭代器删除，避免 ConcurrentModificationException
                         smallestClass.add(transferUser);
-                        System.out.println("转移学员[" + transferUser.getUserId() + "]到人数最少的班级，平衡人数");
+                        System.out.println("转移学员 [" + transferUser.getUserId() + "] 到人数最少的班级，平衡人数");
                     }
                 }
             }
@@ -641,5 +644,181 @@ public class UserService {
             System.err.println("班级分布平衡异常：" + e.getMessage());
             // 即使平衡失败，也不影响核心分班逻辑
         }
+    }
+
+    /**
+     * 更新用户个人信息（完善信息）
+     * @param userId 用户 ID
+     * @param request 用户信息更新请求
+     * @return 是否更新成功
+     * @throws RuntimeException 当手机号重复时抛出
+     */
+    @Transactional(rollbackFor = Exception.class)
+    public boolean updateUserInfo(Long userId, UserUpdateRequest request) {
+        try {
+            System.out.println("开始更新用户信息，userId: " + userId);
+
+            // 1. 查询用户是否存在
+            User existingUser = userMapper.selectById(userId);
+            if (existingUser == null) {
+                System.err.println("用户不存在，userId: " + userId);
+                throw new RuntimeException("用户不存在");
+            }
+
+            // 2. 检查手机号是否与数据库中其他人冲突
+            if (StringUtils.hasText(request.getPhone())) {
+                User userWithSamePhone = userMapper.selectByPhone(request.getPhone());
+                if (userWithSamePhone != null && !userWithSamePhone.getUserId().equals(userId)) {
+                    System.err.println("手机号已被其他账号绑定，phone: " + request.getPhone());
+                    throw new DuplicateKeyException("该手机号已被其他账号绑定");
+                }
+            }
+
+            // 3. 更新用户信息
+            if (StringUtils.hasText(request.getAvatar())) {
+                existingUser.setAvatar(request.getAvatar());
+            }
+            if (StringUtils.hasText(request.getPhone())) {
+                existingUser.setPhone(request.getPhone());
+            }
+            if (request.getGender() != null) {
+                existingUser.setGender(request.getGender());
+            }
+            if (request.getBirthday() != null) {
+                existingUser.setBirthday(request.getBirthday());
+            }
+            if (StringUtils.hasText(request.getRegion())) {
+                existingUser.setRegion(request.getRegion());
+            }
+            if (StringUtils.hasText(request.getProfession())) {
+                existingUser.setProfession(request.getProfession());
+            }
+
+            // 4. 执行数据库更新
+            int result = userMapper.update(existingUser);
+            if (result > 0) {
+                System.out.println("用户信息更新成功，userId: " + userId);
+                return true;
+            } else {
+                System.err.println("用户信息更新失败，userId: " + userId);
+                throw new RuntimeException("用户信息更新失败");
+            }
+        } catch (DuplicateKeyException e) {
+            // 捕获手机号唯一约束冲突
+            System.err.println("=== 手机号重复异常 ===");
+            System.err.println("userId: " + userId);
+            System.err.println("phone: " + request.getPhone());
+            System.err.println("异常信息：" + e.getMessage());
+            throw new RuntimeException("该手机号已被其他账号绑定", e);
+        } catch (Exception e) {
+            System.err.println("=== 更新用户信息异常详情 ===");
+            System.err.println("userId: " + userId);
+            System.err.println("异常类型：" + e.getClass().getSimpleName());
+            System.err.println("异常信息：" + e.getMessage());
+            System.err.println("异常堆栈:");
+            e.printStackTrace();
+            System.err.println("=====================");
+            throw new RuntimeException("更新用户信息失败：" + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * 获取用户个人信息（包含统计指标）
+     * @param userId 用户 ID
+     * @return 用户个人信息 DTO
+     */
+    public com.daily.dailychineseculture.dto.UserProfileDTO getUserProfile(Long userId) {
+        try {
+            // 1. 查询用户基本信息
+            User user = userMapper.selectById(userId);
+            if (user == null) {
+                return null;
+            }
+
+            // 2. 创建返回对象
+            com.daily.dailychineseculture.dto.UserProfileDTO profileDTO = 
+                new com.daily.dailychineseculture.dto.UserProfileDTO();
+            profileDTO.setUserId(user.getUserId().toString());
+            profileDTO.setAccount(user.getAccount());
+            profileDTO.setNickname(user.getNickname() != null ? user.getNickname() : user.getAccount());
+            profileDTO.setAvatar(user.getAvatar() != null && !user.getAvatar().isEmpty() 
+                ? user.getAvatar() 
+                : "https://img.icons8.com/color/96/person-male.png");
+
+            // 3. 判断当前身份（默认学员端）
+            boolean isVolunteer = isVolunteer(userId);
+            profileDTO.setCurrentIdentity(isVolunteer ? "志愿者端" : "学员端");
+
+            // 4. 组装统计指标列表
+            java.util.List<com.daily.dailychineseculture.dto.UserStatsItem> statsList = 
+                new java.util.ArrayList<>();
+
+            // 4.1 地区
+            com.daily.dailychineseculture.dto.UserStatsItem regionItem = 
+                new com.daily.dailychineseculture.dto.UserStatsItem();
+            regionItem.setLabel("地区");
+            regionItem.setValue(user.getRegion() != null && !user.getRegion().isEmpty() 
+                ? user.getRegion() 
+                : "-");
+            statsList.add(regionItem);
+
+            // 4.2 职业
+            com.daily.dailychineseculture.dto.UserStatsItem professionItem = 
+                new com.daily.dailychineseculture.dto.UserStatsItem();
+            professionItem.setLabel("职业");
+            professionItem.setValue(user.getProfession() != null && !user.getProfession().isEmpty() 
+                ? user.getProfession() 
+                : "-");
+            statsList.add(professionItem);
+
+            // 4.3 年数（注册时间至今，向下取整）
+            com.daily.dailychineseculture.dto.UserStatsItem yearsItem = 
+                new com.daily.dailychineseculture.dto.UserStatsItem();
+            yearsItem.setLabel("年数");
+            long yearsSinceRegistration = calculateYearsSinceRegistration(user.getCreateTime());
+            yearsItem.setValue(String.valueOf(yearsSinceRegistration));
+            statsList.add(yearsItem);
+
+            // 4.4 学时（作业次数 * 2，拼接"h"）
+            com.daily.dailychineseculture.dto.UserStatsItem hoursItem = 
+                new com.daily.dailychineseculture.dto.UserStatsItem();
+            hoursItem.setLabel("学时");
+            Integer homeworkCount = userMapper.countUserHomework(userId);
+            int studyHours = (homeworkCount != null ? homeworkCount : 0) * 2;
+            hoursItem.setValue(studyHours + "h");
+            statsList.add(hoursItem);
+
+            // 5. 设置统计列表
+            profileDTO.setStatsList(statsList);
+
+            return profileDTO;
+        } catch (Exception e) {
+            System.err.println("=== 获取用户个人信息异常详情 ===");
+            System.err.println("userId: " + userId);
+            System.err.println("异常类型：" + e.getClass().getSimpleName());
+            System.err.println("异常信息：" + e.getMessage());
+            System.err.println("异常堆栈:");
+            e.printStackTrace();
+            System.err.println("=====================");
+            return null;
+        }
+    }
+
+    /**
+     * 计算从注册到现在经过的年数（向下取整）
+     * @param createTime 注册时间
+     * @return 年数
+     */
+    private long calculateYearsSinceRegistration(Date createTime) {
+        if (createTime == null) {
+            return 0;
+        }
+        
+        long now = System.currentTimeMillis();
+        long registrationTime = createTime.getTime();
+        
+        // 计算毫秒差值，转换为年（向下取整）
+        long millisPerYear = 365L * 24 * 60 * 60 * 1000;
+        return (now - registrationTime) / millisPerYear;
     }
 }
