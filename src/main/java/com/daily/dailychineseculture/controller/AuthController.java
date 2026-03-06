@@ -235,6 +235,106 @@ public class AuthController {
     }
 
     /**
+     * 获取用户个人资料详情接口（包含所有字段）
+     * 用于个人资料编辑页面展示完整信息
+     * 
+     * @param token JWT 令牌
+     * @return 用户资料详情 {
+     *         "code": 200,
+     *         "msg": "success",
+     *         "data": {
+     *         "account": "student01",
+     *         "nickname": "Mystery",
+     *         "avatar": "https://...",
+     *         "phone": "13800000000",
+     *         "region": "北京",
+     *         "profession": "IT 工程师",
+     *         "gender": 1,
+     *         "birthday": "1990-01-01",
+     *         "password": ""
+     *         }
+     *         }
+     */
+    @GetMapping("/user/detail")
+    public Result<com.daily.dailychineseculture.dto.UserDetailDTO> getUserDetail(@RequestHeader("Authorization") String token) {
+        try {
+            // 1. 解析 Token 获取用户 ID
+            Long userId = jwtUtils.getUserIdFromToken(token.replace("Bearer ", ""));
+            if (userId == null) {
+                return Result.error("无效的 Token");
+            }
+
+            // 2. 调用 Service 获取用户资料详情
+            com.daily.dailychineseculture.dto.UserDetailDTO userDetail = userService.getUserDetail(userId);
+            if (userDetail == null) {
+                return Result.error("用户不存在");
+            }
+
+            // 3. 返回成功响应
+            return Result.success(userDetail);
+        } catch (Exception e) {
+            System.err.println("=== 获取用户资料详情异常 ===");
+            System.err.println("异常类型：" + e.getClass().getSimpleName());
+            System.err.println("异常信息：" + e.getMessage());
+            e.printStackTrace();
+            return Result.error("服务器内部错误，请稍后重试");
+        }
+    }
+
+    /**
+     * 更新用户全部资料接口
+     * 接收前端全量字段并更新到数据库
+     * 
+     * @param token JWT 令牌
+     * @param request 更新请求 {
+     *         "avatar": "https://...",
+     *         "nickname": "Mystery",
+     *         "password": "newpassword123",
+     *         "phone": "13800000000",
+     *         "region": "上海",
+     *         "profession": "全栈开发",
+     *         "gender": 1,
+     *         "birthday": "1990-01-01"
+     *         }
+     * @return 保存结果
+     */
+    @PostMapping("/user/updateAll")
+    public Result<Void> updateUserAllInfo(
+            @RequestHeader("Authorization") String token,
+            @RequestBody com.daily.dailychineseculture.dto.UserUpdateAllRequest request) {
+        try {
+            // 1. 解析 Token 获取用户 ID
+            Long userId = jwtUtils.getUserIdFromToken(token.replace("Bearer ", ""));
+            if (userId == null) {
+                return Result.error("无效的 Token");
+            }
+
+            // 2. 参数校验
+            if (request == null) {
+                return Result.error("请求参数不能为空");
+            }
+
+            // 3. 调用 Service 更新用户资料
+            boolean success = userService.updateUserAllInfo(userId, request);
+            
+            if (success) {
+                return Result.successMsg("保存成功");
+            } else {
+                return Result.error("保存失败");
+            }
+        } catch (IllegalArgumentException e) {
+            // 参数校验失败
+            return Result.error(e.getMessage());
+        } catch (Exception e) {
+            System.err.println("=== 更新用户全部资料异常 ===");
+            System.err.println("异常类型：" + e.getClass().getSimpleName());
+            System.err.println("异常信息：" + e.getMessage());
+            e.printStackTrace();
+            return Result.error("服务器内部错误，请稍后重试");
+        }
+    }
+
+    /**
      * 退出登录接口
      */
     @PostMapping("/user/logout")

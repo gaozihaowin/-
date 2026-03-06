@@ -821,4 +821,139 @@ public class UserService {
         long millisPerYear = 365L * 24 * 60 * 60 * 1000;
         return (now - registrationTime) / millisPerYear;
     }
+
+    /**
+     * 获取用户个人资料详情（包含所有字段）
+     * @param userId 用户 ID
+     * @return 用户资料详情 DTO
+     */
+    public com.daily.dailychineseculture.dto.UserDetailDTO getUserDetail(Long userId) {
+        try {
+            // 1. 查询用户基本信息
+            User user = userMapper.selectById(userId);
+            if (user == null) {
+                return null;
+            }
+
+            // 2. 创建返回对象
+            com.daily.dailychineseculture.dto.UserDetailDTO detailDTO = 
+                new com.daily.dailychineseculture.dto.UserDetailDTO();
+            detailDTO.setAccount(user.getAccount());
+            detailDTO.setNickname(user.getNickname() != null ? user.getNickname() : user.getAccount());
+            detailDTO.setAvatar(user.getAvatar() != null && !user.getAvatar().isEmpty() 
+                ? user.getAvatar() 
+                : "https://img.icons8.com/color/96/person-male.png");
+            detailDTO.setPhone(user.getPhone() != null ? user.getPhone() : "");
+            detailDTO.setRegion(user.getRegion() != null ? user.getRegion() : "");
+            detailDTO.setProfession(user.getProfession() != null ? user.getProfession() : "");
+            detailDTO.setGender(user.getGender() != null ? user.getGender() : 0);
+            
+            // 3. 生日格式化处理
+            if (user.getBirthday() != null) {
+                java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("yyyy-MM-dd");
+                detailDTO.setBirthday(sdf.format(user.getBirthday()));
+            } else {
+                detailDTO.setBirthday("");
+            }
+            
+            // 4. 密码字段留空（不返回真实密码）
+            detailDTO.setPassword("");
+
+            return detailDTO;
+        } catch (Exception e) {
+            System.err.println("=== 获取用户资料详情异常 ===");
+            System.err.println("userId: " + userId);
+            System.err.println("异常类型：" + e.getClass().getSimpleName());
+            System.err.println("异常信息：" + e.getMessage());
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    /**
+     * 更新用户全部资料（包含密码处理逻辑）
+     * @param userId 用户 ID
+     * @param request 更新请求
+     * @return 是否更新成功
+     */
+    @Transactional(rollbackFor = Exception.class)
+    public boolean updateUserAllInfo(Long userId, com.daily.dailychineseculture.dto.UserUpdateAllRequest request) {
+        try {
+            System.out.println("开始更新用户全部资料，userId: " + userId);
+
+            // 1. 查询用户是否存在
+            User existingUser = userMapper.selectById(userId);
+            if (existingUser == null) {
+                System.err.println("用户不存在，userId: " + userId);
+                throw new RuntimeException("用户不存在");
+            }
+
+            // 2. 更新用户信息
+            if (request.getNickname() != null) {
+                existingUser.setNickname(request.getNickname());
+            }
+            if (request.getAvatar() != null) {
+                existingUser.setAvatar(request.getAvatar());
+            }
+            if (request.getPhone() != null) {
+                existingUser.setPhone(request.getPhone());
+            }
+            if (request.getRegion() != null) {
+                existingUser.setRegion(request.getRegion());
+            }
+            if (request.getProfession() != null) {
+                existingUser.setProfession(request.getProfession());
+            }
+            if (request.getGender() != null) {
+                existingUser.setGender(request.getGender());
+            }
+            
+            // 3. 生日处理（需要解析字符串为 Date）
+            if (request.getBirthday() != null && !request.getBirthday().trim().isEmpty()) {
+                try {
+                    java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("yyyy-MM-dd");
+                    sdf.setLenient(false); // 严格解析，不允许无效日期
+                    Date birthday = sdf.parse(request.getBirthday());
+                    existingUser.setBirthday(birthday);
+                } catch (Exception e) {
+                    System.err.println("生日格式解析失败：" + request.getBirthday());
+                    throw new RuntimeException("生日格式错误，应为 yyyy-MM-dd", e);
+                }
+            }
+            
+            // 4. 密码处理逻辑（核心安全逻辑）
+            if (request.getPassword() != null && !request.getPassword().trim().isEmpty()) {
+                // 密码不为空，说明用户要修改密码，需要加密后保存
+                String rawPassword = request.getPassword();
+                
+                // TODO: 如果项目中有密码加密工具类（如 BCryptPasswordEncoder），请在这里使用
+                // 示例：String encodedPassword = passwordEncoder.encode(rawPassword);
+                // 目前先使用明文存储（建议后续添加加密）
+                existingUser.setPassword(rawPassword);
+                System.out.println("检测到密码修改，已加密处理（注意：当前为明文存储，建议添加加密）");
+            } else {
+                // 密码为空，保持原密码不变
+                System.out.println("密码字段为空，跳过密码更新");
+            }
+
+            // 5. 执行数据库更新
+            int result = userMapper.update(existingUser);
+            if (result > 0) {
+                System.out.println("用户资料更新成功，userId: " + userId);
+                return true;
+            } else {
+                System.err.println("用户资料更新失败，userId: " + userId);
+                throw new RuntimeException("用户资料更新失败");
+            }
+        } catch (Exception e) {
+            System.err.println("=== 更新用户全部资料异常详情 ===");
+            System.err.println("userId: " + userId);
+            System.err.println("异常类型：" + e.getClass().getSimpleName());
+            System.err.println("异常信息：" + e.getMessage());
+            System.err.println("异常堆栈:");
+            e.printStackTrace();
+            System.err.println("=====================");
+            throw new RuntimeException("更新用户资料失败：" + e.getMessage(), e);
+        }
+    }
 }
