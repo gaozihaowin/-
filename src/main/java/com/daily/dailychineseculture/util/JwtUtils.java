@@ -28,20 +28,37 @@ public class JwtUtils {
     private static final long EXPIRATION_TIME = 604800000;
     
     /**
-     * 生成JWT token
+     * 生成 JWT token（简化版，仅包含 userId 和 username）
      * 
-     * @param userId 用户ID
+     * @param userId 用户 ID
      * @param username 用户名
-     * @return JWT token字符串
+     * @return JWT token 字符串
      */
     public String generateToken(Long userId, String username) {
+        return generateToken(userId, username, null, null);
+    }
+    
+    /**
+     * 生成 JWT token（支持多角色）
+     * 
+     * @param userId 用户 ID
+     * @param username 用户名
+     * @param currentRole 当前角色
+     * @param campId 营期 ID（可选，管理员为 null）
+     * @return JWT token 字符串
+     */
+    public String generateToken(Long userId, String username, String currentRole, Integer campId) {
         Date now = new Date();
         Date expiryDate = new Date(now.getTime() + EXPIRATION_TIME);
-        
+            
         Map<String, Object> claims = new HashMap<>();
         claims.put("userId", userId);
         claims.put("username", username);
-        
+        claims.put("currentRole", currentRole);
+        if (campId != null) {
+            claims.put("campId", campId);
+        }
+            
         return Jwts.builder()
                 .setClaims(claims)
                 .setSubject(username)
@@ -68,7 +85,37 @@ public class JwtUtils {
     }
     
     /**
-     * 从token中解析用户名
+     * 从 token 中解析当前角色
+     * 
+     * @param token JWT token
+     * @return 当前角色
+     */
+    public String getCurrentRoleFromToken(String token) {
+        try {
+            Claims claims = parseToken(token);
+            return claims.get("currentRole", String.class);
+        } catch (Exception e) {
+            throw new RuntimeException("Token 解析失败：" + e.getMessage());
+        }
+    }
+        
+    /**
+     * 从 token 中解析营期 ID
+     * 
+     * @param token JWT token
+     * @return 营期 ID，如果没有则返回 null
+     */
+    public Integer getCampIdFromToken(String token) {
+        try {
+            Claims claims = parseToken(token);
+            return claims.get("campId", Integer.class);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+        
+    /**
+     * 从 token 中解析用户名
      * 
      * @param token JWT token
      * @return 用户名
