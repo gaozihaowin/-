@@ -27,7 +27,7 @@ public class DutyAssignment {
     
     /**
      * 职位类型代码
-     * COURSE_ADMIN(课程管理), ARCHIVE_ADMIN(档案管理), VOLUNTEER(志愿者) 等
+     * COURSE_ADMIN(课程管理), ARCHIVE_ADMIN(档案管理), SUPER_ADMIN(总管理员) 等
      */
     private String dutyType;
     

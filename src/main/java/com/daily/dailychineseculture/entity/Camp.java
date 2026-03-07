@@ -42,7 +42,12 @@ public class Camp {
     private Date endTime;
     
     /**
-     * 状态: 0未开始, 1进行中, 2已结束
+     * 状态：0 未开始，1 进行中，2 已结束
      */
     private Integer status;
+    
+    /**
+     * 报名人数
+     */
+    private Integer enrollCount;
 }

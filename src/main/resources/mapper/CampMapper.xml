@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.daily.dailychineseculture.mapper.CampMapper">
+    
+    <!-- 结果映射：营期列表项 DTO -->
+    <resultMap id="CampListItemResultMap" type="com.daily.dailychineseculture.dto.CampListItemDTO">
+        <result property="campId" column="camp_id"/>
+        <result property="typeName" column="level_name"/>
+        <result property="term" column="term"/>
+        <result property="name" column="name"/>
+        <result property="startTime" column="start_time"/>
+        <result property="endTime" column="end_time"/>
+        <result property="status" column="status"/>
+        <result property="tag" column="tag"/>
+        <result property="enrollCount" column="enroll_count"/>
+    </resultMap>
+    
+    <!-- 查询营期列表总数 -->
+    <select id="countCampList" resultType="int">
+        SELECT COUNT(*)
+        FROM t_camp c
+        <where>
+            <if test="keyword != null and keyword != ''">
+                AND c.name LIKE CONCAT('%', #{keyword}, '%')
+            </if>
+            <if test="status != null">
+                AND c.status = #{status}
+            </if>
+        </where>
+    </select>
+    
+    <!-- 分页查询营期列表（联表查询） -->
+    <select id="selectCampList" resultMap="CampListItemResultMap">
+        SELECT 
+            c.camp_id,
+            ct.level_name AS level_name,
+            c.term,
+            c.name,
+            DATE_FORMAT(c.start_time, '%Y-%m-%d') AS start_time,
+            DATE_FORMAT(c.end_time, '%Y-%m-%d') AS end_time,
+            c.status,
+            c.tag,
+            c.enroll_count
+        FROM t_camp c
+        LEFT JOIN t_camp_type ct ON c.type_id = ct.type_id
+        <where>
+            <if test="keyword != null and keyword != ''">
+                AND c.name LIKE CONCAT('%', #{keyword}, '%')
+            </if>
+            <if test="status != null">
+                AND c.status = #{status}
+            </if>
+        </where>
+        ORDER BY c.start_time DESC
+        LIMIT #{offset}, #{limit}
+    </select>
+    
+</mapper>

@@ -1,6 +1,8 @@
 package com.daily.dailychineseculture.service;
 
+import com.daily.dailychineseculture.dto.CampListPageDTO;
 import com.daily.dailychineseculture.dto.CampVO;
+import com.daily.dailychineseculture.dto.RecentCampDTO;
 import com.daily.dailychineseculture.entity.Camp;
 
 import java.util.List;
@@ -35,4 +37,21 @@ public interface CampService {
      * @return 所有营期列表
      */
     List<Camp> getAllCamps();
+    
+    /**
+     * 获取最近活跃的课程列表（用于仪表盘）
+     * 按开营时间倒序取最新 5 条记录，并进行状态字典转换
+     * @return 最近活跃课程 DTO 列表
+     */
+    List<RecentCampDTO> getRecentCamps();
+    
+    /**
+     * 分页查询营期列表（支持条件过滤）
+     * @param page 当前页码（从 1 开始）
+     * @param size 每页大小
+     * @param keyword 关键词（可选，模糊匹配营期名称）
+     * @param status 状态（可选，精确匹配）
+     * @return 分页结果
+     */
+    CampListPageDTO getCampList(Integer page, Integer size, String keyword, Integer status);
 }

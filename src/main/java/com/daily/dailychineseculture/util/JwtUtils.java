@@ -43,8 +43,8 @@ public class JwtUtils {
      * 
      * @param userId 用户 ID
      * @param username 用户名
-     * @param currentRole 当前角色
-     * @param campId 营期 ID（可选，管理员为 null）
+     * @param currentRole 当前角色（COURSE_ADMIN, ARCHIVE_ADMIN, SUPER_ADMIN）
+     * @param campId 营期 ID（可选，普通管理员有值，SUPER_ADMIN 为 null）
      * @return JWT token 字符串
      */
     public String generateToken(Long userId, String username, String currentRole, Integer campId) {

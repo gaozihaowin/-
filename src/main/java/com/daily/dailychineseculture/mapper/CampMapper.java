@@ -1,8 +1,10 @@
 package com.daily.dailychineseculture.mapper;
 
+import com.daily.dailychineseculture.dto.CampListItemDTO;
 import com.daily.dailychineseculture.dto.CampVO;
 import com.daily.dailychineseculture.entity.Camp;
 import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
 
 import java.util.List;
@@ -51,4 +53,39 @@ public interface CampMapper {
      */
     @Select("SELECT * FROM t_camp")
     List<Camp> selectAll();
+    
+    /**
+     * 查询最近活跃的 5 个营期（用于仪表盘展示）
+     * 按开营时间倒序排列，返回最新 5 条记录
+     * @return 最近活跃营期列表
+     */
+    @Select("SELECT camp_id, name, status, start_time, enroll_count " +
+            "FROM t_camp " +
+            "ORDER BY start_time DESC " +
+            "LIMIT 5")
+    List<Camp> selectRecentCamps();
+    
+    /**
+     * 查询营期列表总数（支持条件过滤）
+     * @param keyword 关键词（营期名称模糊匹配）
+     * @param status 状态精确匹配
+     * @return 总记录数
+     */
+    int countCampList(@Param("keyword") String keyword, @Param("status") Integer status);
+    
+    /**
+     * 分页查询营期列表（联表查询类型名称）
+     * 按开营时间倒序排列
+     * @param keyword 关键词（营期名称模糊匹配）
+     * @param status 状态精确匹配
+     * @param offset 偏移量
+     * @param limit 每页大小
+     * @return 营期列表项 DTO 列表
+     */
+    List<CampListItemDTO> selectCampList(
+        @Param("keyword") String keyword,
+        @Param("status") Integer status,
+        @Param("offset") int offset,
+        @Param("limit") int limit
+    );
 }
