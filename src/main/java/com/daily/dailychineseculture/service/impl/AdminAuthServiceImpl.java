@@ -71,12 +71,6 @@ public class AdminAuthServiceImpl implements AdminAuthService {
             throw new RuntimeException("无权以该身份登录:403");
         }
         
-        // 5. 检查状态是否正常
-        Integer status = (Integer) dutyInfo.get("status");
-        if (status != null && status != 1) {
-            throw new RuntimeException("您的账号已被冻结，请联系管理员");
-        }
-        
         // 6. 生成 JWT Token（包含 userId, currentRole, campId）
         Integer campId = (Integer) dutyInfo.get("camp_id");
         String token = jwtUtils.generateToken(

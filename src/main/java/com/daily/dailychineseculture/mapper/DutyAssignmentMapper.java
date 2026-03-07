@@ -23,7 +23,6 @@ public interface DutyAssignmentMapper {
     @Select("SELECT * FROM t_duty_assignment " +
             "WHERE user_id = #{userId} " +
             "AND duty_type = #{dutyType} " +
-            "AND status = 1 " +
             "AND (end_time IS NULL OR end_time > NOW())")
     DutyAssignment selectByUserIdAndDutyType(@Param("userId") Long userId, @Param("dutyType") String dutyType);
     
@@ -39,7 +38,6 @@ public interface DutyAssignmentMapper {
             "LEFT JOIN t_camp c ON da.camp_id = c.camp_id " +
             "WHERE da.user_id = #{userId} " +
             "AND da.duty_type = #{dutyType} " +
-            "AND da.status = 1 " +
             "AND (da.end_time IS NULL OR da.end_time > NOW())")
     Map<String, Object> selectWithCampInfo(@Param("userId") Long userId, @Param("dutyType") String dutyType);
 }

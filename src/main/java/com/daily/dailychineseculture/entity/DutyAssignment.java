@@ -37,11 +37,6 @@ public class DutyAssignment {
     private String dutyName;
     
     /**
-     * 状态：1 正常，0 冻结
-     */
-    private Integer status;
-    
-    /**
      * 任职开始时间
      */
     private Date startTime;
