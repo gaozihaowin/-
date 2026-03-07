@@ -3,6 +3,7 @@ package com.daily.dailychineseculture.controller;
 import com.daily.dailychineseculture.dto.AdminLoginRequest;
 import com.daily.dailychineseculture.dto.AdminLoginResult;
 import com.daily.dailychineseculture.dto.CampListPageDTO;
+import com.daily.dailychineseculture.dto.CampTypeOptionDTO;
 import com.daily.dailychineseculture.dto.RecentCampDTO;
 import com.daily.dailychineseculture.service.AdminAuthService;
 import com.daily.dailychineseculture.service.CampService;
@@ -82,6 +83,7 @@ public class AdminController {
      * @param size 每页大小（默认 10）
      * @param keyword 关键词（可选，模糊匹配营期名称）
      * @param status 状态（可选，精确匹配）
+     * @param typeId 体系类型 ID（可选，精确匹配）
      * @return 分页结果
      */
     @GetMapping("/camps")
@@ -89,14 +91,32 @@ public class AdminController {
         @RequestParam(value = "page", defaultValue = "1") Integer page,
         @RequestParam(value = "size", defaultValue = "10") Integer size,
         @RequestParam(value = "keyword", required = false) String keyword,
-        @RequestParam(value = "status", required = false) Integer status
+        @RequestParam(value = "status", required = false) Integer status,
+        @RequestParam(value = "typeId", required = false) Integer typeId
     ) {
         try {
-            CampListPageDTO campList = campService.getCampList(page, size, keyword, status);
+            CampListPageDTO campList = campService.getCampList(page, size, keyword, status, typeId);
             return Result.success(campList);
         } catch (Exception e) {
             e.printStackTrace();
             return Result.error("获取营期列表失败：" + e.getMessage());
+        }
+    }
+    
+    /**
+     * 获取所有营期类型（用于下拉选项）
+     * GET /api/admin/camp-types/options
+     * 
+     * @return 营期类型列表
+     */
+    @GetMapping("/camp-types/options")
+    public Result<List<CampTypeOptionDTO>> getCampTypeOptions() {
+        try {
+            List<CampTypeOptionDTO> types = campService.getAllCampTypes();
+            return Result.success(types);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return Result.error("获取营期类型失败：" + e.getMessage());
         }
     }
 }

@@ -2,6 +2,7 @@ package com.daily.dailychineseculture.service.impl;
 
 import com.daily.dailychineseculture.dto.CampListPageDTO;
 import com.daily.dailychineseculture.dto.CampListItemDTO;
+import com.daily.dailychineseculture.dto.CampTypeOptionDTO;
 import com.daily.dailychineseculture.dto.CampVO;
 import com.daily.dailychineseculture.dto.RecentCampDTO;
 import com.daily.dailychineseculture.entity.Camp;
@@ -72,7 +73,7 @@ public class CampServiceImpl implements CampService {
     }
     
     @Override
-    public CampListPageDTO getCampList(Integer page, Integer size, String keyword, Integer status) {
+    public CampListPageDTO getCampList(Integer page, Integer size, String keyword, Integer status, Integer typeId) {
         // 设置默认值
         if (page == null || page < 1) {
             page = 1;
@@ -85,12 +86,12 @@ public class CampServiceImpl implements CampService {
         int offset = (page - 1) * size;
         
         // 查询总数
-        long total = campMapper.countCampList(keyword, status);
+        long total = campMapper.countCampList(keyword, status, typeId);
         
         // 分页查询数据
         List<CampListItemDTO> list = new ArrayList<>();
         if (total > 0) {
-            list = campMapper.selectCampList(keyword, status, offset, size);
+            list = campMapper.selectCampList(keyword, status, typeId, offset, size);
         }
         
         // 组装分页结果
@@ -101,6 +102,11 @@ public class CampServiceImpl implements CampService {
         pageDTO.setList(list);
         
         return pageDTO;
+    }
+    
+    @Override
+    public List<CampTypeOptionDTO> getAllCampTypes() {
+        return campMapper.selectAllCampTypes();
     }
     
     /**

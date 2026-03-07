@@ -1,6 +1,7 @@
 package com.daily.dailychineseculture.service;
 
 import com.daily.dailychineseculture.dto.CampListPageDTO;
+import com.daily.dailychineseculture.dto.CampTypeOptionDTO;
 import com.daily.dailychineseculture.dto.CampVO;
 import com.daily.dailychineseculture.dto.RecentCampDTO;
 import com.daily.dailychineseculture.entity.Camp;
@@ -51,7 +52,14 @@ public interface CampService {
      * @param size 每页大小
      * @param keyword 关键词（可选，模糊匹配营期名称）
      * @param status 状态（可选，精确匹配）
+     * @param typeId 体系类型 ID（可选，精确匹配）
      * @return 分页结果
      */
-    CampListPageDTO getCampList(Integer page, Integer size, String keyword, Integer status);
+    CampListPageDTO getCampList(Integer page, Integer size, String keyword, Integer status, Integer typeId);
+    
+    /**
+     * 获取所有营期类型（用于下拉选项）
+     * @return 营期类型列表
+     */
+    List<CampTypeOptionDTO> getAllCampTypes();
 }

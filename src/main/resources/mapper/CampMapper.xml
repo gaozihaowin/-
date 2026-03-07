@@ -19,12 +19,16 @@
     <select id="countCampList" resultType="int">
         SELECT COUNT(*)
         FROM t_camp c
+        LEFT JOIN t_camp_type ct ON c.type_id = ct.type_id
         <where>
             <if test="keyword != null and keyword != ''">
                 AND c.name LIKE CONCAT('%', #{keyword}, '%')
             </if>
             <if test="status != null">
                 AND c.status = #{status}
+            </if>
+            <if test="typeId != null">
+                AND c.type_id = #{typeId}
             </if>
         </where>
     </select>
@@ -50,9 +54,21 @@
             <if test="status != null">
                 AND c.status = #{status}
             </if>
+            <if test="typeId != null">
+                AND c.type_id = #{typeId}
+            </if>
         </where>
         ORDER BY c.start_time DESC
         LIMIT #{offset}, #{limit}
+    </select>
+    
+    <!-- 查询所有营期类型（用于下拉选项） -->
+    <select id="selectAllCampTypes" resultType="com.daily.dailychineseculture.dto.CampTypeOptionDTO">
+        SELECT 
+            type_id AS typeId,
+            level_name AS levelName
+        FROM t_camp_type
+        ORDER BY type_id
     </select>
     
 </mapper>

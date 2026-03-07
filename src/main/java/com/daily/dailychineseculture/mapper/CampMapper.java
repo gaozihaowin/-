@@ -1,6 +1,7 @@
 package com.daily.dailychineseculture.mapper;
 
 import com.daily.dailychineseculture.dto.CampListItemDTO;
+import com.daily.dailychineseculture.dto.CampTypeOptionDTO;
 import com.daily.dailychineseculture.dto.CampVO;
 import com.daily.dailychineseculture.entity.Camp;
 import org.apache.ibatis.annotations.Mapper;
@@ -69,15 +70,17 @@ public interface CampMapper {
      * 查询营期列表总数（支持条件过滤）
      * @param keyword 关键词（营期名称模糊匹配）
      * @param status 状态精确匹配
+     * @param typeId 体系类型 ID 精确匹配
      * @return 总记录数
      */
-    int countCampList(@Param("keyword") String keyword, @Param("status") Integer status);
+    int countCampList(@Param("keyword") String keyword, @Param("status") Integer status, @Param("typeId") Integer typeId);
     
     /**
      * 分页查询营期列表（联表查询类型名称）
      * 按开营时间倒序排列
      * @param keyword 关键词（营期名称模糊匹配）
      * @param status 状态精确匹配
+     * @param typeId 体系类型 ID 精确匹配
      * @param offset 偏移量
      * @param limit 每页大小
      * @return 营期列表项 DTO 列表
@@ -85,7 +88,14 @@ public interface CampMapper {
     List<CampListItemDTO> selectCampList(
         @Param("keyword") String keyword,
         @Param("status") Integer status,
+        @Param("typeId") Integer typeId,
         @Param("offset") int offset,
         @Param("limit") int limit
     );
+    
+    /**
+     * 查询所有营期类型（用于下拉选项）
+     * @return 营期类型列表
+     */
+    List<CampTypeOptionDTO> selectAllCampTypes();
 }
