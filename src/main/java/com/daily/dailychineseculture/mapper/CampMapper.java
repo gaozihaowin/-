@@ -1,6 +1,7 @@
 package com.daily.dailychineseculture.mapper;
 
 import com.daily.dailychineseculture.dto.CampListItemDTO;
+import com.daily.dailychineseculture.dto.CampOptionDTO;
 import com.daily.dailychineseculture.dto.CampTypeOptionDTO;
 import com.daily.dailychineseculture.dto.CampVO;
 import com.daily.dailychineseculture.entity.Camp;
@@ -98,4 +99,11 @@ public interface CampMapper {
      * @return 营期类型列表
      */
     List<CampTypeOptionDTO> selectAllCampTypes();
+    
+    /**
+     * 查询营期下拉选项（仅返回 id 和 name）
+     * 按开营时间倒序排列
+     * @return 营期下拉选项列表
+     */
+    List<CampOptionDTO> selectCampOptions();
 }

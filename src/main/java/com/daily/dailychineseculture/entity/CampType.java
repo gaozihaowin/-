@@ -16,6 +16,11 @@ public class CampType {
     private Integer typeId;
     
     /**
+     * 等级标识（如：ML、DX、CY 等）
+     */
+    private String level;
+    
+    /**
      * 等级名称（如：明理班、诚意班等）
      */
     private String levelName;

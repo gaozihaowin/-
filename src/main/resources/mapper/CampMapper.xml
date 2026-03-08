@@ -71,4 +71,14 @@
         ORDER BY type_id
     </select>
     
+    <!-- 查询营期下拉选项（仅返回 id 和 name） -->
+    <select id="selectCampOptions" resultType="com.daily.dailychineseculture.dto.CampOptionDTO">
+        SELECT 
+            camp_id AS campId,
+            name,
+            term
+        FROM t_camp
+        ORDER BY start_time DESC
+    </select>
+    
 </mapper>

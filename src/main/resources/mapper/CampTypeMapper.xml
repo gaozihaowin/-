@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.daily.dailychineseculture.mapper.CampTypeMapper">
+    
+    <!-- 结果映射：营期类型 DTO -->
+    <resultMap id="CampTypeResultMap" type="com.daily.dailychineseculture.dto.CampTypeDTO">
+        <result property="typeId" column="type_id"/>
+        <result property="level" column="level"/>
+        <result property="levelName" column="level_name"/>
+    </resultMap>
+    
+    <!-- 查询所有营期类型（全量列表） -->
+    <select id="selectAllCampTypes" resultMap="CampTypeResultMap">
+        SELECT 
+            type_id,
+            level,
+            level_name
+        FROM t_camp_type
+        ORDER BY type_id
+    </select>
+    
+    <!-- 根据 ID 查询营期类型 -->
+    <select id="selectCampTypeById" resultMap="CampTypeResultMap">
+        SELECT 
+            type_id,
+            level,
+            level_name
+        FROM t_camp_type
+        WHERE type_id = #{typeId}
+    </select>
+    
+    <!-- 新增营期类型 -->
+    <insert id="insertCampType" parameterType="com.daily.dailychineseculture.dto.CampTypeDTO" useGeneratedKeys="true" keyProperty="typeId">
+        INSERT INTO t_camp_type (level, level_name)
+        VALUES (#{level}, #{levelName})
+    </insert>
+    
+    <!-- 修改营期类型 -->
+    <update id="updateCampType" parameterType="com.daily.dailychineseculture.dto.CampTypeDTO">
+        UPDATE t_camp_type
+        <set>
+            <if test="level != null and level != ''">
+                level = #{level},
+            </if>
+            <if test="levelName != null and levelName != ''">
+                level_name = #{levelName},
+            </if>
+        </set>
+        WHERE type_id = #{typeId}
+    </update>
+    
+    <!-- 删除营期类型 -->
+    <delete id="deleteCampType" parameterType="java.lang.Integer">
+        DELETE FROM t_camp_type
+        WHERE type_id = #{typeId}
+    </delete>
+    
+</mapper>
