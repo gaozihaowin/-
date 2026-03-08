@@ -17,6 +17,13 @@ public class CampListItemDTO {
     private Integer campId;
     
     /**
+     * 体系 ID（来自 t_camp_type.type_id）
+     * 【重要】用于前端编辑时的下拉框精准回显
+     */
+    @JsonProperty("typeId")
+    private Integer typeId;
+    
+    /**
      * 类型名称（来自 t_camp_type.level_name）
      */
     @JsonProperty("typeName")

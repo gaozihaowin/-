@@ -17,10 +17,15 @@ public class Camp {
     private Integer campId;
     
     /**
-     * 营期类型ID
+     * 营期类型 ID
      */
     private Integer typeId;
-    
+        
+    /**
+     * 期数
+     */
+    private Integer term;
+        
     /**
      * 营期名称
      */
@@ -45,6 +50,11 @@ public class Camp {
      * 状态：0 未开始，1 进行中，2 已结束
      */
     private Integer status;
+    
+    /**
+     * 标签
+     */
+    private String tag;
     
     /**
      * 报名人数

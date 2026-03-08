@@ -1,5 +1,6 @@
 package com.daily.dailychineseculture.service.impl;
 
+import com.daily.dailychineseculture.dto.CampDTO;
 import com.daily.dailychineseculture.dto.CampListPageDTO;
 import com.daily.dailychineseculture.dto.CampListItemDTO;
 import com.daily.dailychineseculture.dto.CampTypeOptionDTO;
@@ -107,6 +108,49 @@ public class CampServiceImpl implements CampService {
     @Override
     public List<CampTypeOptionDTO> getAllCampTypes() {
         return campMapper.selectAllCampTypes();
+    }
+    
+    @Override
+    public void addCamp(CampDTO campDTO) {
+        // 创建营期实体
+        Camp camp = new Camp();
+        camp.setTypeId(campDTO.getTypeId());
+        camp.setTerm(campDTO.getTerm());
+        camp.setName(campDTO.getName());
+        camp.setIntro(campDTO.getIntro());
+        camp.setStartTime(campDTO.getStartTime());
+        camp.setEndTime(campDTO.getEndTime());
+        camp.setStatus(campDTO.getStatus() != null ? campDTO.getStatus() : 0);
+        camp.setTag(campDTO.getTag());
+        // 强制设置 enroll_count 为 0，不接受前端传值
+        camp.setEnrollCount(0);
+        
+        // 执行插入操作
+        campMapper.insertCamp(camp);
+    }
+    
+    @Override
+    public void updateCamp(CampDTO campDTO) {
+        // 验证 campId 是否存在
+        if (campDTO.getCampId() == null) {
+            throw new IllegalArgumentException("编辑营期时，campId 不能为空");
+        }
+        
+        // 创建营期实体
+        Camp camp = new Camp();
+        camp.setCampId(campDTO.getCampId());
+        camp.setTypeId(campDTO.getTypeId());
+        camp.setTerm(campDTO.getTerm());
+        camp.setName(campDTO.getName());
+        camp.setIntro(campDTO.getIntro());
+        camp.setStartTime(campDTO.getStartTime());
+        camp.setEndTime(campDTO.getEndTime());
+        camp.setStatus(campDTO.getStatus() != null ? campDTO.getStatus() : 0);
+        camp.setTag(campDTO.getTag());
+        // 注意：不要更新 enroll_count，保留真实的报名人数
+        
+        // 执行更新操作
+        campMapper.updateCamp(camp);
     }
     
     /**

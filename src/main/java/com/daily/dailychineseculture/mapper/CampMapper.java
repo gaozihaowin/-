@@ -106,4 +106,18 @@ public interface CampMapper {
      * @return 营期下拉选项列表
      */
     List<CampOptionDTO> selectCampOptions();
+    
+    /**
+     * 新增营期
+     * @param camp 营期实体
+     * @return 影响行数
+     */
+    int insertCamp(Camp camp);
+    
+    /**
+     * 编辑营期
+     * @param camp 营期实体
+     * @return 影响行数
+     */
+    int updateCamp(Camp camp);
 }

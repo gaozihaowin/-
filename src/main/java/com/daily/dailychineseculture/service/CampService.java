@@ -1,5 +1,6 @@
 package com.daily.dailychineseculture.service;
 
+import com.daily.dailychineseculture.dto.CampDTO;
 import com.daily.dailychineseculture.dto.CampListPageDTO;
 import com.daily.dailychineseculture.dto.CampTypeOptionDTO;
 import com.daily.dailychineseculture.dto.CampVO;
@@ -62,4 +63,16 @@ public interface CampService {
      * @return 营期类型列表
      */
     List<CampTypeOptionDTO> getAllCampTypes();
+    
+    /**
+     * 新增营期
+     * @param campDTO 营期 DTO
+     */
+    void addCamp(CampDTO campDTO);
+    
+    /**
+     * 编辑营期
+     * @param campDTO 营期 DTO（必须包含 campId）
+     */
+    void updateCamp(CampDTO campDTO);
 }

@@ -5,6 +5,7 @@
     <!-- 结果映射：营期列表项 DTO -->
     <resultMap id="CampListItemResultMap" type="com.daily.dailychineseculture.dto.CampListItemDTO">
         <result property="campId" column="camp_id"/>
+        <result property="typeId" column="type_id"/>
         <result property="typeName" column="level_name"/>
         <result property="term" column="term"/>
         <result property="name" column="name"/>
@@ -37,6 +38,7 @@
     <select id="selectCampList" resultMap="CampListItemResultMap">
         SELECT 
             c.camp_id,
+            c.type_id,
             ct.level_name AS level_name,
             c.term,
             c.name,
@@ -80,5 +82,45 @@
         FROM t_camp
         ORDER BY start_time DESC
     </select>
+    
+    <!-- 新增营期 -->
+    <insert id="insertCamp" parameterType="com.daily.dailychineseculture.entity.Camp" useGeneratedKeys="true" keyProperty="campId">
+        INSERT INTO t_camp (
+            type_id,
+            term,
+            name,
+            intro,
+            start_time,
+            end_time,
+            status,
+            tag,
+            enroll_count
+        ) VALUES (
+            #{typeId},
+            #{term},
+            #{name},
+            #{intro},
+            #{startTime},
+            #{endTime},
+            #{status},
+            #{tag},
+            #{enrollCount}
+        )
+    </insert>
+    
+    <!-- 编辑营期 -->
+    <update id="updateCamp" parameterType="com.daily.dailychineseculture.entity.Camp">
+        UPDATE t_camp
+        SET
+            type_id = #{typeId},
+            term = #{term},
+            name = #{name},
+            intro = #{intro},
+            start_time = #{startTime},
+            end_time = #{endTime},
+            status = #{status},
+            tag = #{tag}
+        WHERE camp_id = #{campId}
+    </update>
     
 </mapper>

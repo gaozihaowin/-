@@ -2,6 +2,7 @@ package com.daily.dailychineseculture.controller;
 
 import com.daily.dailychineseculture.common.ResponseResult;
 import com.daily.dailychineseculture.common.Result;
+import com.daily.dailychineseculture.dto.CampDTO;
 import com.daily.dailychineseculture.dto.CampOptionDTO;
 import com.daily.dailychineseculture.dto.CampVO;
 import com.daily.dailychineseculture.entity.Camp;
@@ -68,7 +69,33 @@ public class CampController {
             return Result.success(allCamps);
         } catch (Exception e) {
             e.printStackTrace();
-            return Result.error("获取课程列表失败: " + e.getMessage());
+            return Result.error("获取课程列表失败：" + e.getMessage());
         }
+    }
+    
+    /**
+     * 新增营期
+     * POST /api/admin/camps
+     * 
+     * @param campDTO 营期 DTO
+     * @return 统一响应结果
+     */
+    @PostMapping
+    public ResponseResult<String> addCamp(@RequestBody CampDTO campDTO) {
+        campService.addCamp(campDTO);
+        return ResponseResult.success("新增成功");
+    }
+    
+    /**
+     * 编辑营期
+     * PUT /api/admin/camps
+     * 
+     * @param campDTO 营期 DTO（必须包含 campId）
+     * @return 统一响应结果
+     */
+    @PutMapping
+    public ResponseResult<String> updateCamp(@RequestBody CampDTO campDTO) {
+        campService.updateCamp(campDTO);
+        return ResponseResult.success("修改成功");
     }
 }
