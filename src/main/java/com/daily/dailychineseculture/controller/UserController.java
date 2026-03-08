@@ -1,15 +1,21 @@
 package com.daily.dailychineseculture.controller;
 
 import com.daily.dailychineseculture.common.ResponseResult;
+import com.daily.dailychineseculture.dto.SwitchIdentityRequest;
+import com.daily.dailychineseculture.dto.UserCurrentInfoDTO;
+import com.daily.dailychineseculture.dto.UserIdentityDTO;
 import com.daily.dailychineseculture.dto.UserUpdateRequest;
 import com.daily.dailychineseculture.entity.User;
 import com.daily.dailychineseculture.service.IdGeneratorService;
+import com.daily.dailychineseculture.service.UserAuthService;
 import com.daily.dailychineseculture.service.UserService;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * 用户控制器
@@ -23,6 +29,9 @@ public class UserController {
     
     @Autowired
     private IdGeneratorService idGeneratorService;
+    
+    @Autowired
+    private UserAuthService userAuthService;
 
     /**
      * 获取所有用户
@@ -128,6 +137,101 @@ public class UserController {
             System.err.println("=== 更新用户信息未知异常 ===");
             e.printStackTrace();
             System.err.println("===========================");
+            return ResponseResult.error(500, "服务器内部错误：" + e.getMessage());
+        }
+    }
+    
+    /**
+     * 获取当前登录用户的状态信息
+     * GET /api/admin/user/me
+     * 
+     * @param httpRequest HTTP 请求对象（用于获取登录用户 ID）
+     * @return 统一响应结果，包含用户当前信息
+     */
+    @GetMapping("/me")
+    public ResponseResult<UserCurrentInfoDTO> getCurrentUserInfo(HttpServletRequest httpRequest) {
+        try {
+            // 从请求属性中获取用户 ID（由认证拦截器设置）
+            Long userId = (Long) httpRequest.getAttribute("userId");
+            if (userId == null) {
+                System.err.println("未找到用户 ID，请确保已登录");
+                return ResponseResult.error(401, "未登录或登录已过期");
+            }
+            
+            UserCurrentInfoDTO userInfo = userAuthService.getCurrentUserInfo(userId);
+            return ResponseResult.success("操作成功", userInfo);
+        } catch (Exception e) {
+            System.err.println("获取当前用户信息异常：" + e.getMessage());
+            e.printStackTrace();
+            return ResponseResult.error(500, "服务器内部错误：" + e.getMessage());
+        }
+    }
+    
+    /**
+     * 获取用户可切换的身份列表
+     * GET /api/admin/user/identities
+     * 
+     * @param httpRequest HTTP 请求对象（用于获取登录用户 ID）
+     * @return 统一响应结果，包含身份信息列表
+     */
+    @GetMapping("/identities")
+    public ResponseResult<List<UserIdentityDTO>> getUserIdentities(HttpServletRequest httpRequest) {
+        try {
+            // 从请求属性中获取用户 ID（由认证拦截器设置）
+            Long userId = (Long) httpRequest.getAttribute("userId");
+            if (userId == null) {
+                System.err.println("未找到用户 ID，请确保已登录");
+                return ResponseResult.error(401, "未登录或登录已过期");
+            }
+            
+            List<UserIdentityDTO> identities = userAuthService.getUserIdentities(userId);
+            return ResponseResult.success("操作成功", identities);
+        } catch (Exception e) {
+            System.err.println("获取用户身份列表异常：" + e.getMessage());
+            e.printStackTrace();
+            return ResponseResult.error(500, "服务器内部错误：" + e.getMessage());
+        }
+    }
+    
+    /**
+     * PC 管理端 - 执行身份切换
+     * POST /api/admin/user/switch-identity
+     * 
+     * @param request 切换身份请求
+     * @param httpRequest HTTP 请求对象（用于获取登录用户 ID）
+     * @return 统一响应结果，包含新的 JWT Token
+     */
+    @PostMapping("/switch-identity")
+    public ResponseResult<Map<String, Object>> switchIdentity(
+            @RequestBody SwitchIdentityRequest request,
+            HttpServletRequest httpRequest) {
+        try {
+            // 从请求属性中获取用户 ID（由认证拦截器设置）
+            Long userId = (Long) httpRequest.getAttribute("userId");
+            if (userId == null) {
+                System.err.println("未找到用户 ID，请确保已登录");
+                return ResponseResult.error(401, "未登录或登录已过期");
+            }
+            
+            System.out.println("PC 管理端收到身份切换请求，userId: " + userId + ", request: " + request);
+            
+            // 执行身份切换，生成新的 JWT Token（使用 ADMIN 类型）
+            String newToken = userAuthService.executeIdentitySwitch(userId, request, "ADMIN");
+            
+            // 构造返回数据
+            Map<String, Object> result = new HashMap<>();
+            result.put("token", newToken);
+            
+            // TODO: 可以在这里补充完整的 userInfo
+            // result.put("userInfo", userAuthService.getCurrentUserInfo(userId));
+            
+            return ResponseResult.success("切换成功", result);
+        } catch (IllegalArgumentException e) {
+            System.err.println("身份切换参数校验失败：" + e.getMessage());
+            return ResponseResult.error(400, e.getMessage());
+        } catch (Exception e) {
+            System.err.println("身份切换异常：" + e.getMessage());
+            e.printStackTrace();
             return ResponseResult.error(500, "服务器内部错误：" + e.getMessage());
         }
     }

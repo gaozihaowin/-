@@ -40,4 +40,31 @@ public interface DutyAssignmentMapper {
             "AND da.duty_type = #{dutyType} " +
             "AND (da.end_time IS NULL OR da.end_time > NOW())")
     Map<String, Object> selectWithCampInfo(@Param("userId") Long userId, @Param("dutyType") String dutyType);
+    
+    /**
+     * 查询用户的所有任命记录（用于身份切换列表）
+     * 
+     * @param userId 用户 ID
+     * @return 任命记录列表（包含营期信息）
+     */
+    @Select("SELECT da.assignment_id, da.user_id, da.camp_id, da.duty_type, " +
+            "da.start_time, da.end_time, c.name as camp_name " +
+            "FROM t_duty_assignment da " +
+            "LEFT JOIN t_camp c ON da.camp_id = c.camp_id " +
+            "WHERE da.user_id = #{userId} " +
+            "ORDER BY da.start_time DESC")
+    java.util.List<Map<String, Object>> selectByUserId(@Param("userId") Long userId);
+    
+    /**
+     * 根据 appointmentId 查询任命记录
+     * 
+     * @param assignmentId 任命记录 ID
+     * @return 任命记录
+     */
+    @Select("SELECT da.assignment_id, da.user_id, da.camp_id, da.duty_type, " +
+            "da.start_time, da.end_time, c.name as camp_name " +
+            "FROM t_duty_assignment da " +
+            "LEFT JOIN t_camp c ON da.camp_id = c.camp_id " +
+            "WHERE da.assignment_id = #{assignmentId}")
+    Map<String, Object> selectById(@Param("assignmentId") Integer assignmentId);
 }

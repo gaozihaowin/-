@@ -69,6 +69,32 @@ public class JwtUtils {
     }
     
     /**
+     * 生成 JWT token（支持自定义 Claims）
+     * 
+     * @param claims 自定义 Claims
+     * @return JWT token 字符串
+     */
+    public String generateToken(Map<String, Object> claims) {
+        Date now = new Date();
+        Date expiryDate = new Date(now.getTime() + EXPIRATION_TIME);
+        
+        // 确保包含必要的 claims
+        if (!claims.containsKey("userId")) {
+            throw new IllegalArgumentException("Claims 必须包含 userId");
+        }
+        
+        String username = (String) claims.getOrDefault("username", "user");
+        
+        return Jwts.builder()
+                .setClaims(claims)
+                .setSubject(username)
+                .setIssuedAt(now)
+                .setExpiration(expiryDate)
+                .signWith(SECRET_KEY)
+                .compact();
+    }
+    
+    /**
      * 从token中解析用户ID
      * 
      * @param token JWT token

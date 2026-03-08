@@ -3,6 +3,7 @@ package com.daily.dailychineseculture.controller;
 import com.daily.dailychineseculture.common.Result;
 import com.daily.dailychineseculture.dto.*;
 import com.daily.dailychineseculture.entity.User;
+import com.daily.dailychineseculture.service.UserAuthService;
 import com.daily.dailychineseculture.service.UserService;
 import com.daily.dailychineseculture.util.JwtUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,6 +28,9 @@ public class AuthController {
 
     @Autowired
     private RestTemplate restTemplate;
+
+    @Autowired
+    private UserAuthService authService;
 
     @Value("${wx.appid:}")
     private String wxAppid;
@@ -350,41 +354,39 @@ public class AuthController {
     }
 
     /**
-     * 切换身份接口
+     * 小程序端 - 用户切换身份接口
+     * 支持学员、志愿者等身份切换（基于 appointmentId）
+     *
+     * @param token JWT 令牌
+     * @param request 切换请求 {"assignmentId": 1}
+     * @return 新的 Token {"token": "eyJhbGci..."}
      */
-    @PostMapping("/user/switch-identity")
-    public Result<Map<String, String>> switchIdentity(@RequestHeader("Authorization") String token,
-                                                      @RequestBody SwitchIdentityRequest request) {
+    @PostMapping("/app/user/switch-identity")
+    public Result<Map<String, Object>> appSwitchIdentity(
+            @RequestHeader("Authorization") String token,
+            @RequestBody SwitchIdentityRequest request) {
         try {
+            // 1. 解析 Token 获取用户 ID
             Long userId = jwtUtils.getUserIdFromToken(token.replace("Bearer ", ""));
-            String identity = request.getIdentity();
-
-            if (identity == null || identity.trim().isEmpty()) {
-                return Result.error("请选择要切换的身份");
+            if (userId == null) {
+                return Result.error("无效的 Token");
             }
 
-            // 身份映射
-            Map<String, String> identityMap = new HashMap<>();
-            identityMap.put("学员端", "student");
-            identityMap.put("志愿者端", "volunteer");
+            System.out.println("小程序端收到身份切换请求，userId: " + userId + ", request: " + request);
 
-            String targetIdentity = identityMap.get(identity);
-            if (targetIdentity == null) {
-                return Result.error("身份类型无效");
-            }
+            // 2. 调用 Service 执行身份切换（使用 APP 类型）
+            String newToken = authService.executeIdentitySwitch(userId, request, "APP");
 
-            // 校验志愿者权限
-            if ("volunteer".equals(targetIdentity)) {
-                boolean isVolunteer = userService.isVolunteer(userId);
-                if (!isVolunteer) {
-                    return Result.error("无志愿者权限，无法切换");
-                }
-            }
+            // 3. 构造返回数据
+            Map<String, Object> result = new HashMap<>();
+            result.put("token", newToken);
 
-            Map<String, String> result = new HashMap<>();
-            result.put("currentIdentity", identity);
-            return Result.build(200, "身份切换成功", result);
+            return Result.success(result);
+        } catch (IllegalArgumentException e) {
+            System.err.println("身份切换参数校验失败：" + e.getMessage());
+            return Result.error(e.getMessage());
         } catch (Exception e) {
+            System.err.println("身份切换异常：" + e.getMessage());
             e.printStackTrace();
             return Result.error("服务器内部错误，请稍后重试");
         }
