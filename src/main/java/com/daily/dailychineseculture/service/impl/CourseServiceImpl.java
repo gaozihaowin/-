@@ -146,11 +146,10 @@ public class CourseServiceImpl implements CourseService {
         // 硬编码测试用户 ID
         Long currentUserId = 10001L;
         
-        // 查询用户今日学习记录
-        UserDailyRecord record = userDailyRecordMapper.selectByUserIdPlanIdAndDate(
+        // 查询用户学习记录（根据 user_id + plan_id 联合唯一查询）
+        UserDailyRecord record = userDailyRecordMapper.selectByUserIdAndPlanId(
             currentUserId, 
-            todayPlan.getPlanId(), 
-            java.sql.Date.valueOf(today)
+            todayPlan.getPlanId()
         );
         
         // 装配任务列表

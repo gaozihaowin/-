@@ -38,8 +38,8 @@ public interface UserDailyRecordMapper {
     int deleteById(Long recordId);
 
     /**
-     * 根据用户 ID、计划 ID 和日期查询记录
+     * 根据用户 ID 和计划 ID 查询记录（user_id + plan_id 联合唯一）
      */
-    @Select("SELECT * FROM t_user_daily_record WHERE user_id = #{userId} AND plan_id = #{planId} AND date = #{date}")
-    UserDailyRecord selectByUserIdPlanIdAndDate(@Param("userId") Long userId, @Param("planId") Integer planId, @Param("date") Date date);
+    @Select("SELECT * FROM t_user_daily_record WHERE user_id = #{userId} AND plan_id = #{planId}")
+    UserDailyRecord selectByUserIdAndPlanId(@Param("userId") Long userId, @Param("planId") Integer planId);
 }
