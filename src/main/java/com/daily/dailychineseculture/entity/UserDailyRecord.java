@@ -10,14 +10,19 @@ import java.util.Date;
 @Data
 public class UserDailyRecord {
     /**
-     * 记录ID (主键)
+     * 记录 ID (主键)
      */
     private Long recordId;
 
     /**
-     * 用户ID
+     * 用户 ID
      */
     private Long userId;
+
+    /**
+     * 计划 ID
+     */
+    private Integer planId;
 
     /**
      * 学习日期
@@ -30,9 +35,54 @@ public class UserDailyRecord {
     private Integer learningDuration;
 
     /**
-     * 签到状态: 0未签到, 1已签到
+     * 签到状态：0 未签到，1 已签到
      */
     private Integer checkInStatus;
+
+    /**
+     * 固定任务 - 原文诵读：0 未完成，1 已完成
+     */
+    private Integer readStatus;
+
+    /**
+     * 固定任务 - 名师导读：0 未完成，1 已完成
+     */
+    private Integer videoStatus;
+
+    /**
+     * 固定任务 - 心得打卡：0 未完成，1 已完成
+     */
+    private Integer homeworkStatus;
+
+    /**
+     * 备选任务 1 名称
+     */
+    private String extraTask1Name;
+
+    /**
+     * 备选任务 1 状态：0 未完成，1 已完成
+     */
+    private Integer extraTask1Status;
+
+    /**
+     * 备选任务 2 名称
+     */
+    private String extraTask2Name;
+
+    /**
+     * 备选任务 2 状态：0 未完成，1 已完成
+     */
+    private Integer extraTask2Status;
+
+    /**
+     * 备选任务 3 名称
+     */
+    private String extraTask3Name;
+
+    /**
+     * 备选任务 3 状态：0 未完成，1 已完成
+     */
+    private Integer extraTask3Status;
 
     /**
      * 创建时间

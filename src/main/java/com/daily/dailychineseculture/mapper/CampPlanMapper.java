@@ -47,4 +47,12 @@ public interface CampPlanMapper {
      * @return 课程安排列表
      */
    List<CampPlan> selectCourseScheduleByCampId(@Param("campId") Integer campId);
+    
+    /**
+     * 查询指定日期的排课计划
+     * @param campId 营期 ID
+     * @param planDate 计划日期
+     * @return 排课计划
+     */
+   CampPlan selectTodayPlan(@Param("campId") Integer campId, @Param("planDate") java.util.Date planDate);
 }

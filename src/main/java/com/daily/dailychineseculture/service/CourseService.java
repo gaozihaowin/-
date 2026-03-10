@@ -2,6 +2,7 @@ package com.daily.dailychineseculture.service;
 
 import com.daily.dailychineseculture.dto.CampScheduleDTO;
 import com.daily.dailychineseculture.dto.MyCourseVO;
+import com.daily.dailychineseculture.dto.TodayCourseDTO;
 
 import java.util.List;
 
@@ -30,4 +31,12 @@ public interface CourseService {
      * @return 课程安排目录列表
      */
    List<CampScheduleDTO> getCourseSchedule(Integer campId);
+    
+    /**
+     * 获取指定营期的今日课程（微信小程序端）
+     * 
+     * @param campId 营期 ID
+     * @return 今日课程信息
+     */
+    TodayCourseDTO getTodayCourse(Integer campId);
 }

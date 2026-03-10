@@ -73,12 +73,38 @@
             graphic_url,
             module_index,
             module_name,
-           reading_title,
+            reading_title,
             teacher_name,
-            video_duration
+            video_duration,
+            extra_task1_name,
+            extra_task2_name,
+            extra_task3_name
         FROM t_camp_plan
         WHERE camp_id = #{campId}
         ORDER BY day_index ASC
+    </select>
+    
+    <!-- 查询指定日期的排课计划 -->
+    <select id="selectTodayPlan" resultType="com.daily.dailychineseculture.entity.CampPlan">
+        SELECT 
+            plan_id,
+            camp_id,
+            day_index,
+            plan_date,
+            title,
+            video_url,
+            graphic_url,
+            module_index,
+            module_name,
+            reading_title,
+            teacher_name,
+            video_duration,
+            extra_task1_name,
+            extra_task2_name,
+            extra_task3_name
+        FROM t_camp_plan
+        WHERE camp_id = #{campId}
+          AND DATE(plan_date) = DATE(#{planDate})
     </select>
     
 </mapper>

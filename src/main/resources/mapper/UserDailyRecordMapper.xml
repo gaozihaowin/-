@@ -6,9 +6,19 @@
     <resultMap id="UserDailyRecordResult" type="com.daily.dailychineseculture.entity.UserDailyRecord">
         <id property="recordId" column="record_id"/>
         <result property="userId" column="user_id"/>
+        <result property="planId" column="plan_id"/>
         <result property="date" column="date"/>
         <result property="learningDuration" column="learning_duration"/>
         <result property="checkInStatus" column="check_in_status"/>
+        <result property="readStatus" column="read_status"/>
+        <result property="videoStatus" column="video_status"/>
+        <result property="homeworkStatus" column="homework_status"/>
+        <result property="extraTask1Name" column="extra_task1_name"/>
+        <result property="extraTask1Status" column="extra_task1_status"/>
+        <result property="extraTask2Name" column="extra_task2_name"/>
+        <result property="extraTask2Status" column="extra_task2_status"/>
+        <result property="extraTask3Name" column="extra_task3_name"/>
+        <result property="extraTask3Status" column="extra_task3_status"/>
         <result property="createTime" column="create_time"/>
     </resultMap>
 

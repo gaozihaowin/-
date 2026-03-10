@@ -70,4 +70,19 @@ public class CampPlan {
      * 视频时长（分钟）
      */
   private Integer videoDuration;
+    
+    /**
+     * 备选任务 1 名称
+     */
+  private String extraTask1Name;
+    
+    /**
+     * 备选任务 2 名称
+     */
+  private String extraTask2Name;
+    
+    /**
+     * 备选任务 3 名称
+     */
+  private String extraTask3Name;
 }
