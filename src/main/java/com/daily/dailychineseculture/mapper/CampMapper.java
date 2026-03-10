@@ -18,7 +18,7 @@ import java.util.List;
 public interface CampMapper {
     
     /**
-     * 查询最新的5个营期（按开营时间倒序）
+     * 查询最新的 5 个营期（按开营时间倒序）
      * 用于首页热门课程展示
      */
     @Select("SELECT camp_id, type_id, name, intro, start_time, end_time, status " +
@@ -29,23 +29,13 @@ public interface CampMapper {
     
     /**
      * 查询热门课程推荐（联表查询）
-     * 按开营时间倒序，取最新的5条数据
-     * @return 热门课程VO列表
+     * SQL 定义在 CampMapper.xml 中
+     * @return 热门课程 VO 列表
      */
-    @Select("SELECT c.camp_id AS id, " +
-            "       c.tag, " +
-            "       ct.level_name AS type, " +
-            "       CONCAT('第', c.term, '期') AS term, " +
-            "       c.name AS title, " +
-            "       FORMAT(c.enroll_count, 0) AS count " +
-            "FROM t_camp c " +
-            "JOIN t_camp_type ct ON c.type_id = ct.type_id " +
-            "ORDER BY c.start_time DESC " +
-            "LIMIT 5")
     List<CampVO> selectHotCourses();
-    
+        
     /**
-     * 根据ID查询营期详情
+     * 根据 ID 查询营期详情
      */
     @Select("SELECT * FROM t_camp WHERE camp_id = #{campId}")
     Camp selectById(Integer campId);

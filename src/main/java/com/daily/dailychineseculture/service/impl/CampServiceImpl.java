@@ -12,6 +12,7 @@ import com.daily.dailychineseculture.service.CampService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.text.NumberFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -34,8 +35,52 @@ public class CampServiceImpl implements CampService {
     
     @Override
     public List<CampVO> getHotCourses() {
-        // 查询热门课程推荐，联表查询并格式化数据
-        return campMapper.selectHotCourses();
+        // 从 Mapper 获取原始数据（未格式化的 List）
+        List<CampVO> rawList = campMapper.selectHotCourses();
+        
+        // 在 Java 层进行数据格式化
+        List<CampVO> formattedList = new ArrayList<>();
+        NumberFormat numberFormat = NumberFormat.getNumberInstance();
+        
+        for (CampVO raw : rawList) {
+            CampVO vo = new CampVO();
+            vo.setId(raw.getId());
+            vo.setTag(raw.getTag());
+            vo.setType(raw.getType());
+            
+            // 处理 term：拼接为"第 X 期"格式
+            if (raw.getTerm() != null && !raw.getTerm().trim().isEmpty()) {
+                try {
+                    Integer termNum = Integer.parseInt(raw.getTerm().trim());
+                    vo.setTerm("第" + termNum + "期");
+                } catch (NumberFormatException e) {
+                    // 如果转换失败，直接使用原始值
+                    vo.setTerm(raw.getTerm());
+                }
+            } else {
+                vo.setTerm("");
+            }
+            
+            vo.setTitle(raw.getTitle());
+            
+            // 处理 count：格式化为千分位字符串
+            // SQL 已返回 String 类型，直接转换为 Integer 再格式化
+            if (raw.getCount() != null && !raw.getCount().isEmpty()) {
+                try {
+                    Integer enrollCount = Integer.parseInt(raw.getCount());
+                    vo.setCount(numberFormat.format(enrollCount));
+                } catch (NumberFormatException e) {
+                    // 如果转换失败，直接使用原始值
+                    vo.setCount(raw.getCount());
+                }
+            } else {
+                vo.setCount("0");
+            }
+            
+            formattedList.add(vo);
+        }
+        
+        return formattedList;
     }
     
     @Override

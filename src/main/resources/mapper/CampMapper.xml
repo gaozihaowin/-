@@ -123,4 +123,24 @@
         WHERE camp_id = #{campId}
     </update>
     
+    <!-- 查询热门课程推荐（联表查询，返回原始数据） -->
+    <select id="selectHotCourses" resultType="com.daily.dailychineseculture.dto.CampVO">
+        SELECT 
+            c.camp_id AS id,
+            c.tag,
+            ct.level_name AS type,
+            c.term,
+            c.name AS title,
+            CAST(c.enroll_count AS CHAR) AS count,
+            c.start_time
+        FROM t_camp c
+        LEFT JOIN t_camp_type ct ON c.type_id = ct.type_id
+        WHERE c.status IN (0, 1)
+        ORDER BY 
+            CASE WHEN c.tag = '热招' THEN 1 ELSE 0 END DESC,
+            c.enroll_count DESC,
+            c.start_time DESC
+        LIMIT 5
+    </select>
+    
 </mapper>

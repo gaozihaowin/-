@@ -54,11 +54,11 @@ public class WebConfig implements WebMvcConfigurer {
                     "/wxLogin",           // 排除微信登录接口
                     "/user/register",     // 排除注册接口
                     "/error",             // 排除错误页面
-                    "/courses/hot",       // 排除热门课程接口 (首页公开访问)
-                    "/api/admin/**"       // 排除 PC端后台管理接口（由 AdminAuthInterceptor 处理）
+                    "/courses/**",        // 排除小程序端课程接口（公开访问，包括热门课程）
+                    "/api/admin/**"       // 排除 PC 端后台管理接口（由 AdminAuthInterceptor 处理）
                 );
-            
-        // 注册 PC端后台管理鉴权拦截器
+                
+        // 注册 PC 端后台管理鉴权拦截器
         registry.addInterceptor(adminAuthInterceptor)
                 .addPathPatterns("/api/admin/**")  // 拦截所有后台管理接口
                 .excludePathPatterns(
