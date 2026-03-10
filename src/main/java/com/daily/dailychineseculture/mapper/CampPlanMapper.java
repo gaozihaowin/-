@@ -40,4 +40,11 @@ public interface CampPlanMapper {
      * @return 影响行数
      */
     int updateCampPlan(CampPlanDTO campPlan);
+    
+    /**
+     * 根据营期 ID 查询课程安排（按天排序）
+     * @param campId 营期 ID
+     * @return 课程安排列表
+     */
+   List<CampPlan> selectCourseScheduleByCampId(@Param("campId") Integer campId);
 }

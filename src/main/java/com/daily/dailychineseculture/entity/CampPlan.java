@@ -45,4 +45,29 @@ public class CampPlan {
      * 图文链接
      */
     private String graphicUrl;
+    
+    /**
+     * 模块索引（第几周）
+     */
+  private Integer moduleIndex;
+    
+    /**
+     * 模块名称
+     */
+  private String moduleName;
+    
+    /**
+     * 阅读篇目
+     */
+  private String readingTitle;
+    
+    /**
+     * 讲师姓名
+     */
+  private String teacherName;
+    
+    /**
+     * 视频时长（分钟）
+     */
+  private Integer videoDuration;
 }

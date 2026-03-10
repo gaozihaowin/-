@@ -1,5 +1,6 @@
 package com.daily.dailychineseculture.service;
 
+import com.daily.dailychineseculture.dto.CampScheduleDTO;
 import com.daily.dailychineseculture.dto.MyCourseVO;
 
 import java.util.List;
@@ -21,4 +22,12 @@ public interface CourseService {
      * @return 我的课程列表
      */
     List<MyCourseVO> getMyCourses(Long userId, Integer tabType);
+    
+    /**
+     * 获取指定营期的课程安排目录
+     * 
+     * @param campId 营期 ID
+     * @return 课程安排目录列表
+     */
+   List<CampScheduleDTO> getCourseSchedule(Integer campId);
 }
