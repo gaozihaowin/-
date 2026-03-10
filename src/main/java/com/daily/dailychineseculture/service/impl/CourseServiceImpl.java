@@ -4,6 +4,8 @@ import com.daily.dailychineseculture.dto.CampPlanDTO;
 import com.daily.dailychineseculture.dto.CampScheduleDTO;
 import com.daily.dailychineseculture.dto.MyCourseVO;
 import com.daily.dailychineseculture.dto.PlanItemDTO;
+import com.daily.dailychineseculture.dto.TaskCompleteReqDTO;
+import com.daily.dailychineseculture.dto.TaskCompleteRespDTO;
 import com.daily.dailychineseculture.dto.TaskItemDTO;
 import com.daily.dailychineseculture.dto.TodayCourseDTO;
 import com.daily.dailychineseculture.entity.CampPlan;
@@ -24,7 +26,7 @@ import java.util.stream.Collectors;
  * 课程服务实现类
  * 实现课程相关业务逻辑
  * 
- * @author Java后端架构师
+ * @author Java 后端架构师
  * @since 2026-02-25
  */
 @Service
@@ -40,14 +42,14 @@ public class CourseServiceImpl implements CourseService {
    private UserDailyRecordMapper userDailyRecordMapper;
     
     @Override
-   public List<MyCourseVO> getMyCourses(Long userId, Integer tabType) {
+  public List<MyCourseVO> getMyCourses(Long userId, Integer tabType) {
         // 参数校验
         if (userId == null || tabType == null) {
-            throw new IllegalArgumentException("用户ID和标签类型不能为空");
+            throw new IllegalArgumentException("用户 ID 和标签类型不能为空");
         }
         
         if (tabType < 1 || tabType > 3) {
-            throw new IllegalArgumentException("标签类型必须为1、2或3");
+            throw new IllegalArgumentException("标签类型必须为 1、2 或 3");
         }
         
         // 查询我的课程列表
@@ -55,7 +57,7 @@ public class CourseServiceImpl implements CourseService {
     }
     
     @Override
-   public List<CampScheduleDTO> getCourseSchedule(Integer campId) {
+  public List<CampScheduleDTO> getCourseSchedule(Integer campId) {
         // 1. 查询营期的所有课程计划（已按 day_index 升序）
         List<CampPlan> allPlans = campPlanMapper.selectCourseScheduleByCampId(campId);
         
@@ -118,7 +120,7 @@ public class CourseServiceImpl implements CourseService {
     }
     
     @Override
-   public TodayCourseDTO getTodayCourse(Integer campId) {
+  public TodayCourseDTO getTodayCourse(Integer campId) {
         // 1. 获取今日日期并格式化
         java.time.LocalDate today = java.time.LocalDate.now();
         String currentDate = today.format(java.time.format.DateTimeFormatter.ofPattern("M 月 d 日"));
@@ -162,7 +164,7 @@ public class CourseServiceImpl implements CourseService {
         readTask.setTaskType("FIXED");
         readTask.setTitle("原文诵读");
         readTask.setSubtitle(todayPlan.getReadingTitle() != null ? todayPlan.getReadingTitle() : "");
-        readTask.setIsDone((record != null && record.getReadStatus() != null && record.getReadStatus() == 1) ? 1 : 0);
+        readTask.setIsDone((record != null && record.getIsReadDone() != null && record.getIsReadDone() == 1) ? 1 : 0);
         tasks.add(readTask);
         if (readTask.getIsDone() == 1) completedCount++;
         
@@ -173,7 +175,7 @@ public class CourseServiceImpl implements CourseService {
         videoTask.setTitle("名师导读");
         String videoSubtitle = buildVideoSubtitle(todayPlan.getTeacherName(), todayPlan.getVideoDuration());
         videoTask.setSubtitle(videoSubtitle);
-        videoTask.setIsDone((record != null && record.getVideoStatus() != null && record.getVideoStatus() == 1) ? 1 : 0);
+        videoTask.setIsDone((record != null && record.getIsVideoDone() != null && record.getIsVideoDone() == 1) ? 1 : 0);
         tasks.add(videoTask);
         if (videoTask.getIsDone() == 1) completedCount++;
         
@@ -183,7 +185,7 @@ public class CourseServiceImpl implements CourseService {
         homeworkTask.setTaskType("FIXED");
         homeworkTask.setTitle("心得打卡");
         homeworkTask.setSubtitle("写下今日感悟");
-        homeworkTask.setIsDone((record != null && record.getHomeworkStatus() != null && record.getHomeworkStatus() == 1) ? 1 : 0);
+        homeworkTask.setIsDone((record != null && record.getIsHomeworkDone() != null && record.getIsHomeworkDone() == 1) ? 1 : 0);
         tasks.add(homeworkTask);
         if (homeworkTask.getIsDone() == 1) completedCount++;
         
@@ -194,7 +196,7 @@ public class CourseServiceImpl implements CourseService {
             extraTask1.setTaskType("EXTRA");
             extraTask1.setTitle(todayPlan.getExtraTask1Name());
             extraTask1.setSubtitle("");
-            extraTask1.setIsDone((record != null && record.getExtraTask1Status() != null && record.getExtraTask1Status() == 1) ? 1 : 0);
+            extraTask1.setIsDone((record != null && record.getIsExtra1Done() != null && record.getIsExtra1Done() == 1) ? 1 : 0);
             tasks.add(extraTask1);
             if (extraTask1.getIsDone() == 1) completedCount++;
         }
@@ -206,21 +208,9 @@ public class CourseServiceImpl implements CourseService {
             extraTask2.setTaskType("EXTRA");
             extraTask2.setTitle(todayPlan.getExtraTask2Name());
             extraTask2.setSubtitle("");
-            extraTask2.setIsDone((record != null && record.getExtraTask2Status() != null && record.getExtraTask2Status() == 1) ? 1 : 0);
+            extraTask2.setIsDone((record != null && record.getIsExtra2Done() != null && record.getIsExtra2Done() == 1) ? 1 : 0);
             tasks.add(extraTask2);
             if (extraTask2.getIsDone() == 1) completedCount++;
-        }
-        
-        // 备选任务 3
-        if (todayPlan.getExtraTask3Name() != null && !todayPlan.getExtraTask3Name().isEmpty()) {
-            TaskItemDTO extraTask3 = new TaskItemDTO();
-            extraTask3.setTaskId("extra3");
-            extraTask3.setTaskType("EXTRA");
-            extraTask3.setTitle(todayPlan.getExtraTask3Name());
-            extraTask3.setSubtitle("");
-            extraTask3.setIsDone((record != null && record.getExtraTask3Status() != null && record.getExtraTask3Status() == 1) ? 1 : 0);
-            tasks.add(extraTask3);
-            if (extraTask3.getIsDone() == 1) completedCount++;
         }
         
         // 计算完成率
@@ -241,5 +231,92 @@ public class CourseServiceImpl implements CourseService {
            return videoDuration + "分钟深度解析";
         }
        return teacherName + " · " + videoDuration + "分钟深度解析";
+    }
+    
+    @Override
+  public TaskCompleteRespDTO completeTask(Integer planId, TaskCompleteReqDTO req) {
+        // 硬编码测试用户 ID
+        Long currentUserId = 10001L;
+        
+        // 步骤 A: 获取排课与动态分母
+        CampPlan plan = campPlanMapper.selectById(planId);
+        if (plan == null) {
+            throw new IllegalArgumentException("排课计划不存在，planId: " + planId);
+        }
+        
+        // 计算总任务数 (分母)
+        int totalTasks = 3; // 诵读、导读、打卡保底
+        if (plan.getExtraTask1Name() != null && !plan.getExtraTask1Name().isEmpty()) {
+            totalTasks++;
+        }
+        if (plan.getExtraTask2Name() != null && !plan.getExtraTask2Name().isEmpty()) {
+            totalTasks++;
+        }
+        
+        // 步骤 B: Upsert 获取记录
+        UserDailyRecord record = userDailyRecordMapper.selectByUserIdAndPlanId(currentUserId, planId);
+        boolean isNew = false;
+        
+        if (record == null) {
+            record = new UserDailyRecord();
+            record.setUserId(currentUserId);
+            record.setCampId(plan.getCampId());
+            record.setPlanId(planId);
+            record.setIsReadDone(0);
+            record.setIsVideoDone(0);
+            record.setIsHomeworkDone(0);
+            record.setIsExtra1Done(0);
+            record.setIsExtra2Done(0);
+            record.setCompletionRate(0);
+            isNew = true;
+        }
+        
+        // 步骤 C: 状态点亮与重算分子
+        String taskType = req.getTaskType();
+        switch (taskType) {
+            case "read":
+                record.setIsReadDone(1);
+                break;
+            case "video":
+                record.setIsVideoDone(1);
+                break;
+            case "homework":
+                record.setIsHomeworkDone(1);
+                break;
+            case "extra1":
+                record.setIsExtra1Done(1);
+                break;
+            case "extra2":
+                record.setIsExtra2Done(1);
+                break;
+            default:
+                throw new IllegalArgumentException("不支持的任务类型：" + taskType);
+        }
+        
+        // 计算已完成数 (分子)
+        int completed = 0;
+        if (record.getIsReadDone() != null && record.getIsReadDone() == 1) completed++;
+        if (record.getIsVideoDone() != null && record.getIsVideoDone() == 1) completed++;
+        if (record.getIsHomeworkDone() != null && record.getIsHomeworkDone() == 1) completed++;
+        if (record.getIsExtra1Done() != null && record.getIsExtra1Done() == 1) completed++;
+        if (record.getIsExtra2Done() != null && record.getIsExtra2Done() == 1) completed++;
+        
+        // 计算进度
+        int completionRate = (completed * 100) / totalTasks;
+        
+        // 步骤 D: 落库与返回
+        if (isNew) {
+            userDailyRecordMapper.insert(record);
+        } else {
+            userDailyRecordMapper.update(record);
+        }
+        
+        // 组装响应
+        TaskCompleteRespDTO resp = new TaskCompleteRespDTO();
+        resp.setPlanId(planId);
+        resp.setTaskType(taskType);
+        resp.setCompletionRate(completionRate);
+        
+       return resp;
     }
 }

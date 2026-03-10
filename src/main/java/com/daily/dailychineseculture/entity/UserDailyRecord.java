@@ -1,7 +1,6 @@
 package com.daily.dailychineseculture.entity;
 
 import lombok.Data;
-import java.util.Date;
 
 /**
  * 用户每日学习记录实体类
@@ -12,7 +11,7 @@ public class UserDailyRecord {
     /**
      * 记录 ID (主键)
      */
-    private Long recordId;
+    private Integer recordId;
 
     /**
      * 用户 ID
@@ -20,72 +19,46 @@ public class UserDailyRecord {
     private Long userId;
 
     /**
+     * 营期 ID
+     */
+    private Integer campId;
+
+    /**
      * 计划 ID
      */
     private Integer planId;
-
+    
+    // 任务完成状态 (0 未完成，1 已完成)
+    
     /**
-     * 学习日期
+     * 原文诵读：0 未完成，1 已完成
      */
-    private Date date;
-
+    private Integer isReadDone;
+    
     /**
-     * 当日学习时长（分钟）
+     * 名师导读：0 未完成，1 已完成
      */
-    private Integer learningDuration;
-
+    private Integer isVideoDone;
+    
     /**
-     * 签到状态：0 未签到，1 已签到
+     * 心得打卡：0 未完成，1 已完成
      */
-    private Integer checkInStatus;
-
+    private Integer isHomeworkDone;
+    
     /**
-     * 固定任务 - 原文诵读：0 未完成，1 已完成
+     * 备选任务 1:0 未完成，1 已完成
      */
-    private Integer readStatus;
-
+    private Integer isExtra1Done;
+    
     /**
-     * 固定任务 - 名师导读：0 未完成，1 已完成
+     * 备选任务 2:0 未完成，1 已完成
      */
-    private Integer videoStatus;
-
+    private Integer isExtra2Done;
+    
+    // 总进度百分比 (0-100)
+    
     /**
-     * 固定任务 - 心得打卡：0 未完成，1 已完成
+     * 完成率
      */
-    private Integer homeworkStatus;
-
-    /**
-     * 备选任务 1 名称
-     */
-    private String extraTask1Name;
-
-    /**
-     * 备选任务 1 状态：0 未完成，1 已完成
-     */
-    private Integer extraTask1Status;
-
-    /**
-     * 备选任务 2 名称
-     */
-    private String extraTask2Name;
-
-    /**
-     * 备选任务 2 状态：0 未完成，1 已完成
-     */
-    private Integer extraTask2Status;
-
-    /**
-     * 备选任务 3 名称
-     */
-    private String extraTask3Name;
-
-    /**
-     * 备选任务 3 状态：0 未完成，1 已完成
-     */
-    private Integer extraTask3Status;
-
-    /**
-     * 创建时间
-     */
-    private Date createTime;
+    private Integer completionRate;
 }

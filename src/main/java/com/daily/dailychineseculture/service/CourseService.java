@@ -2,7 +2,9 @@ package com.daily.dailychineseculture.service;
 
 import com.daily.dailychineseculture.dto.CampScheduleDTO;
 import com.daily.dailychineseculture.dto.MyCourseVO;
+import com.daily.dailychineseculture.dto.TaskCompleteRespDTO;
 import com.daily.dailychineseculture.dto.TodayCourseDTO;
+import com.daily.dailychineseculture.dto.TaskCompleteReqDTO;
 
 import java.util.List;
 
@@ -39,4 +41,13 @@ public interface CourseService {
      * @return 今日课程信息
      */
     TodayCourseDTO getTodayCourse(Integer campId);
+    
+    /**
+     * 完成任务打卡并返回最新进度（微信小程序端）
+     * 
+     * @param planId 计划 ID
+     * @param req 请求参数
+     * @return 任务完成响应
+     */
+    TaskCompleteRespDTO completeTask(Integer planId, TaskCompleteReqDTO req);
 }

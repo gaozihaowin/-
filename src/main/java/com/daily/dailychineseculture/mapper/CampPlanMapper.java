@@ -55,4 +55,11 @@ public interface CampPlanMapper {
      * @return 排课计划
      */
    CampPlan selectTodayPlan(@Param("campId") Integer campId, @Param("planDate") java.util.Date planDate);
+    
+    /**
+     * 根据 ID 查询排课计划
+     * @param planId 计划 ID
+     * @return 排课计划
+     */
+   CampPlan selectById(@Param("planId") Integer planId);
 }

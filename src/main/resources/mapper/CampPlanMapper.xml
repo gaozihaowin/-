@@ -107,4 +107,25 @@
           AND DATE(plan_date) = DATE(#{planDate})
     </select>
     
+    <!-- 根据 ID 查询排课计划 -->
+    <select id="selectById" resultType="com.daily.dailychineseculture.entity.CampPlan">
+        SELECT 
+            plan_id,
+            camp_id,
+            day_index,
+            plan_date,
+            title,
+            video_url,
+            graphic_url,
+            module_index,
+            module_name,
+            reading_title,
+            teacher_name,
+            video_duration,
+            extra_task1_name,
+            extra_task2_name
+        FROM t_camp_plan
+        WHERE plan_id = #{planId}
+    </select>
+    
 </mapper>
