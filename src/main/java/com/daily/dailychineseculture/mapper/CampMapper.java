@@ -4,6 +4,7 @@ import com.daily.dailychineseculture.dto.CampListItemDTO;
 import com.daily.dailychineseculture.dto.CampOptionDTO;
 import com.daily.dailychineseculture.dto.CampTypeOptionDTO;
 import com.daily.dailychineseculture.dto.CampVO;
+import com.daily.dailychineseculture.dto.CampInfoDTO;
 import com.daily.dailychineseculture.entity.Camp;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
@@ -96,6 +97,19 @@ public interface CampMapper {
      * @return 营期下拉选项列表
      */
     List<CampOptionDTO> selectCampOptions();
+    
+    /**
+     * 查询营期详情信息（联表查询类型名称）
+     * 用于课程详情页顶部信息栏展示
+     * @param campId 营期 ID
+     * @return 营期详情信息 DTO
+     */
+    @Select("SELECT c.camp_id, c.term, c.name as title, c.intro, c.enroll_count, c.tag, " +
+            "ct.level as campType, ct.level_name as campName " +
+            "FROM t_camp c " +
+            "LEFT JOIN t_camp_type ct ON c.type_id = ct.type_id " +
+            "WHERE c.camp_id = #{campId}")
+    CampInfoDTO selectCampInfo(@Param("campId") Integer campId);
     
     /**
      * 新增营期

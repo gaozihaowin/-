@@ -2,17 +2,22 @@ package com.daily.dailychineseculture.service.impl;
 
 import com.daily.dailychineseculture.dto.CampPlanDTO;
 import com.daily.dailychineseculture.dto.CampScheduleDTO;
+import com.daily.dailychineseculture.dto.CourseDataDTO;
 import com.daily.dailychineseculture.dto.MyCourseVO;
 import com.daily.dailychineseculture.dto.PlanItemDTO;
 import com.daily.dailychineseculture.dto.TaskCompleteReqDTO;
 import com.daily.dailychineseculture.dto.TaskCompleteRespDTO;
 import com.daily.dailychineseculture.dto.TaskItemDTO;
 import com.daily.dailychineseculture.dto.TodayCourseDTO;
+import com.daily.dailychineseculture.dto.TrendItemDTO;
+import com.daily.dailychineseculture.dto.AchievementDTO;
+import com.daily.dailychineseculture.dto.CampInfoDTO;
 import com.daily.dailychineseculture.entity.CampPlan;
 import com.daily.dailychineseculture.entity.UserDailyRecord;
 import com.daily.dailychineseculture.mapper.CampPlanMapper;
 import com.daily.dailychineseculture.mapper.MyCourseMapper;
 import com.daily.dailychineseculture.mapper.UserDailyRecordMapper;
+import com.daily.dailychineseculture.mapper.CampMapper;
 import com.daily.dailychineseculture.service.CourseService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -40,6 +45,9 @@ public class CourseServiceImpl implements CourseService {
     
     @Autowired
    private UserDailyRecordMapper userDailyRecordMapper;
+    
+    @Autowired
+   private CampMapper campMapper;
     
     @Override
   public List<MyCourseVO> getMyCourses(Long userId, Integer tabType) {
@@ -120,7 +128,7 @@ public class CourseServiceImpl implements CourseService {
     }
     
     @Override
-  public TodayCourseDTO getTodayCourse(Integer campId) {
+  public TodayCourseDTO getTodayCourse(Integer campId, Long currentUserId) {
         // 1. 获取今日日期并格式化
         java.time.LocalDate today = java.time.LocalDate.now();
         String currentDate = today.format(java.time.format.DateTimeFormatter.ofPattern("M 月 d 日"));
@@ -144,9 +152,6 @@ public class CourseServiceImpl implements CourseService {
         dto.setHasCourse(true);
         dto.setCurrentDate(currentDate);
         dto.setPlanId(todayPlan.getPlanId());
-        
-        // 硬编码测试用户 ID
-        Long currentUserId = 10001L;
         
         // 查询用户学习记录（根据 user_id + plan_id 联合唯一查询）
         UserDailyRecord record = userDailyRecordMapper.selectByUserIdAndPlanId(
@@ -234,10 +239,7 @@ public class CourseServiceImpl implements CourseService {
     }
     
     @Override
-  public TaskCompleteRespDTO completeTask(Integer planId, TaskCompleteReqDTO req) {
-        // 硬编码测试用户 ID
-        Long currentUserId = 10001L;
-        
+  public TaskCompleteRespDTO completeTask(Integer planId, TaskCompleteReqDTO req, Long currentUserId) {
         // 步骤 A: 获取排课与动态分母
         CampPlan plan = campPlanMapper.selectById(planId);
         if (plan == null) {
@@ -318,5 +320,130 @@ public class CourseServiceImpl implements CourseService {
         resp.setCompletionRate(completionRate);
         
        return resp;
+    }
+    
+    @Override
+    public CourseDataDTO getCourseData(Integer campId, Long currentUserId) {
+        CourseDataDTO dto = new CourseDataDTO();
+        
+        // ========== A. 基础指标统计 ==========
+        // 1. 查询总天数（排课总数）
+        List<CampPlan> allPlans = campPlanMapper.selectCourseScheduleByCampId(campId);
+        int totalDays = (allPlans != null) ? allPlans.size() : 0;
+        dto.setTotalDays(totalDays);
+        
+        // 2. 查询当前用户在该营期的所有打卡记录
+        List<UserDailyRecord> recordList = userDailyRecordMapper.selectByUserIdAndCampId(currentUserId, campId);
+        if (recordList == null) {
+            recordList = new ArrayList<>();
+        }
+        
+        // 3. 统计已完成天数（completionRate == 100 的记录数）
+        int completedDays = 0;
+        for (UserDailyRecord record : recordList) {
+            if (record.getCompletionRate() != null && record.getCompletionRate() == 100) {
+                completedDays++;
+            }
+        }
+        dto.setCompletedDays(completedDays);
+        
+        // 4. 计算总体完成率
+        int overallRate = (totalDays > 0) ? (completedDays * 100) / totalDays : 0;
+        dto.setOverallRate(overallRate);
+        
+        // ========== B. 学习趋势推导（动态取最近 7 节课）==========
+        List<TrendItemDTO> trends = new ArrayList<>();
+        
+        // 1. 查询已发生的课程（plan_date <= today），按 day_index 降序取 7 条
+        java.time.LocalDate today = java.time.LocalDate.now();
+        List<CampPlan> recentPlans = campPlanMapper.selectRecentPlansByCampId(campId, java.sql.Date.valueOf(today));
+        
+        // 2. 在内存中反转为升序
+        if (recentPlans != null && !recentPlans.isEmpty()) {
+            java.util.Collections.reverse(recentPlans);
+            
+            // 3. 遍历组装趋势数据
+            for (CampPlan plan : recentPlans) {
+                TrendItemDTO trendItem = new TrendItemDTO();
+                trendItem.setDayStr("Day" + plan.getDayIndex());
+                
+                // 在 recordList 中找对应的进度
+                Integer rate = 0;
+                for (UserDailyRecord record : recordList) {
+                    if (record.getPlanId().equals(plan.getPlanId())) {
+                        rate = (record.getCompletionRate() != null) ? record.getCompletionRate() : 0;
+                        break;
+                    }
+                }
+                trendItem.setRate(rate);
+                trends.add(trendItem);
+            }
+        }
+        dto.setTrends(trends);
+        
+        // ========== C. 动态成就计算（规则引擎化）==========
+        List<AchievementDTO> achievements = new ArrayList<>();
+        
+        // 规则 1: 完成 >= 1 天
+        if (completedDays >= 1) {
+            AchievementDTO beginner = new AchievementDTO();
+            beginner.setIcon("https://img.icons8.com/color/96/medal2.png");
+            beginner.setTitle("初学者");
+            beginner.setDesc("完成第一天学习，开启致良知之旅");
+            achievements.add(beginner);
+        }
+        
+        // 规则 2: 完成 >= 3 天
+        if (completedDays >= 3) {
+            AchievementDTO progress = new AchievementDTO();
+            progress.setIcon("https://img.icons8.com/color/96/warranty.png");
+            progress.setTitle("渐入佳境");
+            progress.setDesc("累计完成三天学习");
+            achievements.add(progress);
+        }
+        
+        // 规则 3: 100% 完成（圆满结业）
+        if (totalDays > 0 && completedDays == totalDays) {
+            AchievementDTO trophy = new AchievementDTO();
+            trophy.setIcon("https://img.icons8.com/color/96/trophy.png");
+            trophy.setTitle("圆满结业");
+            trophy.setDesc("完成全部课程");
+            achievements.add(trophy);
+        }
+        
+        dto.setAchievements(achievements);
+        
+        return dto;
+    }
+    
+    @Override
+    public CampInfoDTO getCampInfo(Integer campId) {
+        // 1. 调用 Mapper 连表查询获取原始数据
+        CampInfoDTO result = campMapper.selectCampInfo(campId);
+        
+        if (result == null) {
+            throw new IllegalArgumentException("营期不存在，campId: " + campId);
+        }
+        
+        // 2. 字段转换处理
+        // batch 字段组装："第" + term + "期"
+        Integer term = result.getTerm();
+        if (term != null) {
+            result.setBatch("第" + term + "期");
+        } else {
+            result.setBatch("");
+        }
+        
+        // description 赋值为 intro
+        if (result.getIntro() == null) {
+            result.setDescription("");
+        }
+        
+        // participantCount 赋值为 enroll_count（已经在 SQL 中映射）
+        if (result.getParticipantCount() == null) {
+            result.setParticipantCount(0);
+        }
+        
+        return result;
     }
 }

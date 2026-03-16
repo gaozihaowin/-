@@ -128,4 +128,28 @@
         WHERE plan_id = #{planId}
     </select>
     
+    <!-- 查询营期已发生的最近 7 节课（plan_date <= today，按 day_index 降序） -->
+    <select id="selectRecentPlansByCampId" resultType="com.daily.dailychineseculture.entity.CampPlan">
+        SELECT 
+            plan_id,
+            camp_id,
+            day_index,
+            plan_date,
+            title,
+            video_url,
+            graphic_url,
+            module_index,
+            module_name,
+            reading_title,
+            teacher_name,
+            video_duration,
+            extra_task1_name,
+            extra_task2_name
+        FROM t_camp_plan
+        WHERE camp_id = #{campId}
+          AND DATE(plan_date) &lt;= DATE(#{today})
+        ORDER BY day_index DESC
+        LIMIT 7
+    </select>
+    
 </mapper>

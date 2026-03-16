@@ -2,10 +2,13 @@ package com.daily.dailychineseculture.controller;
 
 import com.daily.dailychineseculture.common.Result;
 import com.daily.dailychineseculture.dto.CampScheduleDTO;
+import com.daily.dailychineseculture.dto.CourseDataDTO;
 import com.daily.dailychineseculture.dto.TaskCompleteReqDTO;
 import com.daily.dailychineseculture.dto.TaskCompleteRespDTO;
 import com.daily.dailychineseculture.dto.TodayCourseDTO;
+import com.daily.dailychineseculture.dto.CampInfoDTO;
 import com.daily.dailychineseculture.service.CourseService;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -44,11 +47,16 @@ public class AppCourseController {
      * GET /courses/{campId}/today
      * 
      * @param campId 营期 ID
+     * @param request HTTP 请求（用于获取登录用户 ID）
      * @return 今日课程信息
      */
     @GetMapping("/{campId}/today")
-   public Result<TodayCourseDTO> getTodayCourse(@PathVariable Integer campId) {
-        TodayCourseDTO todayCourse = courseService.getTodayCourse(campId);
+   public Result<TodayCourseDTO> getTodayCourse(@PathVariable Integer campId, HttpServletRequest request) {
+        Long currentUserId = (Long) request.getAttribute("userId");
+        if (currentUserId == null) {
+            throw new RuntimeException("用户未登录或 Token 失效，无法访问课程");
+        }
+        TodayCourseDTO todayCourse = courseService.getTodayCourse(campId, currentUserId);
         return Result.success(todayCourse);
     }
     
@@ -58,11 +66,47 @@ public class AppCourseController {
      * 
      * @param planId 计划 ID
      * @param req 请求参数
+     * @param request HTTP 请求（用于获取登录用户 ID）
      * @return 任务完成响应
      */
     @PostMapping("/plan/{planId}/task/complete")
-   public Result<TaskCompleteRespDTO> completeTask(@PathVariable Integer planId, @RequestBody TaskCompleteReqDTO req) {
-        TaskCompleteRespDTO resp = courseService.completeTask(planId, req);
+   public Result<TaskCompleteRespDTO> completeTask(@PathVariable Integer planId, @RequestBody TaskCompleteReqDTO req, HttpServletRequest request) {
+        Long currentUserId = (Long) request.getAttribute("userId");
+        if (currentUserId == null) {
+            throw new RuntimeException("用户未登录或 Token 失效，无法打卡");
+        }
+        TaskCompleteRespDTO resp = courseService.completeTask(planId, req, currentUserId);
         return Result.success(resp);
+    }
+    
+    /**
+     * 获取课程数据看板
+     * GET /courses/{campId}/data
+     * 
+     * @param campId 营期 ID
+     * @param request HTTP 请求（用于获取登录用户 ID）
+     * @return 课程数据看板
+     */
+    @GetMapping("/{campId}/data")
+   public Result<CourseDataDTO> getCourseData(@PathVariable Integer campId, HttpServletRequest request) {
+        Long currentUserId = (Long) request.getAttribute("userId");
+        if (currentUserId == null) {
+            throw new RuntimeException("用户未登录或 Token 失效，无法访问数据看板");
+        }
+        CourseDataDTO data = courseService.getCourseData(campId, currentUserId);
+        return Result.success(data);
+    }
+    
+    /**
+     * 获取营期详情信息（课程详情页顶部信息栏）
+     * GET /courses/{campId}/info
+     * 
+     * @param campId 营期 ID
+     * @return 营期详情信息
+     */
+    @GetMapping("/{campId}/info")
+   public Result<CampInfoDTO> getCampInfo(@PathVariable Integer campId) {
+        CampInfoDTO info = courseService.getCampInfo(campId);
+        return Result.success(info);
     }
 }

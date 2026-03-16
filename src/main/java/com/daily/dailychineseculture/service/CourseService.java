@@ -1,10 +1,12 @@
 package com.daily.dailychineseculture.service;
 
 import com.daily.dailychineseculture.dto.CampScheduleDTO;
+import com.daily.dailychineseculture.dto.CourseDataDTO;
 import com.daily.dailychineseculture.dto.MyCourseVO;
 import com.daily.dailychineseculture.dto.TaskCompleteRespDTO;
 import com.daily.dailychineseculture.dto.TodayCourseDTO;
 import com.daily.dailychineseculture.dto.TaskCompleteReqDTO;
+import com.daily.dailychineseculture.dto.CampInfoDTO;
 
 import java.util.List;
 
@@ -38,16 +40,35 @@ public interface CourseService {
      * 获取指定营期的今日课程（微信小程序端）
      * 
      * @param campId 营期 ID
+     * @param userId 当前登录用户 ID
      * @return 今日课程信息
      */
-    TodayCourseDTO getTodayCourse(Integer campId);
+    TodayCourseDTO getTodayCourse(Integer campId, Long userId);
     
     /**
      * 完成任务打卡并返回最新进度（微信小程序端）
      * 
      * @param planId 计划 ID
      * @param req 请求参数
+     * @param userId 当前登录用户 ID
      * @return 任务完成响应
      */
-    TaskCompleteRespDTO completeTask(Integer planId, TaskCompleteReqDTO req);
+    TaskCompleteRespDTO completeTask(Integer planId, TaskCompleteReqDTO req, Long userId);
+    
+    /**
+     * 获取课程数据看板（微信小程序端）
+     * 
+     * @param campId 营期 ID
+     * @param userId 当前登录用户 ID
+     * @return 课程数据看板
+     */
+    CourseDataDTO getCourseData(Integer campId, Long userId);
+    
+    /**
+     * 获取营期详情信息（移动端课程详情页顶部信息栏）
+     * 
+     * @param campId 营期 ID
+     * @return 营期详情信息
+     */
+    CampInfoDTO getCampInfo(Integer campId);
 }

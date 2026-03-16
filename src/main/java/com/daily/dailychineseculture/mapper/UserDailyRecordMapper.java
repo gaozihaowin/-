@@ -3,6 +3,8 @@ package com.daily.dailychineseculture.mapper;
 import com.daily.dailychineseculture.entity.UserDailyRecord;
 import org.apache.ibatis.annotations.*;
 
+import java.util.List;
+
 /**
  * 用户每日学习记录 Mapper
  */
@@ -46,4 +48,10 @@ public interface UserDailyRecordMapper {
      */
     @Select("SELECT * FROM t_user_daily_record WHERE user_id = #{userId} AND plan_id = #{planId}")
     UserDailyRecord selectByUserIdAndPlanId(@Param("userId") Long userId, @Param("planId") Integer planId);
+    
+    /**
+     * 根据用户 ID 和营期 ID 查询所有打卡记录
+     */
+    @Select("SELECT * FROM t_user_daily_record WHERE user_id = #{userId} AND camp_id = #{campId}")
+    List<UserDailyRecord> selectByUserIdAndCampId(@Param("userId") Long userId, @Param("campId") Integer campId);
 }

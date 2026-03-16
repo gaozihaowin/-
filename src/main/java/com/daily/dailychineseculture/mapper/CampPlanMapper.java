@@ -62,4 +62,12 @@ public interface CampPlanMapper {
      * @return 排课计划
      */
    CampPlan selectById(@Param("planId") Integer planId);
+    
+    /**
+     * 查询营期已发生的最近 7 节课（plan_date <= today，按 day_index 降序）
+     * @param campId 营期 ID
+     * @param today 当前日期
+     * @return 最近课程列表
+     */
+   List<CampPlan> selectRecentPlansByCampId(@Param("campId") Integer campId, @Param("today") java.util.Date today);
 }
