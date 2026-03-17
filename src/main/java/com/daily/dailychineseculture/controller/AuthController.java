@@ -339,7 +339,8 @@ public class AuthController {
     }
 
     /**
-     * 退出登录接口
+     * 退出登录接口（通用）
+     * 注意：此接口适用于所有客户端，如需区分客户端类型，请使用专用的退出接口
      */
     @PostMapping("/user/logout")
     public Result<Void> logout(@RequestHeader("Authorization") String token) {
@@ -350,6 +351,55 @@ public class AuthController {
         } catch (Exception e) {
             e.printStackTrace();
             return Result.error("服务器内部错误，请稍后重试");
+        }
+    }
+
+    /**
+     * 小程序端 - 退出登录接口（C 端专属）
+     * POST /api/app/user/logout
+     * 
+     * 业务逻辑：
+     * 1. 销毁 Token（JWT 无需服务端操作，前端删除本地存储即可）
+     * 2. 容错处理：即使 Token 已过期、不存在或解析失败，也返回成功
+     * 3. 确保前端能顺利执行本地清理逻辑
+     *
+     * @param token JWT 令牌（可选，允许为空或已过期）
+     * @return 统一响应结果 {
+     *         "code": 200,
+     *         "msg": "退出登录成功",
+     *         "data": null
+     *         }
+     */
+    @PostMapping("/app/user/logout")
+    public Result<Void> appLogout(@RequestHeader(value = "Authorization", required = false) String token) {
+        try {
+            // 尝试解析 Token（仅用于日志记录，不做强校验）
+            if (token != null && !token.trim().isEmpty()) {
+                String cleanToken = token.replace("Bearer ", "");
+                try {
+                    Long userId = jwtUtils.getUserIdFromToken(cleanToken);
+                    System.out.println("小程序端用户 " + userId + " 退出登录");
+                } catch (Exception e) {
+                    // Token 已过期或解析失败，不做处理，继续返回成功
+                    System.out.println("小程序端用户退出登录（Token 已失效）");
+                }
+            } else {
+                System.out.println("小程序端用户退出登录（未携带 Token）");
+            }
+            
+            // 无论 Token 状态如何，都返回成功
+            // JWT 机制下，服务端无需执行额外操作，前端删除本地存储的 Token 即可
+            return Result.successMsg("退出登录成功");
+            
+        } catch (Exception e) {
+            // 捕获所有异常，确保不抛出 500 错误
+            System.err.println("=== 小程序端退出登录异常 ===");
+            System.err.println("异常类型：" + e.getClass().getSimpleName());
+            System.err.println("异常信息：" + e.getMessage());
+            e.printStackTrace();
+            
+            // 即使发生异常，也返回成功，确保前端能执行本地清理
+            return Result.successMsg("退出登录成功");
         }
     }
 
