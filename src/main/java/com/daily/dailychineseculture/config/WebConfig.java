@@ -59,6 +59,7 @@ public class WebConfig implements WebMvcConfigurer {
                     
                     // ========== 首页与展示数据：完全公开 ==========
                     "/courses/hot",                  // 热门课程推荐（小程序端首页）
+                    "/courses/list",                  // 课程列表分页查询（小程序端课程列表页）
                     "/courses/*/schedule",           // 课程安排目录（营期详情页）
                     "/courses/*/info",               // 营期详情信息（课程详情页顶部信息栏）
                     "/api/admin/camps/options",      // 营期选项列表（PC 端登录页）
