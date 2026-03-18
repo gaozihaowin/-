@@ -12,9 +12,11 @@ import com.daily.dailychineseculture.dto.TodayCourseDTO;
 import com.daily.dailychineseculture.dto.TrendItemDTO;
 import com.daily.dailychineseculture.dto.AchievementDTO;
 import com.daily.dailychineseculture.dto.CampInfoDTO;
+import com.daily.dailychineseculture.entity.Course;
 import com.daily.dailychineseculture.entity.CampPlan;
 import com.daily.dailychineseculture.entity.UserDailyRecord;
 import com.daily.dailychineseculture.mapper.CampPlanMapper;
+import com.daily.dailychineseculture.mapper.CourseMapper;
 import com.daily.dailychineseculture.mapper.MyCourseMapper;
 import com.daily.dailychineseculture.mapper.UserDailyRecordMapper;
 import com.daily.dailychineseculture.mapper.CampMapper;
@@ -48,6 +50,9 @@ public class CourseServiceImpl implements CourseService {
     
     @Autowired
    private CampMapper campMapper;
+
+    @Autowired
+   private CourseMapper courseMapper;
     
     @Override
   public List<MyCourseVO> getMyCourses(Long userId, Integer tabType) {
@@ -445,5 +450,14 @@ public class CourseServiceImpl implements CourseService {
         }
         
         return result;
+    }
+
+    @Override
+    public Course getCourseDetail(Integer id) {
+        Course course = courseMapper.selectCourseById(id);
+        if (course == null) {
+            throw new IllegalArgumentException("营期不存在，campId: " + id);
+        }
+        return course;
     }
 }

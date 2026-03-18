@@ -35,4 +35,18 @@ public interface CourseMapper {
             "AND end_time >= NOW() " +          // 拦截 2：只查还没结束的课程
             "ORDER BY start_time ASC")
     List<Course> selectActiveCourses();
+
+    @Select("SELECT " +
+            "camp_id AS id, " +
+            "name AS title, " +
+            "name AS campName, " +
+            "CONCAT('第', term, '期') AS batch, " +
+            "intro AS description, " +
+            "enroll_count AS participantCount, " +
+            "status, " +
+            "start_time AS startTime, " +
+            "end_time AS endTime " +
+            "FROM t_camp " +
+            "WHERE camp_id = #{id}")
+    Course selectCourseById(@Param("id") Integer id);
 }

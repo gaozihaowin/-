@@ -7,6 +7,7 @@ import com.daily.dailychineseculture.dto.TaskCompleteRespDTO;
 import com.daily.dailychineseculture.dto.TodayCourseDTO;
 import com.daily.dailychineseculture.dto.TaskCompleteReqDTO;
 import com.daily.dailychineseculture.dto.CampInfoDTO;
+import com.daily.dailychineseculture.entity.Course;
 
 import java.util.List;
 
@@ -71,4 +72,6 @@ public interface CourseService {
      * @return 营期详情信息
      */
     CampInfoDTO getCampInfo(Integer campId);
+
+    Course getCourseDetail(Integer id);
 }

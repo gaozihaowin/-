@@ -4,6 +4,7 @@ import com.daily.dailychineseculture.common.ResponseResult;
 import com.daily.dailychineseculture.common.Result;
 import com.daily.dailychineseculture.dto.CampVO;
 import com.daily.dailychineseculture.dto.MyCourseVO;
+import com.daily.dailychineseculture.entity.Course;
 import com.daily.dailychineseculture.service.CampService;
 import com.daily.dailychineseculture.service.CourseService;
 import com.daily.dailychineseculture.util.JwtUtils;
@@ -80,6 +81,19 @@ public class CourseController {
             return Result.build(401, "未授权：" + e.getMessage(), null);
         } catch (Exception e) {
             return Result.error("获取我的课程失败：" + e.getMessage());
+        }
+    }
+
+    @GetMapping("/detail")
+    public Result<Course> getCourseDetail(@RequestParam Integer id) {
+        try {
+            if (id == null) {
+                return Result.error("课程ID不能为空");
+            }
+            Course course = courseService.getCourseDetail(id);
+            return Result.success(course);
+        } catch (Exception e) {
+            return Result.error("获取课程详情失败：" + e.getMessage());
         }
     }
 }
