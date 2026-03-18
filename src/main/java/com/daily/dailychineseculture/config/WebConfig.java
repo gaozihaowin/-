@@ -52,7 +52,12 @@ public class WebConfig implements WebMvcConfigurer {
                 .excludePathPatterns(
                     // ========== 认证相关：完全公开 ==========
                     "/login",                        // 账号密码登录
+                    "/admin/login",                  // 管理端登录（无 /api 前缀场景）
+                    "/api/admin/login",              // 管理端登录（带 /api 前缀场景）
                     "/wxLogin",                      // 微信登录
+                    "/captcha",                      // 验证码（通用）
+                    "/admin/captcha",                // 管理端验证码（无 /api 前缀）
+                    "/api/admin/captcha",            // 管理端验证码（带 /api 前缀）
                     "/user/register",                // 用户注册
                     "/user/updateAll",               // 用户信息更新（公开接口）
                     "/updateUserInfo",               // 兼容旧版信息更新
@@ -83,7 +88,11 @@ public class WebConfig implements WebMvcConfigurer {
         registry.addInterceptor(adminAuthInterceptor)
                 .addPathPatterns("/api/admin/**")  // 拦截所有后台管理接口
                 .excludePathPatterns(
+                    "/admin/login",         // 排除管理员登录接口（无 /api 前缀）
                     "/api/admin/login",     // 排除管理员登录接口
+                    "/captcha",             // 排除验证码接口（通用）
+                    "/admin/captcha",       // 排除验证码接口（无 /api 前缀）
+                    "/api/admin/captcha",   // 排除验证码接口（带 /api 前缀）
                     "/api/admin/camps/options",  // 排除营期选项（登录页需要）
                     "/api/admin/camps/hot",      // 排除热门营期（登录页需要）
                     "/api/admin/camps/all"       // 排除全部营期（登录页需要）
