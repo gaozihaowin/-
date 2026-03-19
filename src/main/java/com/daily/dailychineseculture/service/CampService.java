@@ -75,4 +75,6 @@ public interface CampService {
      * @param campDTO 营期 DTO（必须包含 campId）
      */
     void updateCamp(CampDTO campDTO);
+
+    void enrollCamp(Long userId, Integer campId);
 }

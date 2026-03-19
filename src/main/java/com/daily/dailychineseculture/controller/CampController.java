@@ -3,13 +3,14 @@ package com.daily.dailychineseculture.controller;
 import com.daily.dailychineseculture.common.ResponseResult;
 import com.daily.dailychineseculture.common.Result;
 import com.daily.dailychineseculture.dto.CampDTO;
+import com.daily.dailychineseculture.dto.CampEnrollDTO;
 import com.daily.dailychineseculture.dto.CampOptionDTO;
 import com.daily.dailychineseculture.dto.CampVO;
 import com.daily.dailychineseculture.entity.Camp;
 import com.daily.dailychineseculture.service.CampPlanService;
 import com.daily.dailychineseculture.service.CampService;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -19,7 +20,7 @@ import java.util.List;
  * 提供营期相关的 API 接口
  */
 @RestController
-@RequestMapping("/api/admin/camps")
+@RequestMapping({"/api/admin/camps", "/camp"})
 @RequiredArgsConstructor
 public class CampController {
     
@@ -97,5 +98,25 @@ public class CampController {
     public ResponseResult<String> updateCamp(@RequestBody CampDTO campDTO) {
         campService.updateCamp(campDTO);
         return ResponseResult.success("修改成功");
+    }
+
+    @PostMapping("/enroll")
+    public ResponseResult<Void> enrollCamp(@RequestBody CampEnrollDTO dto, HttpServletRequest request) {
+        try {
+            if (dto == null || dto.getCampId() == null) {
+                return ResponseResult.error(400, "campId 不能为空");
+            }
+            // 这里从请求上下文获取 userId；如你的项目使用独立 Token 工具，可替换为 Token 解析逻辑
+            Long userId = (Long) request.getAttribute("userId");
+            if (userId == null) {
+                return ResponseResult.error(401, "未登录或登录已过期");
+            }
+            campService.enrollCamp(userId, dto.getCampId());
+            return ResponseResult.success("报名成功", null);
+        } catch (IllegalArgumentException e) {
+            return ResponseResult.error(400, e.getMessage());
+        } catch (Exception e) {
+            return ResponseResult.error("报名失败：" + e.getMessage());
+        }
     }
 }

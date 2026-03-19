@@ -142,5 +142,17 @@
             c.start_time DESC
         LIMIT 5
     </select>
+
+    <select id="selectCampForEnroll" resultType="com.daily.dailychineseculture.entity.Camp">
+        SELECT camp_id, status
+        FROM t_camp
+        WHERE camp_id = #{campId}
+    </select>
+
+    <update id="incrementEnrollCount">
+        update t_camp
+        set enroll_count = enroll_count + 1
+        where camp_id = #{campId}
+    </update>
     
 </mapper>

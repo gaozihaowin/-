@@ -7,10 +7,13 @@ import com.daily.dailychineseculture.dto.CampTypeOptionDTO;
 import com.daily.dailychineseculture.dto.CampVO;
 import com.daily.dailychineseculture.dto.RecentCampDTO;
 import com.daily.dailychineseculture.entity.Camp;
+import com.daily.dailychineseculture.mapper.CampEnrollmentMapper;
 import com.daily.dailychineseculture.mapper.CampMapper;
 import com.daily.dailychineseculture.service.CampService;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.text.NumberFormat;
 import java.text.SimpleDateFormat;
@@ -26,6 +29,9 @@ public class CampServiceImpl implements CampService {
     
     @Autowired
     private CampMapper campMapper;
+
+    @Autowired
+    private CampEnrollmentMapper campEnrollmentMapper;
     
     @Override
     public List<Camp> getHotCamps() {
@@ -196,6 +202,44 @@ public class CampServiceImpl implements CampService {
         
         // 执行更新操作
         campMapper.updateCamp(camp);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void enrollCamp(Long userId, Integer campId) {
+        if (userId == null) {
+            throw new IllegalArgumentException("用户未登录");
+        }
+        if (campId == null) {
+            throw new IllegalArgumentException("campId 不能为空");
+        }
+
+        Camp camp = campMapper.selectCampForEnroll(campId);
+        if (camp == null) {
+            throw new IllegalArgumentException("营期不存在");
+        }
+        if (camp.getStatus() == null || camp.getStatus() == 2) {
+            throw new IllegalArgumentException("当前营期不可报名");
+        }
+
+        Integer count = campEnrollmentMapper.countByUserIdAndCampId(userId, campId);
+        if (count != null && count > 0) {
+            throw new IllegalArgumentException("您已报名过该营期，请勿重复操作");
+        }
+
+        try {
+            int inserted = campEnrollmentMapper.insertEnrollment(userId, campId);
+            if (inserted <= 0) {
+                throw new RuntimeException("报名失败");
+            }
+        } catch (DuplicateKeyException e) {
+            throw new IllegalArgumentException("您已报名过该营期，请勿重复操作");
+        }
+
+        int updated = campMapper.incrementEnrollCount(campId);
+        if (updated <= 0) {
+            throw new RuntimeException("更新报名人数失败");
+        }
     }
     
     /**

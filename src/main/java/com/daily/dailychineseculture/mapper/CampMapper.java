@@ -124,4 +124,8 @@ public interface CampMapper {
      * @return 影响行数
      */
     int updateCamp(Camp camp);
+
+    Camp selectCampForEnroll(@Param("campId") Integer campId);
+
+    int incrementEnrollCount(@Param("campId") Integer campId);
 }
