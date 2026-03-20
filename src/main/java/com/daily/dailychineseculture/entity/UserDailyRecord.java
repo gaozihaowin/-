@@ -28,37 +28,13 @@ public class UserDailyRecord {
      */
     private Integer planId;
     
-    // 任务完成状态 (0 未完成，1 已完成)
-    
     /**
-     * 原文诵读：0 未完成，1 已完成
-     */
-    private Integer isReadDone;
-    
-    /**
-     * 名师导读：0 未完成，1 已完成
-     */
-    private Integer isVideoDone;
-    
-    /**
-     * 心得打卡：0 未完成，1 已完成
-     */
-    private Integer isHomeworkDone;
-    
-    /**
-     * 备选任务 1:0 未完成，1 已完成
-     */
-    private Integer isExtra1Done;
-    
-    /**
-     * 备选任务 2:0 未完成，1 已完成
-     */
-    private Integer isExtra2Done;
-    
-    // 总进度百分比 (0-100)
-    
-    /**
-     * 完成率
+     * 完成率 (0-100)
      */
     private Integer completionRate;
+
+    /**
+     * 是否全部完成：0-未完成，1-已完成
+     */
+    private Integer isAllCompleted;
 }

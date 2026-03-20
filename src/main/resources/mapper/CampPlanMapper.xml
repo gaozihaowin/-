@@ -9,8 +9,6 @@
         <result property="dayIndex" column="day_index"/>
         <result property="planDate" column="plan_date"/>
         <result property="title" column="title"/>
-        <result property="videoUrl" column="video_url"/>
-        <result property="graphicUrl" column="graphic_url"/>
     </resultMap>
     
     <!-- 根据营期 ID 查询排课计划列表 -->
@@ -20,9 +18,7 @@
             camp_id,
             day_index,
             plan_date,
-            title,
-            video_url,
-            graphic_url
+            title
         FROM t_camp_plan
         WHERE camp_id = #{campId}
         ORDER BY day_index ASC
@@ -37,10 +33,10 @@
     
     <!-- 批量插入排课计划 -->
     <insert id="batchInsertCampPlans" parameterType="java.util.List">
-        INSERT INTO t_camp_plan (camp_id, day_index, plan_date, title, video_url, graphic_url)
+        INSERT INTO t_camp_plan (camp_id, day_index, plan_date, title)
         VALUES
         <foreach collection="list" item="plan" separator=",">
-            (#{plan.campId}, #{plan.dayIndex}, #{plan.planDate}, #{plan.title}, #{plan.videoUrl}, #{plan.graphicUrl})
+            (#{plan.campId}, #{plan.dayIndex}, #{plan.planDate}, #{plan.title})
         </foreach>
     </insert>
     
@@ -50,12 +46,6 @@
         <set>
             <if test="title != null">
                 title = #{title},
-            </if>
-            <if test="videoUrl != null">
-                video_url = #{videoUrl},
-            </if>
-            <if test="graphicUrl != null">
-                graphic_url = #{graphicUrl},
             </if>
         </set>
         WHERE plan_id = #{planId}
@@ -69,16 +59,10 @@
             day_index,
             plan_date,
             title,
-            video_url,
-            graphic_url,
             module_index,
             module_name,
-            reading_title,
             teacher_name,
-            video_duration,
-            extra_task1_name,
-            extra_task2_name,
-            extra_task3_name
+            is_finished
         FROM t_camp_plan
         WHERE camp_id = #{campId}
         ORDER BY day_index ASC
@@ -92,16 +76,10 @@
             day_index,
             plan_date,
             title,
-            video_url,
-            graphic_url,
             module_index,
             module_name,
-            reading_title,
             teacher_name,
-            video_duration,
-            extra_task1_name,
-            extra_task2_name,
-            extra_task3_name
+            is_finished
         FROM t_camp_plan
         WHERE camp_id = #{campId}
           AND DATE(plan_date) = DATE(#{planDate})
@@ -115,20 +93,15 @@
             day_index,
             plan_date,
             title,
-            video_url,
-            graphic_url,
             module_index,
             module_name,
-            reading_title,
             teacher_name,
-            video_duration,
-            extra_task1_name,
-            extra_task2_name
+            is_finished
         FROM t_camp_plan
         WHERE plan_id = #{planId}
     </select>
     
-    <!-- 查询营期已发生的最近 7 节课（plan_date <= today，按 day_index 降序） -->
+    <!-- 查询营期全部课次（按 day_index 升序） -->
     <select id="selectRecentPlansByCampId" resultType="com.daily.dailychineseculture.entity.CampPlan">
         SELECT 
             plan_id,
@@ -136,20 +109,13 @@
             day_index,
             plan_date,
             title,
-            video_url,
-            graphic_url,
             module_index,
             module_name,
-            reading_title,
             teacher_name,
-            video_duration,
-            extra_task1_name,
-            extra_task2_name
+            is_finished
         FROM t_camp_plan
         WHERE camp_id = #{campId}
-          AND DATE(plan_date) &lt;= DATE(#{today})
-        ORDER BY day_index DESC
-        LIMIT 7
+        ORDER BY day_index ASC
     </select>
     
 </mapper>

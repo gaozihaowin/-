@@ -13,12 +13,12 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class TaskItemDTO {
     /**
-     * 任务 ID（前端用）：read, video, homework, extra1, extra2, extra3
+     * 任务 ID
      */
-    private String taskId;
+    private Integer taskId;
 
     /**
-     * 任务类型：FIXED(固定任务) 或 EXTRA(备选任务)
+     * 任务类型
      */
     private String taskType;
 
@@ -28,12 +28,17 @@ public class TaskItemDTO {
     private String title;
 
     /**
-     * 任务副标题
+     * 任务副标题/描述
      */
     private String subtitle;
 
     /**
-     * 完成状态：0 未完成，1 已完成
+     * 是否必做：1-必做，0-选做
+     */
+    private Integer isRequired;
+
+    /**
+     * 是否完成：1-已完成，0-未完成
      */
     private Integer isDone;
 }

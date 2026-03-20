@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.daily.dailychineseculture.mapper.PlanTaskMapper">
+    <select id="selectTaskItemsByPlanIdAndUserId" resultType="com.daily.dailychineseculture.dto.TaskItemDTO">
+        SELECT
+            t.task_id AS taskId,
+            t.task_type AS taskType,
+            t.task_name AS title,
+            t.task_desc AS subtitle,
+            t.is_required AS isRequired,
+            IF(r.record_id IS NOT NULL, 1, 0) AS isDone
+        FROM t_plan_task t
+        LEFT JOIN t_user_task_record r ON t.task_id = r.task_id
+            AND r.user_id = #{userId}
+            AND r.is_done = 1
+        WHERE t.plan_id = #{planId}
+          AND t.is_deleted = 0
+        ORDER BY t.sort_order ASC
+    </select>
+
+    <select id="countRequiredTasksByPlanId" resultType="int">
+        SELECT COUNT(*)
+        FROM t_plan_task
+        WHERE plan_id = #{planId}
+          AND is_required = 1
+          AND is_deleted = 0
+    </select>
+
+    <select id="countCompletedRequiredTasksByUserIdAndPlanId" resultType="int">
+        SELECT COUNT(*)
+        FROM t_plan_task t
+        JOIN t_user_task_record r ON t.task_id = r.task_id
+        WHERE t.plan_id = #{planId}
+          AND t.is_required = 1
+          AND t.is_deleted = 0
+          AND r.user_id = #{userId}
+          AND r.is_done = 1
+    </select>
+
+    <select id="countTaskInPlan" resultType="int">
+        SELECT COUNT(*)
+        FROM t_plan_task
+        WHERE plan_id = #{planId}
+          AND task_id = #{taskId}
+          AND is_deleted = 0
+    </select>
+
+    <select id="selectTaskTypeByTaskId" resultType="string">
+        SELECT task_type
+        FROM t_plan_task
+        WHERE task_id = #{taskId}
+          AND is_deleted = 0
+    </select>
+</mapper>

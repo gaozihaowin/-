@@ -18,11 +18,14 @@ import com.daily.dailychineseculture.entity.UserDailyRecord;
 import com.daily.dailychineseculture.mapper.CampPlanMapper;
 import com.daily.dailychineseculture.mapper.CourseMapper;
 import com.daily.dailychineseculture.mapper.MyCourseMapper;
+import com.daily.dailychineseculture.mapper.PlanTaskMapper;
 import com.daily.dailychineseculture.mapper.UserDailyRecordMapper;
+import com.daily.dailychineseculture.mapper.UserTaskRecordMapper;
 import com.daily.dailychineseculture.mapper.CampMapper;
 import com.daily.dailychineseculture.service.CourseService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -53,6 +56,12 @@ public class CourseServiceImpl implements CourseService {
 
     @Autowired
    private CourseMapper courseMapper;
+
+    @Autowired
+   private PlanTaskMapper planTaskMapper;
+
+    @Autowired
+   private UserTaskRecordMapper userTaskRecordMapper;
     
     @Override
   public List<MyCourseVO> getMyCourses(Long userId, Integer tabType) {
@@ -98,9 +107,7 @@ public class CourseServiceImpl implements CourseService {
                             plan.getPlanId(),
                             plan.getDayIndex(),
                             plan.getTitle(),
-                            plan.getReadingTitle(),
-                            plan.getTeacherName(),
-                            plan.getVideoDuration()
+                            plan.getTeacherName()
                     ))
                     .collect(Collectors.toList());
             
@@ -152,84 +159,32 @@ public class CourseServiceImpl implements CourseService {
            return noCourseDTO;
         }
         
-        // 4. 今日有课组装
         TodayCourseDTO dto = new TodayCourseDTO();
         dto.setHasCourse(true);
         dto.setCurrentDate(currentDate);
         dto.setPlanId(todayPlan.getPlanId());
-        
-        // 查询用户学习记录（根据 user_id + plan_id 联合唯一查询）
-        UserDailyRecord record = userDailyRecordMapper.selectByUserIdAndPlanId(
-            currentUserId, 
-            todayPlan.getPlanId()
-        );
-        
-        // 装配任务列表
-        List<TaskItemDTO> tasks = new ArrayList<>();
-        int completedCount = 0;
-        
-        // 固定任务 1: 原文诵读
-        TaskItemDTO readTask = new TaskItemDTO();
-        readTask.setTaskId("read");
-        readTask.setTaskType("FIXED");
-        readTask.setTitle("原文诵读");
-        readTask.setSubtitle(todayPlan.getReadingTitle() != null ? todayPlan.getReadingTitle() : "");
-        readTask.setIsDone((record != null && record.getIsReadDone() != null && record.getIsReadDone() == 1) ? 1 : 0);
-        tasks.add(readTask);
-        if (readTask.getIsDone() == 1) completedCount++;
-        
-        // 固定任务 2: 名师导读
-        TaskItemDTO videoTask = new TaskItemDTO();
-        videoTask.setTaskId("video");
-        videoTask.setTaskType("FIXED");
-        videoTask.setTitle("名师导读");
-        String videoSubtitle = buildVideoSubtitle(todayPlan.getTeacherName(), todayPlan.getVideoDuration());
-        videoTask.setSubtitle(videoSubtitle);
-        videoTask.setIsDone((record != null && record.getIsVideoDone() != null && record.getIsVideoDone() == 1) ? 1 : 0);
-        tasks.add(videoTask);
-        if (videoTask.getIsDone() == 1) completedCount++;
-        
-        // 固定任务 3: 心得打卡
-        TaskItemDTO homeworkTask = new TaskItemDTO();
-        homeworkTask.setTaskId("homework");
-        homeworkTask.setTaskType("FIXED");
-        homeworkTask.setTitle("心得打卡");
-        homeworkTask.setSubtitle("写下今日感悟");
-        homeworkTask.setIsDone((record != null && record.getIsHomeworkDone() != null && record.getIsHomeworkDone() == 1) ? 1 : 0);
-        tasks.add(homeworkTask);
-        if (homeworkTask.getIsDone() == 1) completedCount++;
-        
-        // 备选任务 1
-        if (todayPlan.getExtraTask1Name() != null && !todayPlan.getExtraTask1Name().isEmpty()) {
-            TaskItemDTO extraTask1 = new TaskItemDTO();
-            extraTask1.setTaskId("extra1");
-            extraTask1.setTaskType("EXTRA");
-            extraTask1.setTitle(todayPlan.getExtraTask1Name());
-            extraTask1.setSubtitle("");
-            extraTask1.setIsDone((record != null && record.getIsExtra1Done() != null && record.getIsExtra1Done() == 1) ? 1 : 0);
-            tasks.add(extraTask1);
-            if (extraTask1.getIsDone() == 1) completedCount++;
+
+        List<TaskItemDTO> tasks = planTaskMapper.selectTaskItemsByPlanIdAndUserId(todayPlan.getPlanId(), currentUserId);
+        if (tasks == null) {
+            tasks = new ArrayList<>();
         }
-        
-        // 备选任务 2
-        if (todayPlan.getExtraTask2Name() != null && !todayPlan.getExtraTask2Name().isEmpty()) {
-            TaskItemDTO extraTask2 = new TaskItemDTO();
-            extraTask2.setTaskId("extra2");
-            extraTask2.setTaskType("EXTRA");
-            extraTask2.setTitle(todayPlan.getExtraTask2Name());
-            extraTask2.setSubtitle("");
-            extraTask2.setIsDone((record != null && record.getIsExtra2Done() != null && record.getIsExtra2Done() == 1) ? 1 : 0);
-            tasks.add(extraTask2);
-            if (extraTask2.getIsDone() == 1) completedCount++;
-        }
-        
-        // 计算完成率
-        int totalTasks = tasks.size();
-        int completionRate = totalTasks > 0 ? (completedCount * 100 / totalTasks) : 0;
-        dto.setCompletionRate(completionRate);
-        
         dto.setTasks(tasks);
-       return dto;
+
+        UserDailyRecord summary = userDailyRecordMapper.selectByUserIdAndPlanId(currentUserId, todayPlan.getPlanId());
+        int completionRate = 0;
+        if (summary != null && summary.getCompletionRate() != null) {
+            completionRate = summary.getCompletionRate();
+        } else if (!tasks.isEmpty()) {
+            int doneCount = 0;
+            for (TaskItemDTO task : tasks) {
+                if (task.getIsDone() != null && task.getIsDone() == 1) {
+                    doneCount++;
+                }
+            }
+            completionRate = doneCount * 100 / tasks.size();
+        }
+        dto.setCompletionRate(completionRate);
+        return dto;
     }
     
     /**
@@ -244,87 +199,39 @@ public class CourseServiceImpl implements CourseService {
     }
     
     @Override
+    @Transactional(rollbackFor = Exception.class)
   public TaskCompleteRespDTO completeTask(Integer planId, TaskCompleteReqDTO req, Long currentUserId) {
-        // 步骤 A: 获取排课与动态分母
+        if (req == null || req.getTaskId() == null) {
+            throw new IllegalArgumentException("taskId 不能为空");
+        }
+
         CampPlan plan = campPlanMapper.selectById(planId);
         if (plan == null) {
             throw new IllegalArgumentException("排课计划不存在，planId: " + planId);
         }
-        
-        // 计算总任务数 (分母)
-        int totalTasks = 3; // 诵读、导读、打卡保底
-        if (plan.getExtraTask1Name() != null && !plan.getExtraTask1Name().isEmpty()) {
-            totalTasks++;
+
+        Integer taskId = req.getTaskId();
+        Integer exists = planTaskMapper.countTaskInPlan(planId, taskId);
+        if (exists == null || exists <= 0) {
+            throw new IllegalArgumentException("任务不存在或不属于该排课，taskId: " + taskId);
         }
-        if (plan.getExtraTask2Name() != null && !plan.getExtraTask2Name().isEmpty()) {
-            totalTasks++;
-        }
-        
-        // 步骤 B: Upsert 获取记录
-        UserDailyRecord record = userDailyRecordMapper.selectByUserIdAndPlanId(currentUserId, planId);
-        boolean isNew = false;
-        
-        if (record == null) {
-            record = new UserDailyRecord();
-            record.setUserId(currentUserId);
-            record.setCampId(plan.getCampId());
-            record.setPlanId(planId);
-            record.setIsReadDone(0);
-            record.setIsVideoDone(0);
-            record.setIsHomeworkDone(0);
-            record.setIsExtra1Done(0);
-            record.setIsExtra2Done(0);
-            record.setCompletionRate(0);
-            isNew = true;
-        }
-        
-        // 步骤 C: 状态点亮与重算分子
-        String taskType = req.getTaskType();
-        switch (taskType) {
-            case "read":
-                record.setIsReadDone(1);
-                break;
-            case "video":
-                record.setIsVideoDone(1);
-                break;
-            case "homework":
-                record.setIsHomeworkDone(1);
-                break;
-            case "extra1":
-                record.setIsExtra1Done(1);
-                break;
-            case "extra2":
-                record.setIsExtra2Done(1);
-                break;
-            default:
-                throw new IllegalArgumentException("不支持的任务类型：" + taskType);
-        }
-        
-        // 计算已完成数 (分子)
-        int completed = 0;
-        if (record.getIsReadDone() != null && record.getIsReadDone() == 1) completed++;
-        if (record.getIsVideoDone() != null && record.getIsVideoDone() == 1) completed++;
-        if (record.getIsHomeworkDone() != null && record.getIsHomeworkDone() == 1) completed++;
-        if (record.getIsExtra1Done() != null && record.getIsExtra1Done() == 1) completed++;
-        if (record.getIsExtra2Done() != null && record.getIsExtra2Done() == 1) completed++;
-        
-        // 计算进度
-        int completionRate = (completed * 100) / totalTasks;
-        
-        // 步骤 D: 落库与返回
-        if (isNew) {
-            userDailyRecordMapper.insert(record);
-        } else {
-            userDailyRecordMapper.update(record);
-        }
-        
-        // 组装响应
+
+        userTaskRecordMapper.upsertDoneRecord(currentUserId, planId, taskId);
+
+        Integer totalRequired = planTaskMapper.countRequiredTasksByPlanId(planId);
+        Integer completedRequired = planTaskMapper.countCompletedRequiredTasksByUserIdAndPlanId(currentUserId, planId);
+        int total = totalRequired == null ? 0 : totalRequired;
+        int completed = completedRequired == null ? 0 : completedRequired;
+        int newRate = total > 0 ? (completed * 100) / total : 0;
+        int isAllCompleted = newRate == 100 ? 1 : 0;
+
+        userDailyRecordMapper.upsertSummary(currentUserId, plan.getCampId(), planId, newRate, isAllCompleted);
+
         TaskCompleteRespDTO resp = new TaskCompleteRespDTO();
         resp.setPlanId(planId);
-        resp.setTaskType(taskType);
-        resp.setCompletionRate(completionRate);
-        
-       return resp;
+        resp.setTaskType(planTaskMapper.selectTaskTypeByTaskId(taskId));
+        resp.setCompletionRate(newRate);
+        return resp;
     }
     
     @Override
@@ -353,26 +260,21 @@ public class CourseServiceImpl implements CourseService {
         dto.setCompletedDays(completedDays);
         
         // 4. 计算总体完成率
-        int overallRate = (totalDays > 0) ? (completedDays * 100) / totalDays : 0;
-        dto.setOverallRate(overallRate);
+        long overallRate = (totalDays > 0) ? Math.round((completedDays * 100.0) / totalDays) : 0L;
+        dto.setOverallRate((int) overallRate);
         
-        // ========== B. 学习趋势推导（动态取最近 7 节课）==========
+        // ========== B. 学习趋势推导（全营期进度全景）==========
         List<TrendItemDTO> trends = new ArrayList<>();
-        
-        // 1. 查询已发生的课程（plan_date <= today），按 day_index 降序取 7 条
+
         java.time.LocalDate today = java.time.LocalDate.now();
-        List<CampPlan> recentPlans = campPlanMapper.selectRecentPlansByCampId(campId, java.sql.Date.valueOf(today));
-        
-        // 2. 在内存中反转为升序
-        if (recentPlans != null && !recentPlans.isEmpty()) {
-            java.util.Collections.reverse(recentPlans);
-            
-            // 3. 遍历组装趋势数据
-            for (CampPlan plan : recentPlans) {
+        List<CampPlan> allTrendPlans = campPlanMapper.selectRecentPlansByCampId(campId, java.sql.Date.valueOf(today));
+
+        if (allTrendPlans != null && !allTrendPlans.isEmpty()) {
+            for (CampPlan plan : allTrendPlans) {
                 TrendItemDTO trendItem = new TrendItemDTO();
                 trendItem.setDayStr("Day" + plan.getDayIndex());
-                
-                // 在 recordList 中找对应的进度
+                trendItem.setDayIndex(plan.getDayIndex());
+
                 Integer rate = 0;
                 for (UserDailyRecord record : recordList) {
                     if (record.getPlanId().equals(plan.getPlanId())) {
@@ -381,6 +283,20 @@ public class CourseServiceImpl implements CourseService {
                     }
                 }
                 trendItem.setRate(rate);
+
+                java.time.LocalDate planDate = (plan.getPlanDate() == null)
+                        ? today
+                        : plan.getPlanDate().toInstant().atZone(java.time.ZoneId.systemDefault()).toLocalDate();
+
+                if (planDate.isAfter(today)) {
+                    trendItem.setStatus("LOCKED");
+                    trendItem.setRate(0);
+                } else if (rate > 0) {
+                    trendItem.setStatus("COMPLETED");
+                } else {
+                    trendItem.setStatus("MISSED");
+                }
+
                 trends.add(trendItem);
             }
         }

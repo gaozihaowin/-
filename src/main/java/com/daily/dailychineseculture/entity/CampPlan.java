@@ -37,52 +37,22 @@ public class CampPlan {
     private String title;
     
     /**
-     * 视频链接
-     */
-    private String videoUrl;
-    
-    /**
-     * 图文链接
-     */
-    private String graphicUrl;
-    
-    /**
      * 模块索引（第几周）
      */
-  private Integer moduleIndex;
+    private Integer moduleIndex;
     
     /**
      * 模块名称
      */
-  private String moduleName;
-    
-    /**
-     * 阅读篇目
-     */
-  private String readingTitle;
+    private String moduleName;
     
     /**
      * 讲师姓名
      */
-  private String teacherName;
+    private String teacherName;
     
     /**
-     * 视频时长（分钟）
+     * 是否完成：0-未完成，1-已完成
      */
-  private Integer videoDuration;
-    
-    /**
-     * 备选任务 1 名称
-     */
-  private String extraTask1Name;
-    
-    /**
-     * 备选任务 2 名称
-     */
-  private String extraTask2Name;
-    
-    /**
-     * 备选任务 3 名称
-     */
-  private String extraTask3Name;
+    private Integer isFinished;
 }

@@ -12,8 +12,5 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class TaskCompleteReqDTO {
-    /**
-     * 任务类型：read, video, homework, extra1, extra2
-     */
-    private String taskType;
+    private Integer taskId;
 }

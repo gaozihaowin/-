@@ -15,30 +15,20 @@ public class PlanItemDTO {
     /**
      * 计划 ID（对应 t_camp_plan.plan_id）
      */
-   private Integer planId;
+    private Integer planId;
     
     /**
      * 第几天（对应 t_camp_plan.day_index）
      */
-   private Integer dayIndex;
+    private Integer dayIndex;
     
     /**
      * 课程标题（对应 t_camp_plan.title）
      */
-   private String title;
-    
-    /**
-     * 阅读篇目（对应 t_camp_plan.reading_title）
-     */
-   private String readingTitle;
+    private String title;
     
     /**
      * 讲师姓名（对应 t_camp_plan.teacher_name）
      */
-   private String teacherName;
-    
-    /**
-     * 视频时长（分钟，对应 t_camp_plan.video_duration）
-     */
-   private Integer videoDuration;
+    private String teacherName;
 }

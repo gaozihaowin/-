@@ -32,14 +32,4 @@ public class CampPlanDTO {
      * 导读标题
      */
     private String title;
-    
-    /**
-     * 视频链接
-     */
-    private String videoUrl;
-    
-    /**
-     * 图文链接
-     */
-    private String graphicUrl;
 }

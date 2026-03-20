@@ -73,9 +73,7 @@ public class CampPlanServiceImpl implements CampPlanService {
             plan.setCampId(campId);
             plan.setDayIndex(i + 1); // day_index 从 1 开始递增
             plan.setPlanDate(Date.from(startDate.plusDays(i).atStartOfDay(ZoneId.systemDefault()).toInstant()));
-            plan.setTitle(""); // 其他业务字段留空
-            plan.setVideoUrl("");
-            plan.setGraphicUrl("");
+            plan.setTitle("");
             
             campPlans.add(plan);
         }
