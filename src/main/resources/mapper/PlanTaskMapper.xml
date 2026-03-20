@@ -29,7 +29,7 @@
     <select id="countCompletedRequiredTasksByUserIdAndPlanId" resultType="int">
         SELECT COUNT(*)
         FROM t_plan_task t
-        JOIN t_user_task_record r ON t.task_id = r.task_id
+        INNER JOIN t_user_task_record r ON t.task_id = r.task_id
         WHERE t.plan_id = #{planId}
           AND t.is_required = 1
           AND t.is_deleted = 0

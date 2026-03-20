@@ -222,8 +222,14 @@ public class CourseServiceImpl implements CourseService {
         Integer completedRequired = planTaskMapper.countCompletedRequiredTasksByUserIdAndPlanId(currentUserId, planId);
         int total = totalRequired == null ? 0 : totalRequired;
         int completed = completedRequired == null ? 0 : completedRequired;
-        int newRate = total > 0 ? (completed * 100) / total : 0;
-        int isAllCompleted = newRate == 100 ? 1 : 0;
+
+        int newRate = 0;
+        if (total > 0) {
+            newRate = (completed * 100) / total;
+        } else {
+            newRate = 100;
+        }
+        int isAllCompleted = (newRate == 100) ? 1 : 0;
 
         userDailyRecordMapper.upsertSummary(currentUserId, plan.getCampId(), planId, newRate, isAllCompleted);
 
@@ -237,51 +243,40 @@ public class CourseServiceImpl implements CourseService {
     @Override
     public CourseDataDTO getCourseData(Integer campId, Long currentUserId) {
         CourseDataDTO dto = new CourseDataDTO();
-        
-        // ========== A. 基础指标统计 ==========
-        // 1. 查询总天数（排课总数）
+        java.time.LocalDate today = java.time.LocalDate.now();
+
         List<CampPlan> allPlans = campPlanMapper.selectCourseScheduleByCampId(campId);
         int totalDays = (allPlans != null) ? allPlans.size() : 0;
         dto.setTotalDays(totalDays);
-        
-        // 2. 查询当前用户在该营期的所有打卡记录
+
         List<UserDailyRecord> recordList = userDailyRecordMapper.selectByUserIdAndCampId(currentUserId, campId);
         if (recordList == null) {
             recordList = new ArrayList<>();
         }
-        
-        // 3. 统计已完成天数（completionRate == 100 的记录数）
-        int completedDays = 0;
-        for (UserDailyRecord record : recordList) {
-            if (record.getCompletionRate() != null && record.getCompletionRate() == 100) {
-                completedDays++;
-            }
-        }
+
+        Map<Integer, Integer> rateMap = recordList.stream()
+                .collect(Collectors.toMap(
+                        UserDailyRecord::getPlanId,
+                        r -> r.getCompletionRate() != null ? r.getCompletionRate() : 0,
+                        (existing, replacement) -> replacement
+                ));
+
+        int completedDays = (int) rateMap.values().stream()
+                .filter(rate -> rate == 100)
+                .count();
         dto.setCompletedDays(completedDays);
-        
-        // 4. 计算总体完成率
-        long overallRate = (totalDays > 0) ? Math.round((completedDays * 100.0) / totalDays) : 0L;
-        dto.setOverallRate((int) overallRate);
-        
-        // ========== B. 学习趋势推导（全营期进度全景）==========
+
+        int overallRate = (totalDays > 0) ? (int) Math.round((completedDays * 100.0) / totalDays) : 0;
+        dto.setOverallRate(overallRate);
+
         List<TrendItemDTO> trends = new ArrayList<>();
-
-        java.time.LocalDate today = java.time.LocalDate.now();
-        List<CampPlan> allTrendPlans = campPlanMapper.selectRecentPlansByCampId(campId, java.sql.Date.valueOf(today));
-
-        if (allTrendPlans != null && !allTrendPlans.isEmpty()) {
-            for (CampPlan plan : allTrendPlans) {
+        if (allPlans != null && !allPlans.isEmpty()) {
+            for (CampPlan plan : allPlans) {
                 TrendItemDTO trendItem = new TrendItemDTO();
                 trendItem.setDayStr("Day" + plan.getDayIndex());
                 trendItem.setDayIndex(plan.getDayIndex());
 
-                Integer rate = 0;
-                for (UserDailyRecord record : recordList) {
-                    if (record.getPlanId().equals(plan.getPlanId())) {
-                        rate = (record.getCompletionRate() != null) ? record.getCompletionRate() : 0;
-                        break;
-                    }
-                }
+                int rate = rateMap.getOrDefault(plan.getPlanId(), 0);
                 trendItem.setRate(rate);
 
                 java.time.LocalDate planDate = (plan.getPlanDate() == null)
@@ -291,6 +286,8 @@ public class CourseServiceImpl implements CourseService {
                 if (planDate.isAfter(today)) {
                     trendItem.setStatus("LOCKED");
                     trendItem.setRate(0);
+                } else if (rate == 100) {
+                    trendItem.setStatus("COMPLETED");
                 } else if (rate > 0) {
                     trendItem.setStatus("COMPLETED");
                 } else {
@@ -301,11 +298,9 @@ public class CourseServiceImpl implements CourseService {
             }
         }
         dto.setTrends(trends);
-        
-        // ========== C. 动态成就计算（规则引擎化）==========
+
         List<AchievementDTO> achievements = new ArrayList<>();
         
-        // 规则 1: 完成 >= 1 天
         if (completedDays >= 1) {
             AchievementDTO beginner = new AchievementDTO();
             beginner.setIcon("https://img.icons8.com/color/96/medal2.png");
@@ -314,7 +309,6 @@ public class CourseServiceImpl implements CourseService {
             achievements.add(beginner);
         }
         
-        // 规则 2: 完成 >= 3 天
         if (completedDays >= 3) {
             AchievementDTO progress = new AchievementDTO();
             progress.setIcon("https://img.icons8.com/color/96/warranty.png");
@@ -323,7 +317,6 @@ public class CourseServiceImpl implements CourseService {
             achievements.add(progress);
         }
         
-        // 规则 3: 100% 完成（圆满结业）
         if (totalDays > 0 && completedDays == totalDays) {
             AchievementDTO trophy = new AchievementDTO();
             trophy.setIcon("https://img.icons8.com/color/96/trophy.png");
