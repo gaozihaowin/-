@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
@@ -43,20 +44,24 @@ public class AppCourseController {
     }
     
     /**
-     * 获取指定营期的今日课程
+     * 获取指定营期的今日课程（支持时光机模式）
      * GET /courses/{campId}/today
      * 
      * @param campId 营期 ID
+     * @param planId 排课计划 ID（可选，传入时查询指定历史天）
      * @param request HTTP 请求（用于获取登录用户 ID）
-     * @return 今日课程信息
+     * @return 今日/历史课程信息
      */
     @GetMapping("/{campId}/today")
-   public Result<TodayCourseDTO> getTodayCourse(@PathVariable Integer campId, HttpServletRequest request) {
+    public Result<TodayCourseDTO> getTodayCourse(
+            @PathVariable Integer campId,
+            @RequestParam(required = false) Integer planId,
+            HttpServletRequest request) {
         Long currentUserId = (Long) request.getAttribute("userId");
         if (currentUserId == null) {
             throw new RuntimeException("用户未登录或 Token 失效，无法访问课程");
         }
-        TodayCourseDTO todayCourse = courseService.getTodayCourse(campId, currentUserId);
+        TodayCourseDTO todayCourse = courseService.getTodayCourse(campId, currentUserId, planId);
         return Result.success(todayCourse);
     }
     
