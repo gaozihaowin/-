@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.daily.dailychineseculture.mapper.CampPlanMapper">
-    
+
     <!-- 结果映射：排课计划 DTO -->
     <resultMap id="CampPlanResultMap" type="com.daily.dailychineseculture.dto.CampPlanDTO">
         <result property="planId" column="plan_id"/>
@@ -10,10 +10,10 @@
         <result property="planDate" column="plan_date"/>
         <result property="title" column="title"/>
     </resultMap>
-    
+
     <!-- 根据营期 ID 查询排课计划列表 -->
     <select id="selectCampPlansByCampId" resultMap="CampPlanResultMap">
-        SELECT 
+        SELECT
             plan_id,
             camp_id,
             day_index,
@@ -23,14 +23,14 @@
         WHERE camp_id = #{campId}
         ORDER BY day_index ASC
     </select>
-    
+
     <!-- 检查营期是否已有排课计划 -->
     <select id="countCampPlansByCampId" resultType="int">
         SELECT COUNT(*)
         FROM t_camp_plan
         WHERE camp_id = #{campId}
     </select>
-    
+
     <!-- 批量插入排课计划 -->
     <insert id="batchInsertCampPlans" parameterType="java.util.List">
         INSERT INTO t_camp_plan (camp_id, day_index, plan_date, title)
@@ -39,7 +39,13 @@
             (#{plan.campId}, #{plan.dayIndex}, #{plan.planDate}, #{plan.title})
         </foreach>
     </insert>
-    
+
+    <!-- 插入单条排课计划 -->
+    <insert id="insertCampPlan" parameterType="com.daily.dailychineseculture.entity.CampPlan" useGeneratedKeys="true" keyProperty="planId">
+        INSERT INTO t_camp_plan (camp_id, day_index, plan_date, title)
+        VALUES (#{campId}, #{dayIndex}, #{planDate}, #{title})
+    </insert>
+
     <!-- 根据 ID 更新排课计划 -->
     <update id="updateCampPlan" parameterType="com.daily.dailychineseculture.dto.CampPlanDTO">
         UPDATE t_camp_plan
@@ -50,10 +56,16 @@
         </set>
         WHERE plan_id = #{planId}
     </update>
-    
+
+    <!-- 根据 ID 删除排课计划 -->
+    <delete id="deleteByPlanId">
+        DELETE FROM t_camp_plan
+        WHERE plan_id = #{planId}
+    </delete>
+
     <!-- 根据营期 ID 查询课程安排（按天排序） -->
     <select id="selectCourseScheduleByCampId" resultType="com.daily.dailychineseculture.entity.CampPlan">
-        SELECT 
+        SELECT
             plan_id,
             camp_id,
             day_index,
@@ -67,10 +79,10 @@
         WHERE camp_id = #{campId}
         ORDER BY day_index ASC
     </select>
-    
+
     <!-- 查询指定日期的排课计划 -->
     <select id="selectTodayPlan" resultType="com.daily.dailychineseculture.entity.CampPlan">
-        SELECT 
+        SELECT
             plan_id,
             camp_id,
             day_index,
@@ -84,10 +96,10 @@
         WHERE camp_id = #{campId}
           AND DATE(plan_date) = DATE(#{planDate})
     </select>
-    
+
     <!-- 根据 ID 查询排课计划 -->
     <select id="selectById" resultType="com.daily.dailychineseculture.entity.CampPlan">
-        SELECT 
+        SELECT
             plan_id,
             camp_id,
             day_index,
@@ -100,10 +112,10 @@
         FROM t_camp_plan
         WHERE plan_id = #{planId}
     </select>
-    
+
     <!-- 查询营期全部课次（按 day_index 升序） -->
     <select id="selectRecentPlansByCampId" resultType="com.daily.dailychineseculture.entity.CampPlan">
-        SELECT 
+        SELECT
             plan_id,
             camp_id,
             day_index,
@@ -117,5 +129,5 @@
         WHERE camp_id = #{campId}
         ORDER BY day_index ASC
     </select>
-    
+
 </mapper>
