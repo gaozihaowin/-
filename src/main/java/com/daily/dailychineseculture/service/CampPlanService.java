@@ -2,6 +2,7 @@ package com.daily.dailychineseculture.service;
 
 import com.daily.dailychineseculture.dto.CampOptionDTO;
 import com.daily.dailychineseculture.dto.CampPlanDTO;
+import com.daily.dailychineseculture.dto.CampPlanSaveDayDTO;
 import com.daily.dailychineseculture.dto.GenerateCalendarRequest;
 
 import java.util.List;
@@ -50,4 +51,11 @@ public interface CampPlanService {
      * @param planId 排课 ID
      */
     void deleteCampPlan(Integer planId);
+
+    /**
+     * 聚合保存单日排课（主表+任务列表全量刷新）
+     * 采用全删全插策略：先删该日所有旧任务，再批量插入新任务
+     * @param request 单日排课聚合保存请求
+     */
+    void saveDayPlan(CampPlanSaveDayDTO request);
 }

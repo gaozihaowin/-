@@ -95,6 +95,13 @@ public interface PlanTaskMapper {
     Integer deleteByPlanId(@Param("planId") Integer planId);
 
     /**
+     * 根据排课 ID 删除所有任务（物理删除）
+     * @param planId 排课 ID
+     * @return 影响行数
+     */
+    Integer deleteTasksByPlanId(@Param("planId") Integer planId);
+
+    /**
      * 批量删除任务（物理删除）
      * @param taskIds 任务 ID 列表
      * @return 影响行数
@@ -107,4 +114,23 @@ public interface PlanTaskMapper {
      * @return 影响行数
      */
     Integer logicDeleteBatch(@Param("taskIds") List<Integer> taskIds);
+
+    /**
+     * 批量插入任务
+     * @param tasks 任务列表
+     * @return 影响行数
+     */
+    Integer batchInsertTasks(@Param("tasks") List<PlanTask> tasks);
+
+    /**
+     * 根据任务ID列表批量删除任务（物理删除）
+     * @param ids 任务ID列表
+     */
+    void deleteTasksByIds(@Param("ids") List<Integer> ids);
+
+    /**
+     * 批量更新任务
+     * @param tasks 任务列表
+     */
+    void batchUpdateTasks(@Param("tasks") List<PlanTask> tasks);
 }

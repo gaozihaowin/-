@@ -2,6 +2,7 @@ package com.daily.dailychineseculture.service.impl;
 
 import com.daily.dailychineseculture.dto.CampOptionDTO;
 import com.daily.dailychineseculture.dto.CampPlanDTO;
+import com.daily.dailychineseculture.dto.CampPlanSaveDayDTO;
 import com.daily.dailychineseculture.dto.GenerateCalendarRequest;
 import com.daily.dailychineseculture.dto.PlanTaskDTO;
 import com.daily.dailychineseculture.entity.Camp;
@@ -20,6 +21,7 @@ import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -248,5 +250,66 @@ public class CampPlanServiceImpl implements CampPlanService {
      */
     private LocalDate convertToLocalDate(Date date) {
         return date.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+    }
+
+    /**
+     * 聚合保存单日排课（主表+任务列表全量刷新）
+     * 全删全插策略：
+     * 1. 更新 CampPlan 主表信息
+     * 2. 物理删除该日所有旧任务
+     * 3. 遍历前端任务列表，强制设置 planId 并置空 ID，批量插入新任务
+     */
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void saveDayPlan(CampPlanSaveDayDTO request) {
+        Integer planId = request.getId();
+
+        // 1. 更新主表
+        CampPlanDTO planDTO = new CampPlanDTO();
+        planDTO.setPlanId(planId);
+        planDTO.setCampId(request.getCampId());
+        planDTO.setTitle(request.getTitle());
+        campPlanMapper.updateCampPlan(planDTO);
+
+        // 2. 准备数据
+        List<CampPlanSaveDayDTO.CampTask> incoming = request.getTasks();
+        if (incoming == null) incoming = new ArrayList<>();
+        List<Integer> existingIds = planTaskMapper.selectTaskIdsByPlanId(planId);
+
+        // 3. 分拣：有 taskId → 更新，无 taskId → 新增
+        List<PlanTask> toUpdate = new ArrayList<>();
+        List<PlanTask> toInsert = new ArrayList<>();
+        Set<Integer> incomingIds = new HashSet<>();
+
+        for (int i = 0; i < incoming.size(); i++) {
+            CampPlanSaveDayDTO.CampTask dto = incoming.get(i);
+            PlanTask task = new PlanTask();
+            task.setPlanId(planId);
+            task.setTaskName(dto.getTaskName());
+            task.setTaskType(dto.getTaskType().toUpperCase());
+            task.setTaskDesc(dto.getTaskDesc());
+            task.setTaskUrl(dto.getTaskUrl());
+            task.setDuration(dto.getDuration());
+            task.setIsRequired(dto.getIsRequired());
+            task.setSortOrder(i + 1);
+
+            if (dto.getTaskId() != null) {
+                task.setTaskId(dto.getTaskId());
+                incomingIds.add(dto.getTaskId());
+                toUpdate.add(task);
+            } else {
+                toInsert.add(task);
+            }
+        }
+
+        // 4. 找出要删除的 ID
+        List<Integer> toDeleteIds = existingIds.stream()
+                .filter(id -> !incomingIds.contains(id))
+                .collect(Collectors.toList());
+
+        // 5. 先删 → 再改 → 再增
+        if (!toDeleteIds.isEmpty()) planTaskMapper.deleteTasksByIds(toDeleteIds);
+        if (!toUpdate.isEmpty())    planTaskMapper.batchUpdateTasks(toUpdate);
+        if (!toInsert.isEmpty())    planTaskMapper.batchInsertTasks(toInsert);
     }
 }

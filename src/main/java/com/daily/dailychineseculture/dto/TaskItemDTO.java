@@ -41,4 +41,9 @@ public class TaskItemDTO {
      * 是否完成：1-已完成，0-未完成
      */
     private Integer isDone;
+
+    /**
+     * 资源链接（视频/文档等）
+     */
+    private String taskUrl;
 }

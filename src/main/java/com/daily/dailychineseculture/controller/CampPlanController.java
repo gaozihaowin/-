@@ -3,8 +3,10 @@ package com.daily.dailychineseculture.controller;
 import com.daily.dailychineseculture.common.ResponseResult;
 import com.daily.dailychineseculture.dto.CampOptionDTO;
 import com.daily.dailychineseculture.dto.CampPlanDTO;
+import com.daily.dailychineseculture.dto.CampPlanSaveDayDTO;
 import com.daily.dailychineseculture.dto.GenerateCalendarRequest;
 import com.daily.dailychineseculture.service.CampPlanService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
@@ -88,5 +90,11 @@ public class CampPlanController {
     public ResponseResult<String> deleteCampPlan(@PathVariable Integer planId) {
         campPlanService.deleteCampPlan(planId);
         return ResponseResult.success("删除成功");
+    }
+
+    @PutMapping("/save-day")
+    public ResponseResult<String> saveDay(@Valid @RequestBody CampPlanSaveDayDTO request) {
+        campPlanService.saveDayPlan(request);
+        return ResponseResult.success("保存成功");
     }
 }
