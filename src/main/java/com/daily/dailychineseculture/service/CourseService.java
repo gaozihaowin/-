@@ -39,12 +39,14 @@ public interface CourseService {
     
     /**
      * 获取指定营期的今日课程（微信小程序端）
+     * 支持时光机模式：传入 planId 时查询指定历史天
      * 
      * @param campId 营期 ID
      * @param userId 当前登录用户 ID
-     * @return 今日课程信息
+     * @param planId 排课计划 ID（可选，传入时查询指定历史天）
+     * @return 今日/历史课程信息
      */
-    TodayCourseDTO getTodayCourse(Integer campId, Long userId);
+    TodayCourseDTO getTodayCourse(Integer campId, Long userId, Integer planId);
     
     /**
      * 完成任务打卡并返回最新进度（微信小程序端）

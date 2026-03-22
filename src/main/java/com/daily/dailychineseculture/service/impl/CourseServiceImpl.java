@@ -140,37 +140,57 @@ public class CourseServiceImpl implements CourseService {
     }
     
     @Override
-  public TodayCourseDTO getTodayCourse(Integer campId, Long currentUserId) {
-        // 1. 获取今日日期并格式化
-        java.time.LocalDate today = java.time.LocalDate.now();
-        String currentDate = today.format(java.time.format.DateTimeFormatter.ofPattern("M 月 d 日"));
-        
-        // 2. 查询今日排课
-        CampPlan todayPlan = campPlanMapper.selectTodayPlan(campId, java.sql.Date.valueOf(today));
-        
-        // 3. 今日无课兜底
-        if (todayPlan == null) {
-            TodayCourseDTO noCourseDTO = new TodayCourseDTO();
-            noCourseDTO.setHasCourse(false);
-            noCourseDTO.setCurrentDate(currentDate);
-            noCourseDTO.setPlanId(null);
-            noCourseDTO.setCompletionRate(0);
-            noCourseDTO.setTasks(new ArrayList<>());
-           return noCourseDTO;
+    public TodayCourseDTO getTodayCourse(Integer campId, Long currentUserId, Integer planId) {
+        CampPlan targetPlan = null;
+        String displayDateStr = "";
+
+        if (planId != null) {
+            targetPlan = campPlanMapper.selectById(planId);
+            if (targetPlan == null || !targetPlan.getCampId().equals(campId)) {
+                TodayCourseDTO emptyDto = new TodayCourseDTO();
+                emptyDto.setHasCourse(false);
+                emptyDto.setCurrentDate("");
+                emptyDto.setPlanId(null);
+                emptyDto.setCompletionRate(0);
+                emptyDto.setTasks(new ArrayList<>());
+                return emptyDto;
+            }
+            if (targetPlan.getPlanDate() != null) {
+                displayDateStr = targetPlan.getPlanDate().toInstant()
+                        .atZone(java.time.ZoneId.systemDefault())
+                        .toLocalDate()
+                        .format(java.time.format.DateTimeFormatter.ofPattern("M 月 d 日"));
+            } else {
+                displayDateStr = "Day " + targetPlan.getDayIndex();
+            }
+        } else {
+            java.time.LocalDate today = java.time.LocalDate.now();
+            displayDateStr = today.format(java.time.format.DateTimeFormatter.ofPattern("M 月 d 日"));
+            targetPlan = campPlanMapper.selectTodayPlan(campId, java.sql.Date.valueOf(today));
         }
-        
+
+        if (targetPlan == null) {
+            TodayCourseDTO emptyDto = new TodayCourseDTO();
+            emptyDto.setHasCourse(false);
+            emptyDto.setCurrentDate(displayDateStr);
+            emptyDto.setPlanId(null);
+            emptyDto.setCompletionRate(0);
+            emptyDto.setTasks(new ArrayList<>());
+            return emptyDto;
+        }
+
         TodayCourseDTO dto = new TodayCourseDTO();
         dto.setHasCourse(true);
-        dto.setCurrentDate(currentDate);
-        dto.setPlanId(todayPlan.getPlanId());
+        dto.setCurrentDate(displayDateStr);
+        dto.setPlanId(targetPlan.getPlanId());
 
-        List<TaskItemDTO> tasks = planTaskMapper.selectTaskItemsByPlanIdAndUserId(todayPlan.getPlanId(), currentUserId);
+        List<TaskItemDTO> tasks = planTaskMapper.selectTaskItemsByPlanIdAndUserId(targetPlan.getPlanId(), currentUserId);
         if (tasks == null) {
             tasks = new ArrayList<>();
         }
         dto.setTasks(tasks);
 
-        UserDailyRecord summary = userDailyRecordMapper.selectByUserIdAndPlanId(currentUserId, todayPlan.getPlanId());
+        UserDailyRecord summary = userDailyRecordMapper.selectByUserIdAndPlanId(currentUserId, targetPlan.getPlanId());
         int completionRate = 0;
         if (summary != null && summary.getCompletionRate() != null) {
             completionRate = summary.getCompletionRate();

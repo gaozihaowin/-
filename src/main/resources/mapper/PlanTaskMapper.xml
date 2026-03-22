@@ -1,6 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.daily.dailychineseculture.mapper.PlanTaskMapper">
+
+    <!-- ========== C 端查询相关 ========== -->
+
+    <!-- 根据排课 ID 和用户 ID 查询任务列表（C 端使用） -->
     <select id="selectTaskItemsByPlanIdAndUserId" resultType="com.daily.dailychineseculture.dto.TaskItemDTO">
         SELECT
             t.task_id AS taskId,
@@ -18,6 +22,7 @@
         ORDER BY t.sort_order ASC
     </select>
 
+    <!-- 统计某排课下的必做任务数量 -->
     <select id="countRequiredTasksByPlanId" resultType="int">
         SELECT COUNT(*)
         FROM t_plan_task
@@ -26,6 +31,7 @@
           AND is_deleted = 0
     </select>
 
+    <!-- 统计用户在某排课下已完成的必做任务数量 -->
     <select id="countCompletedRequiredTasksByUserIdAndPlanId" resultType="int">
         SELECT COUNT(*)
         FROM t_plan_task t
@@ -37,6 +43,7 @@
           AND r.is_done = 1
     </select>
 
+    <!-- 检查任务是否属于某排课 -->
     <select id="countTaskInPlan" resultType="int">
         SELECT COUNT(*)
         FROM t_plan_task
@@ -45,10 +52,109 @@
           AND is_deleted = 0
     </select>
 
+    <!-- 根据任务 ID 查询任务类型 -->
     <select id="selectTaskTypeByTaskId" resultType="string">
         SELECT task_type
         FROM t_plan_task
         WHERE task_id = #{taskId}
           AND is_deleted = 0
     </select>
+
+    <!-- ========== 管理后台相关 ========== -->
+
+    <!-- 根据排课 ID 查询所有任务（管理后台使用） -->
+    <select id="selectTasksByPlanId" resultType="com.daily.dailychineseculture.dto.TaskAdminDTO">
+        SELECT
+            task_id AS taskId,
+            task_type AS taskType,
+            task_name AS taskName,
+            task_desc AS taskDesc,
+            task_url AS taskUrl,
+            is_required AS isRequired,
+            sort_order AS sortOrder
+        FROM t_plan_task
+        WHERE plan_id = #{planId}
+          AND is_deleted = 0
+        ORDER BY sort_order ASC
+    </select>
+
+    <!-- 根据排课 ID 查询所有任务 ID -->
+    <select id="selectTaskIdsByPlanId" resultType="int">
+        SELECT task_id
+        FROM t_plan_task
+        WHERE plan_id = #{planId}
+          AND is_deleted = 0
+    </select>
+
+    <!-- 插入新任务 -->
+    <insert id="insertTask" parameterType="com.daily.dailychineseculture.entity.PlanTask" useGeneratedKeys="true" keyProperty="taskId">
+        INSERT INTO t_plan_task (
+            plan_id,
+            task_type,
+            task_name,
+            task_desc,
+            task_url,
+            is_required,
+            sort_order,
+            is_deleted
+        ) VALUES (
+            #{planId},
+            #{taskType},
+            #{taskName},
+            #{taskDesc},
+            #{taskUrl},
+            #{isRequired},
+            #{sortOrder},
+            0
+        )
+    </insert>
+
+    <!-- 更新任务 -->
+    <update id="updateTask" parameterType="com.daily.dailychineseculture.entity.PlanTask">
+        UPDATE t_plan_task
+        <set>
+            <if test="taskType != null">
+                task_type = #{taskType},
+            </if>
+            <if test="taskName != null">
+                task_name = #{taskName},
+            </if>
+            <if test="taskDesc != null">
+                task_desc = #{taskDesc},
+            </if>
+            <if test="taskUrl != null">
+                task_url = #{taskUrl},
+            </if>
+            <if test="isRequired != null">
+                is_required = #{isRequired},
+            </if>
+            <if test="sortOrder != null">
+                sort_order = #{sortOrder},
+            </if>
+        </set>
+        WHERE task_id = #{taskId}
+          AND is_deleted = 0
+    </update>
+
+    <!-- 根据任务 ID 删除任务（物理删除） -->
+    <delete id="deleteByTaskId">
+        DELETE FROM t_plan_task
+        WHERE task_id = #{taskId}
+    </delete>
+
+    <!-- 根据排课 ID 删除所有任务（物理删除） -->
+    <delete id="deleteByPlanId">
+        DELETE FROM t_plan_task
+        WHERE plan_id = #{planId}
+    </delete>
+
+    <!-- 批量删除任务（物理删除） -->
+    <delete id="deleteByTaskIds">
+        DELETE FROM t_plan_task
+        WHERE task_id IN
+        <foreach collection="taskIds" item="taskId" open="(" separator="," close=")">
+            #{taskId}
+        </foreach>
+    </delete>
+
 </mapper>
