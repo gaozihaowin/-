@@ -63,13 +63,14 @@
     <!-- ========== 管理后台相关 ========== -->
 
     <!-- 根据排课 ID 查询所有任务（管理后台使用） -->
-    <select id="selectTasksByPlanId" resultType="com.daily.dailychineseculture.dto.TaskAdminDTO">
+    <select id="selectTasksByPlanId" resultType="com.daily.dailychineseculture.dto.PlanTaskDTO">
         SELECT
             task_id AS taskId,
             task_type AS taskType,
             task_name AS taskName,
             task_desc AS taskDesc,
             task_url AS taskUrl,
+            duration,
             is_required AS isRequired,
             sort_order AS sortOrder
         FROM t_plan_task
@@ -94,6 +95,7 @@
             task_name,
             task_desc,
             task_url,
+            duration,
             is_required,
             sort_order,
             is_deleted
@@ -103,6 +105,7 @@
             #{taskName},
             #{taskDesc},
             #{taskUrl},
+            #{duration},
             #{isRequired},
             #{sortOrder},
             0
@@ -124,6 +127,9 @@
             </if>
             <if test="taskUrl != null">
                 task_url = #{taskUrl},
+            </if>
+            <if test="duration != null">
+                duration = #{duration},
             </if>
             <if test="isRequired != null">
                 is_required = #{isRequired},
@@ -156,5 +162,15 @@
             #{taskId}
         </foreach>
     </delete>
+
+    <!-- 批量逻辑删除任务（is_deleted = 1） -->
+    <update id="logicDeleteBatch">
+        UPDATE t_plan_task
+        SET is_deleted = 1
+        WHERE task_id IN
+        <foreach collection="taskIds" item="taskId" open="(" separator="," close=")">
+            #{taskId}
+        </foreach>
+    </update>
 
 </mapper>

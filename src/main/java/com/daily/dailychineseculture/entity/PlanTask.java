@@ -44,6 +44,11 @@ public class PlanTask {
     private String taskUrl;
 
     /**
+     * 建议时长（分钟）
+     */
+    private Integer duration;
+
+    /**
      * 是否必做
      * 1 - 必修
      * 0 - 选修

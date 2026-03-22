@@ -9,6 +9,9 @@ import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
+import java.io.File;
+import java.nio.file.Paths;
+
 /**
  * Web MVC 配置类 - 用于配置静态资源映射和拦截器
  */
@@ -30,15 +33,12 @@ public class WebConfig implements WebMvcConfigurer {
      */
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
-        // 配置文件上传目录的静态资源映射
-        // 访问路径：http://localhost:8080/uploads/文件名.jpg
-        // 实际物理路径：C:/camp_system/uploads/文件名.jpg
+        String path = Paths.get(uploadDir).toAbsolutePath().normalize().toString();
+        if (!path.endsWith(File.separator)) {
+            path += File.separator;
+        }
         registry.addResourceHandler("/uploads/**")
-                .addResourceLocations("file:" + uploadDir);
-        
-        // 可以添加其他静态资源映射，例如：
-        // registry.addResourceHandler("/static/**")
-        //         .addResourceLocations("classpath:/static/");
+                .addResourceLocations("file:" + path);
     }
 
     /**

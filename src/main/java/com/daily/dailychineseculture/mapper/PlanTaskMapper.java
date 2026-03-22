@@ -1,6 +1,6 @@
 package com.daily.dailychineseculture.mapper;
 
-import com.daily.dailychineseculture.dto.TaskAdminDTO;
+import com.daily.dailychineseculture.dto.PlanTaskDTO;
 import com.daily.dailychineseculture.dto.TaskItemDTO;
 import com.daily.dailychineseculture.entity.PlanTask;
 import org.apache.ibatis.annotations.Mapper;
@@ -57,7 +57,7 @@ public interface PlanTaskMapper {
      * @param planId 排课 ID
      * @return 任务列表
      */
-    List<TaskAdminDTO> selectTasksByPlanId(@Param("planId") Integer planId);
+    List<PlanTaskDTO> selectTasksByPlanId(@Param("planId") Integer planId);
 
     /**
      * 根据排课 ID 查询所有任务 ID
@@ -100,4 +100,11 @@ public interface PlanTaskMapper {
      * @return 影响行数
      */
     Integer deleteByTaskIds(@Param("taskIds") List<Integer> taskIds);
+
+    /**
+     * 批量逻辑删除任务
+     * @param taskIds 任务 ID 列表
+     * @return 影响行数
+     */
+    Integer logicDeleteBatch(@Param("taskIds") List<Integer> taskIds);
 }

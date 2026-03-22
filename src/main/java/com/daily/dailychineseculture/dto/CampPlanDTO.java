@@ -39,5 +39,5 @@ public class CampPlanDTO {
      * 任务列表
      * 该排课下的所有任务（视频、阅读、作业等）
      */
-    private List<TaskAdminDTO> tasks;
+    private List<PlanTaskDTO> tasks;
 }

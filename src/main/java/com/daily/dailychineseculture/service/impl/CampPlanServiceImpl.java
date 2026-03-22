@@ -3,7 +3,7 @@ package com.daily.dailychineseculture.service.impl;
 import com.daily.dailychineseculture.dto.CampOptionDTO;
 import com.daily.dailychineseculture.dto.CampPlanDTO;
 import com.daily.dailychineseculture.dto.GenerateCalendarRequest;
-import com.daily.dailychineseculture.dto.TaskAdminDTO;
+import com.daily.dailychineseculture.dto.PlanTaskDTO;
 import com.daily.dailychineseculture.entity.Camp;
 import com.daily.dailychineseculture.entity.CampPlan;
 import com.daily.dailychineseculture.entity.PlanTask;
@@ -51,7 +51,7 @@ public class CampPlanServiceImpl implements CampPlanService {
 
         // 2. 遍历每个排课计划，查询其下的所有任务
         for (CampPlanDTO plan : plans) {
-            List<TaskAdminDTO> tasks = planTaskMapper.selectTasksByPlanId(plan.getPlanId());
+            List<PlanTaskDTO> tasks = planTaskMapper.selectTasksByPlanId(plan.getPlanId());
             plan.setTasks(tasks);
         }
 
@@ -127,19 +127,19 @@ public class CampPlanServiceImpl implements CampPlanService {
      * 核心逻辑：
      * - 前端传了 taskId 且数据库有的，执行 update
      * - 前端传的 taskId 为 null 的，执行 insert
-     * - 数据库里原有，但前端没传的 taskId，执行 delete
+     * - 数据库里原有，但前端没传的 taskId，执行逻辑删除
      *
      * @param planId 排课 ID
      * @param newTasks 前端传来的任务列表
      */
-    private void syncTasks(Integer planId, List<TaskAdminDTO> newTasks) {
+    private void syncTasks(Integer planId, List<PlanTaskDTO> newTasks) {
         // 1. 查询数据库中该 planId 原有的所有任务 ID
         List<Integer> existingTaskIds = planTaskMapper.selectTaskIdsByPlanId(planId);
         Set<Integer> existingTaskIdSet = existingTaskIds.stream().collect(Collectors.toSet());
 
-        // 2. 收集前端传来的有效 taskId
+        // 2. 收集前端传来的有效 taskId（前端使用 Long，这里转 Integer）
         Set<Integer> newTaskIdSet = newTasks.stream()
-                .map(TaskAdminDTO::getTaskId)
+                .map(dto -> dto.getTaskId() != null ? dto.getTaskId().intValue() : null)
                 .filter(id -> id != null)
                 .collect(Collectors.toSet());
 
@@ -148,13 +148,13 @@ public class CampPlanServiceImpl implements CampPlanService {
                 .filter(id -> !newTaskIdSet.contains(id))
                 .collect(Collectors.toList());
 
-        // 4. 批量删除不再需要的任务
+        // 4. 批量逻辑删除不再需要的任务（is_deleted = 1）
         if (!toDeleteTaskIds.isEmpty()) {
-            planTaskMapper.deleteByTaskIds(toDeleteTaskIds);
+            planTaskMapper.logicDeleteBatch(toDeleteTaskIds);
         }
 
         // 5. 遍历前端传来的任务，执行 insert 或 update
-        for (TaskAdminDTO taskDTO : newTasks) {
+        for (PlanTaskDTO taskDTO : newTasks) {
             if (taskDTO.getTaskId() == null) {
                 // 新增任务
                 PlanTask newTask = convertToEntity(planId, taskDTO);
@@ -172,7 +172,7 @@ public class CampPlanServiceImpl implements CampPlanService {
     /**
      * 将 DTO 转换为实体
      */
-    private PlanTask convertToEntity(Integer planId, TaskAdminDTO dto) {
+    private PlanTask convertToEntity(Integer planId, PlanTaskDTO dto) {
         PlanTask task = new PlanTask();
         task.setTaskId(dto.getTaskId());
         task.setPlanId(planId);
@@ -180,6 +180,7 @@ public class CampPlanServiceImpl implements CampPlanService {
         task.setTaskName(dto.getTaskName());
         task.setTaskDesc(dto.getTaskDesc());
         task.setTaskUrl(dto.getTaskUrl());
+        task.setDuration(dto.getDuration());
         task.setIsRequired(dto.getIsRequired());
         task.setSortOrder(dto.getSortOrder());
         return task;
@@ -209,12 +210,12 @@ public class CampPlanServiceImpl implements CampPlanService {
 
         // 4. 如果有任务列表，同步插入任务
         if (campPlan.getTasks() != null && !campPlan.getTasks().isEmpty()) {
-            for (TaskAdminDTO taskDTO : campPlan.getTasks()) {
+            for (PlanTaskDTO taskDTO : campPlan.getTasks()) {
                 PlanTask newTask = convertToEntity(plan.getPlanId(), taskDTO);
                 planTaskMapper.insertTask(newTask);
             }
             // 重新查询任务列表
-            List<TaskAdminDTO> tasks = planTaskMapper.selectTasksByPlanId(plan.getPlanId());
+            List<PlanTaskDTO> tasks = planTaskMapper.selectTasksByPlanId(plan.getPlanId());
             campPlan.setTasks(tasks);
         }
 
@@ -225,7 +226,9 @@ public class CampPlanServiceImpl implements CampPlanService {
     }
 
     /**
-     * 删除整天排课及挂载的所有任务
+     * 删除整天排课
+     * 直接删除 t_camp_plan 表中对应 ID 的记录即可
+     * 数据库已有 ON DELETE CASCADE 约束自动清理底层任务
      */
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -236,10 +239,7 @@ public class CampPlanServiceImpl implements CampPlanService {
             throw new RuntimeException("未找到指定的排课计划");
         }
 
-        // 2. 先删除该排课下的所有任务
-        planTaskMapper.deleteByPlanId(planId);
-
-        // 3. 再删除排课计划
+        // 2. 直接删除排课计划，CASCADE 约束会自动清理底层任务
         campPlanMapper.deleteByPlanId(planId);
     }
 
