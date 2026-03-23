@@ -1,17 +1,23 @@
 package com.daily.dailychineseculture.controller;
 
+import com.daily.dailychineseculture.common.Result;
 import com.daily.dailychineseculture.dto.AdminLoginRequest;
 import com.daily.dailychineseculture.dto.AdminLoginResult;
 import com.daily.dailychineseculture.dto.CampListPageDTO;
 import com.daily.dailychineseculture.dto.CampTypeOptionDTO;
 import com.daily.dailychineseculture.dto.RecentCampDTO;
+import com.daily.dailychineseculture.entity.User;
+import com.daily.dailychineseculture.mapper.UserMapper;
 import com.daily.dailychineseculture.service.AdminAuthService;
 import com.daily.dailychineseculture.service.CampService;
-import com.daily.dailychineseculture.common.Result;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+import java.text.SimpleDateFormat;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * PC 端后台管理控制器
@@ -25,6 +31,9 @@ public class AdminController {
     
     @Autowired
     private CampService campService;
+    
+    @Autowired
+    private UserMapper userMapper;
     
     /**
      * 管理员登录接口
@@ -118,5 +127,76 @@ public class AdminController {
             e.printStackTrace();
             return Result.error("获取营期类型失败：" + e.getMessage());
         }
+    }
+    
+    @GetMapping("/profile")
+    public com.daily.dailychineseculture.common.ResponseResult<Map<String, Object>> getProfile(HttpServletRequest request) {
+        Long userId = (Long) request.getAttribute("userId");
+        User user = userMapper.selectById(userId);
+        if (user == null) {
+            return com.daily.dailychineseculture.common.ResponseResult.error(404, "用户不存在");
+        }
+        Map<String, Object> data = new LinkedHashMap<>();
+        data.put("userId", String.valueOf(user.getUserId()));
+        data.put("account", user.getAccount());
+        data.put("nickname", user.getNickname());
+        data.put("avatar", user.getAvatar());
+        data.put("phone", user.getPhone());
+        data.put("region", user.getRegion());
+        data.put("birthday", user.getBirthday() != null
+            ? new SimpleDateFormat("yyyy-MM-dd").format(user.getBirthday()) : null);
+        data.put("profession", user.getProfession());
+        data.put("gender", user.getGender());
+        return com.daily.dailychineseculture.common.ResponseResult.success("查询成功", data);
+    }
+    
+    @PutMapping("/profile")
+    public com.daily.dailychineseculture.common.ResponseResult<String> updateProfile(
+            @RequestBody Map<String, Object> body,
+            HttpServletRequest request) {
+        Long userId = (Long) request.getAttribute("userId");
+        User user = userMapper.selectById(userId);
+        if (user == null) {
+            return com.daily.dailychineseculture.common.ResponseResult.error(404, "用户不存在");
+        }
+        if (body.get("nickname") != null) user.setNickname((String) body.get("nickname"));
+        if (body.get("avatar") != null) user.setAvatar((String) body.get("avatar"));
+        if (body.get("phone") != null) user.setPhone((String) body.get("phone"));
+        if (body.get("region") != null) user.setRegion((String) body.get("region"));
+        if (body.get("profession") != null) user.setProfession((String) body.get("profession"));
+        if (body.get("gender") != null) user.setGender(((Number) body.get("gender")).intValue());
+        if (body.get("birthday") != null && !((String) body.get("birthday")).isEmpty()) {
+            try {
+                user.setBirthday(new SimpleDateFormat("yyyy-MM-dd").parse((String) body.get("birthday")));
+            } catch (Exception ignored) {}
+        }
+        userMapper.update(user);
+        return com.daily.dailychineseculture.common.ResponseResult.success("保存成功");
+    }
+    
+    @PutMapping("/profile/password")
+    public com.daily.dailychineseculture.common.ResponseResult<String> updatePassword(
+            @RequestBody Map<String, String> body,
+            HttpServletRequest request) {
+        Long userId = (Long) request.getAttribute("userId");
+        User user = userMapper.selectById(userId);
+        if (user == null) {
+            return com.daily.dailychineseculture.common.ResponseResult.error(404, "用户不存在");
+        }
+        String oldPwd = body.get("oldPassword");
+        String newPwd = body.get("newPassword");
+        String confirmPwd = body.get("confirmPassword");
+        if (!user.getPassword().equals(oldPwd)) {
+            return com.daily.dailychineseculture.common.ResponseResult.error(400, "当前密码错误");
+        }
+        if (newPwd == null || newPwd.length() < 6) {
+            return com.daily.dailychineseculture.common.ResponseResult.error(400, "新密码不能少于6位");
+        }
+        if (!newPwd.equals(confirmPwd)) {
+            return com.daily.dailychineseculture.common.ResponseResult.error(400, "两次密码不一致");
+        }
+        user.setPassword(newPwd);
+        userMapper.update(user);
+        return com.daily.dailychineseculture.common.ResponseResult.success("密码修改成功");
     }
 }

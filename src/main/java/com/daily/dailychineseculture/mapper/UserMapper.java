@@ -48,8 +48,8 @@ public interface UserMapper {
          * 更新用户
          */
         @Update("UPDATE t_user SET account=#{account}, password=#{password}, avatar=#{avatar}, " +
-                "phone=#{phone}, region=#{region}, birthday=#{birthday}, profession=#{profession}, gender=#{gender} "
-                +
+                "nickname=#{nickname}, " +
+                "phone=#{phone}, region=#{region}, birthday=#{birthday}, profession=#{profession}, gender=#{gender} " +
                 "WHERE user_id=#{userId}")
         int update(User user);
 
