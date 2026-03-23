@@ -194,44 +194,29 @@ public class UserController {
     }
     
     /**
-     * PC 管理端 - 执行身份切换
-     * POST /api/admin/user/switch-identity
-     * 
-     * @param request 切换身份请求
-     * @param httpRequest HTTP 请求对象（用于获取登录用户 ID）
-     * @return 统一响应结果，包含新的 JWT Token
+     * PC 管理端 - 执行身份切换 (修复越权漏洞，统一使用 /api/admin 前缀)
      */
-    @PostMapping("/switch-identity")
+    @PostMapping("/api/admin/user/switch-identity")
     public ResponseResult<Map<String, Object>> switchIdentity(
             @RequestBody SwitchIdentityRequest request,
             HttpServletRequest httpRequest) {
         try {
-            // 从请求属性中获取用户 ID（由认证拦截器设置）
             Long userId = (Long) httpRequest.getAttribute("userId");
             if (userId == null) {
-                System.err.println("未找到用户 ID，请确保已登录");
                 return ResponseResult.error(401, "未登录或登录已过期");
             }
-            
-            System.out.println("PC 管理端收到身份切换请求，userId: " + userId + ", request: " + request);
-            
+
             // 执行身份切换，生成新的 JWT Token（使用 ADMIN 类型）
             String newToken = userAuthService.executeIdentitySwitch(userId, request, "ADMIN");
-            
-            // 构造返回数据
+
             Map<String, Object> result = new HashMap<>();
             result.put("token", newToken);
-            
-            // TODO: 可以在这里补充完整的 userInfo
-            // result.put("userInfo", userAuthService.getCurrentUserInfo(userId));
-            
+            result.put("currentIdentity", request.getIdentity());
+
             return ResponseResult.success("切换成功", result);
         } catch (IllegalArgumentException e) {
-            System.err.println("身份切换参数校验失败：" + e.getMessage());
             return ResponseResult.error(400, e.getMessage());
         } catch (Exception e) {
-            System.err.println("身份切换异常：" + e.getMessage());
-            e.printStackTrace();
             return ResponseResult.error(500, "服务器内部错误：" + e.getMessage());
         }
     }

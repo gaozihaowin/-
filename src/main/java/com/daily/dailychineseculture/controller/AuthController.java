@@ -404,40 +404,29 @@ public class AuthController {
     }
 
     /**
-     * 小程序端 - 用户切换身份接口
-     * 支持学员、志愿者等身份切换（基于 appointmentId）
-     *
-     * @param token JWT 令牌
-     * @param request 切换请求 {"assignmentId": 1}
-     * @return 新的 Token {"token": "eyJhbGci..."}
+     * 小程序端 - 用户切换身份接口 (严格遵守无 api/ 前缀规范)
      */
-    @PostMapping("/app/user/switch-identity")
+    @PostMapping("/user/switch-identity")
     public Result<Map<String, Object>> appSwitchIdentity(
             @RequestHeader("Authorization") String token,
             @RequestBody SwitchIdentityRequest request) {
         try {
-            // 1. 解析 Token 获取用户 ID
             Long userId = jwtUtils.getUserIdFromToken(token.replace("Bearer ", ""));
             if (userId == null) {
                 return Result.error("无效的 Token");
             }
 
-            System.out.println("小程序端收到身份切换请求，userId: " + userId + ", request: " + request);
-
-            // 2. 调用 Service 执行身份切换（使用 APP 类型）
+            // 执行身份切换（使用 APP 类型）
             String newToken = authService.executeIdentitySwitch(userId, request, "APP");
 
-            // 3. 构造返回数据
             Map<String, Object> result = new HashMap<>();
             result.put("token", newToken);
+            result.put("currentIdentity", request.getIdentity());
 
             return Result.success(result);
         } catch (IllegalArgumentException e) {
-            System.err.println("身份切换参数校验失败：" + e.getMessage());
             return Result.error(e.getMessage());
         } catch (Exception e) {
-            System.err.println("身份切换异常：" + e.getMessage());
-            e.printStackTrace();
             return Result.error("服务器内部错误，请稍后重试");
         }
     }
