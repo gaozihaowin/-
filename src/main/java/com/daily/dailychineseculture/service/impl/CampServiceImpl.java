@@ -218,8 +218,8 @@ public class CampServiceImpl implements CampService {
         if (camp == null) {
             throw new IllegalArgumentException("营期不存在");
         }
-        if (camp.getStatus() == null || camp.getStatus() == 2) {
-            throw new IllegalArgumentException("当前营期不可报名");
+        if (camp.getEndTime() != null && new Date().after(camp.getEndTime())) {
+            throw new IllegalArgumentException("当前营期已结束，不可报名");
         }
 
         Integer count = campEnrollmentMapper.countByUserIdAndCampId(userId, campId);
