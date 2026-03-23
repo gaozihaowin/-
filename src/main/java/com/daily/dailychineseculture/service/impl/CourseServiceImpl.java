@@ -15,6 +15,7 @@ import com.daily.dailychineseculture.dto.CampInfoDTO;
 import com.daily.dailychineseculture.entity.Course;
 import com.daily.dailychineseculture.entity.CampPlan;
 import com.daily.dailychineseculture.entity.UserDailyRecord;
+import com.daily.dailychineseculture.event.CampProgressUpdateEvent;
 import com.daily.dailychineseculture.mapper.CampPlanMapper;
 import com.daily.dailychineseculture.mapper.CourseMapper;
 import com.daily.dailychineseculture.mapper.MyCourseMapper;
@@ -24,6 +25,7 @@ import com.daily.dailychineseculture.mapper.UserTaskRecordMapper;
 import com.daily.dailychineseculture.mapper.CampMapper;
 import com.daily.dailychineseculture.service.CourseService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -53,6 +55,9 @@ public class CourseServiceImpl implements CourseService {
     
     @Autowired
    private CampMapper campMapper;
+
+    @Autowired
+    private ApplicationEventPublisher eventPublisher;
 
     @Autowired
    private CourseMapper courseMapper;
@@ -252,6 +257,8 @@ public class CourseServiceImpl implements CourseService {
         int isAllCompleted = (newRate == 100) ? 1 : 0;
 
         userDailyRecordMapper.upsertSummary(currentUserId, plan.getCampId(), planId, newRate, isAllCompleted);
+
+        eventPublisher.publishEvent(new CampProgressUpdateEvent(this, currentUserId, plan.getCampId()));
 
         TaskCompleteRespDTO resp = new TaskCompleteRespDTO();
         resp.setPlanId(planId);

@@ -4,6 +4,7 @@ import com.daily.dailychineseculture.dto.CampPlanDTO;
 import com.daily.dailychineseculture.entity.CampPlan;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
+import org.apache.ibatis.annotations.Select;
 
 import java.util.List;
 
@@ -84,4 +85,7 @@ public interface CampPlanMapper {
      * @return 最近课程列表
      */
     List<CampPlan> selectRecentPlansByCampId(@Param("campId") Integer campId, @Param("today") java.util.Date today);
+
+    @Select("SELECT COUNT(1) FROM t_camp_plan WHERE camp_id = #{campId}")
+    Integer countTotalDaysByCampId(@Param("campId") Integer campId);
 }
