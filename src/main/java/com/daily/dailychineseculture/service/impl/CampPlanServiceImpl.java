@@ -312,4 +312,58 @@ public class CampPlanServiceImpl implements CampPlanService {
         if (!toUpdate.isEmpty())    planTaskMapper.batchUpdateTasks(toUpdate);
         if (!toInsert.isEmpty())    planTaskMapper.batchInsertTasks(toInsert);
     }
+
+    /**
+     * 追加一天排课
+     * 在当前营期下新增一天的排课记录
+     */
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public CampPlanDTO appendDay(Integer campId) {
+        // 1. 校验营期是否存在
+        Camp camp = campMapper.selectById(campId);
+        if (camp == null) {
+            throw new RuntimeException("未找到指定的营期");
+        }
+
+        // 2. 查询该营期下的最大 day_index 和最晚的 plan_date
+        Integer maxDayIndex = campPlanMapper.selectMaxDayIndexByCampId(campId);
+        Date maxPlanDate = campPlanMapper.selectMaxPlanDateByCampId(campId);
+
+        // 3. 计算新的 day_index 和 plan_date
+        Integer newDayIndex;
+        LocalDate newPlanDate;
+
+        if (maxDayIndex == null || maxPlanDate == null) {
+            // 如果该营期没有任何排课记录
+            newDayIndex = 1;
+            newPlanDate = LocalDate.now();
+        } else {
+            // 如果已有记录，新记录的 day_index = 最大 day_index + 1
+            newDayIndex = maxDayIndex + 1;
+            // plan_date = 最晚 plan_date 往后加 1 天
+            newPlanDate = convertToLocalDate(maxPlanDate).plusDays(1);
+        }
+
+        // 4. 创建新的排课实体
+        CampPlan newPlan = new CampPlan();
+        newPlan.setCampId(campId);
+        newPlan.setDayIndex(newDayIndex);
+        newPlan.setPlanDate(Date.from(newPlanDate.atStartOfDay(ZoneId.systemDefault()).toInstant()));
+        newPlan.setTitle("新增排课");
+
+        // 5. 插入数据库
+        campPlanMapper.insertCampPlan(newPlan);
+
+        // 6. 构建返回结果
+        CampPlanDTO result = new CampPlanDTO();
+        result.setPlanId(newPlan.getPlanId());
+        result.setCampId(newPlan.getCampId());
+        result.setDayIndex(newPlan.getDayIndex());
+        result.setPlanDate(newPlan.getPlanDate());
+        result.setTitle(newPlan.getTitle());
+        result.setTasks(new ArrayList<>());
+
+        return result;
+    }
 }

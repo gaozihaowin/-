@@ -58,4 +58,12 @@ public interface CampPlanService {
      * @param request 单日排课聚合保存请求
      */
     void saveDayPlan(CampPlanSaveDayDTO request);
+
+    /**
+     * 追加一天排课
+     * 在当前营期下新增一天的排课记录
+     * @param campId 营期 ID
+     * @return 新增的排课计划（包含 planId）
+     */
+    CampPlanDTO appendDay(Integer campId);
 }

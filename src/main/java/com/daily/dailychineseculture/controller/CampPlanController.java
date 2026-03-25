@@ -1,6 +1,7 @@
 package com.daily.dailychineseculture.controller;
 
 import com.daily.dailychineseculture.common.ResponseResult;
+import com.daily.dailychineseculture.dto.AppendCampPlanRequest;
 import com.daily.dailychineseculture.dto.CampOptionDTO;
 import com.daily.dailychineseculture.dto.CampPlanDTO;
 import com.daily.dailychineseculture.dto.CampPlanSaveDayDTO;
@@ -96,5 +97,18 @@ public class CampPlanController {
     public ResponseResult<String> saveDay(@Valid @RequestBody CampPlanSaveDayDTO request) {
         campPlanService.saveDayPlan(request);
         return ResponseResult.success("保存成功");
+    }
+
+    /**
+     * 追加一天排课
+     * POST /api/admin/camp-plans/append
+     *
+     * @param request 请求体，包含 campId
+     * @return 统一响应结果，包含新增的排课计划（含 planId）
+     */
+    @PostMapping("/append")
+    public ResponseResult<CampPlanDTO> appendDay(@RequestBody AppendCampPlanRequest request) {
+        CampPlanDTO result = campPlanService.appendDay(request.getCampId());
+        return ResponseResult.success("追加成功", result);
     }
 }

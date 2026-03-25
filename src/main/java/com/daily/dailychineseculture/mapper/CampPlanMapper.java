@@ -6,6 +6,7 @@ import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
 
+import java.util.Date;
 import java.util.List;
 
 /**
@@ -20,6 +21,22 @@ public interface CampPlanMapper {
      * @return 排课计划列表
      */
     List<CampPlanDTO> selectCampPlansByCampId(@Param("campId") Integer campId);
+
+    /**
+     * 查询某营期下的最大 day_index
+     * @param campId 营期 ID
+     * @return 最大 day_index，如果没有记录返回 null
+     */
+    @Select("SELECT MAX(day_index) FROM t_camp_plan WHERE camp_id = #{campId}")
+    Integer selectMaxDayIndexByCampId(@Param("campId") Integer campId);
+
+    /**
+     * 查询某营期下最晚的 plan_date
+     * @param campId 营期 ID
+     * @return 最晚的 plan_date，如果没有记录返回 null
+     */
+    @Select("SELECT MAX(plan_date) FROM t_camp_plan WHERE camp_id = #{campId}")
+    Date selectMaxPlanDateByCampId(@Param("campId") Integer campId);
 
     /**
      * 检查营期是否已有排课计划
