@@ -3,7 +3,10 @@ package com.daily.dailychineseculture.service;
 import com.daily.dailychineseculture.dto.DutyApplicationReviewDTO;
 import com.daily.dailychineseculture.vo.AdminDutyApplicationListItemVO;
 import com.daily.dailychineseculture.vo.AdminDutyApplicationStatsVO;
+import com.daily.dailychineseculture.vo.AdminListItemVO;
 import com.github.pagehelper.PageInfo;
+
+import java.util.List;
 
 /**
  * 管理端权限申请服务接口
@@ -46,4 +49,13 @@ public interface AdminDutyApplicationService {
      * @param reviewDTO    审批请求DTO
      */
     void reviewApplication(Long reviewerId, String currentRole, DutyApplicationReviewDTO reviewDTO);
+
+    /**
+     * 查询管理人员列表
+     * 实现数据隔离：非超级管理员只能看到自己角色权限范围内的管理员
+     *
+     * @param currentRole 当前登录管理员角色
+     * @return 管理人员列表
+     */
+    List<AdminListItemVO> getAdminList(String currentRole);
 }

@@ -9,6 +9,7 @@ import com.daily.dailychineseculture.mapper.DutyAssignmentMapper;
 import com.daily.dailychineseculture.service.AdminDutyApplicationService;
 import com.daily.dailychineseculture.vo.AdminDutyApplicationListItemVO;
 import com.daily.dailychineseculture.vo.AdminDutyApplicationStatsVO;
+import com.daily.dailychineseculture.vo.AdminListItemVO;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -167,5 +168,26 @@ public class AdminDutyApplicationServiceImpl implements AdminDutyApplicationServ
                 }
             }
         }
+    }
+
+    /**
+     * 查询管理人员列表
+     * 实现数据隔离：非超级管理员只能看到自己角色权限范围内的管理员
+     *
+     * @param currentRole 当前登录管理员角色
+     * @return 管理人员列表
+     */
+    @Override
+    public List<AdminListItemVO> getAdminList(String currentRole) {
+        // ========== 数据隔离逻辑 ==========
+        // SUPER_ADMIN 可以看到所有管理员
+        // 其他角色只能看到与自己角色匹配的管理员
+        String dutyTypeFilter = null;
+        if (!SUPER_ADMIN.equals(currentRole)) {
+            // 非超级管理员：强制过滤为自己的角色类型
+            dutyTypeFilter = currentRole;
+        }
+
+        return dutyAssignmentMapper.selectAdminList(dutyTypeFilter);
     }
 }

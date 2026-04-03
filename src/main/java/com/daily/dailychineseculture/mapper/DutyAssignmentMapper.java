@@ -1,11 +1,13 @@
 package com.daily.dailychineseculture.mapper;
 
 import com.daily.dailychineseculture.entity.DutyAssignment;
+import com.daily.dailychineseculture.vo.AdminListItemVO;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
 
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -96,4 +98,28 @@ public interface DutyAssignmentMapper {
      */
     @Insert("INSERT INTO t_duty_assignment (user_id, duty_type) VALUES (#{userId}, #{dutyType})")
     int insertAssignment(@Param("userId") Long userId, @Param("dutyType") String dutyType);
+
+    /**
+     * 查询管理人员列表（带身份隔离）
+     * JOIN t_user 表获取管理员的 nickname 和 account
+     *
+     * @param dutyTypeFilter 角色过滤条件（非 SUPER_ADMIN 时传入具体角色，SUPER_ADMIN 传 null）
+     * @return 管理人员列表
+     */
+    @Select("<script>" +
+            "SELECT " +
+            "  da.user_id AS userId, " +
+            "  u.nickname AS nickname, " +
+            "  u.account AS account, " +
+            "  da.duty_type AS dutyType, " +
+            "  da.start_time AS assignTime " +
+            "FROM t_duty_assignment da " +
+            "LEFT JOIN t_user u ON da.user_id = u.user_id " +
+            "WHERE (da.end_time IS NULL OR da.end_time > NOW()) " +
+            "<if test='dutyTypeFilter != null'>" +
+            "  AND da.duty_type = #{dutyTypeFilter} " +
+            "</if>" +
+            "ORDER BY da.start_time DESC " +
+            "</script>")
+    List<AdminListItemVO> selectAdminList(@Param("dutyTypeFilter") String dutyTypeFilter);
 }
