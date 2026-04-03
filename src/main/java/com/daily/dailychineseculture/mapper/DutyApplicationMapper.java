@@ -67,4 +67,26 @@ public interface DutyApplicationMapper {
             "SET status = #{status}, update_time = NOW() " +
             "WHERE apply_id = #{applyId}")
     int updateStatus(DutyApplication application);
+
+    /**
+     * 审批流转更新（更新审批状态、审核备注、审核人、审核时间）
+     * 用于管理端审批接口
+     *
+     * @param applyId     申请ID
+     * @param status      审批状态（1-通过, 2-拒绝）
+     * @param auditRemark 审核备注
+     * @param reviewerId  审核人ID
+     * @return 影响行数
+     */
+    @Update("UPDATE t_duty_application " +
+            "SET status = #{status}, " +
+            "    audit_remark = #{auditRemark}, " +
+            "    reviewer_id = #{reviewerId}, " +
+            "    review_time = NOW(), " +
+            "    update_time = NOW() " +
+            "WHERE apply_id = #{applyId}")
+    int updateForReview(@Param("applyId") Integer applyId,
+                         @Param("status") Integer status,
+                         @Param("auditRemark") String auditRemark,
+                         @Param("reviewerId") Long reviewerId);
 }

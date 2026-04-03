@@ -1,6 +1,7 @@
 package com.daily.dailychineseculture.controller;
 
 import com.daily.dailychineseculture.common.ResponseResult;
+import com.daily.dailychineseculture.dto.DutyApplicationReviewDTO;
 import com.daily.dailychineseculture.service.AdminDutyApplicationService;
 import com.daily.dailychineseculture.vo.AdminDutyApplicationListItemVO;
 import com.daily.dailychineseculture.vo.AdminDutyApplicationStatsVO;
@@ -125,6 +126,73 @@ public class AdminDutyApplicationController {
             return ResponseResult.success(pageInfo);
         } catch (Exception e) {
             return ResponseResult.error(500, "获取列表数据失败：" + e.getMessage());
+        }
+    }
+
+    /**
+     * 审批流转接口（通过/拒绝）
+     * 
+     * 接口路径：POST /api/admin/duty-application/review
+     * 
+     * 请求体：
+     * {
+     *   "applyId": 16,
+     *   "status": 1,          // 1-通过, 2-拒绝
+     *   "auditRemark": "同意！" // 拒绝时必填，通过时选填
+     * }
+     * 
+     * 数据隔离逻辑：
+     * - SUPER_ADMIN：可审批所有申请
+     * - 其他角色：只能审批 duty_type 与自己角色匹配的申请
+     * 
+     * 成功响应：
+     * {
+     *   "code": 200,
+     *   "message": "审批完成",
+     *   "data": null
+     * }
+     */
+    @PostMapping("/review")
+    public ResponseResult<Void> reviewApplication(
+            HttpServletRequest request,
+            @RequestBody DutyApplicationReviewDTO reviewDTO) {
+
+        try {
+            // 从拦截器注入的上下文中获取当前管理员信息
+            Long userId = (Long) request.getAttribute("userId");
+            String currentRole = (String) request.getAttribute("currentRole");
+
+            // 校验用户信息
+            if (userId == null) {
+                return ResponseResult.error(403, "无法获取当前用户ID");
+            }
+            if (currentRole == null || currentRole.trim().isEmpty()) {
+                return ResponseResult.error(403, "无法获取当前用户角色");
+            }
+
+            // 参数校验
+            if (reviewDTO == null) {
+                return ResponseResult.error(400, "请求参数不能为空");
+            }
+            if (reviewDTO.getApplyId() == null) {
+                return ResponseResult.error(400, "申请ID不能为空");
+            }
+            if (reviewDTO.getStatus() == null) {
+                return ResponseResult.error(400, "审批状态不能为空");
+            }
+            if (reviewDTO.getStatus() != 1 && reviewDTO.getStatus() != 2) {
+                return ResponseResult.error(400, "审批状态只能为1(通过)或2(拒绝)");
+            }
+
+            // 调用服务层执行审批
+            adminDutyApplicationService.reviewApplication(userId, currentRole, reviewDTO);
+
+            return ResponseResult.success("审批完成", null);
+        } catch (RuntimeException e) {
+            // 业务异常（越权、状态不对等）返回 400
+            return ResponseResult.error(400, e.getMessage());
+        } catch (Exception e) {
+            return ResponseResult.error(500, "审批处理失败：" + e.getMessage());
         }
     }
 }

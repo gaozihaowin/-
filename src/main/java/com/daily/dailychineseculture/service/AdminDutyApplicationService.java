@@ -1,5 +1,6 @@
 package com.daily.dailychineseculture.service;
 
+import com.daily.dailychineseculture.dto.DutyApplicationReviewDTO;
 import com.daily.dailychineseculture.vo.AdminDutyApplicationListItemVO;
 import com.daily.dailychineseculture.vo.AdminDutyApplicationStatsVO;
 import com.github.pagehelper.PageInfo;
@@ -35,4 +36,14 @@ public interface AdminDutyApplicationService {
             Integer size,
             Integer status,
             String dutyType);
+
+    /**
+     * 审批流转（通过/拒绝）
+     * 包含数据隔离校验、状态防呆、事务控制
+     *
+     * @param reviewerId   当前审核人ID
+     * @param currentRole  当前审核人角色
+     * @param reviewDTO    审批请求DTO
+     */
+    void reviewApplication(Long reviewerId, String currentRole, DutyApplicationReviewDTO reviewDTO);
 }

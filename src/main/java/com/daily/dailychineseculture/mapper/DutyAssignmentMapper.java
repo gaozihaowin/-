@@ -1,6 +1,7 @@
 package com.daily.dailychineseculture.mapper;
 
 import com.daily.dailychineseculture.entity.DutyAssignment;
+import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
@@ -69,28 +70,30 @@ public interface DutyAssignmentMapper {
     Map<String, Object> selectById(@Param("assignmentId") Integer assignmentId);
     
     /**
-     * 校验用户是否已拥有某个权限（支持 campId 精准匹配）
+     * 校验用户是否已拥有某个权限（全局权限）
      * 用于权限申请的防重复授权校验
      * 
-     * @param userId 用户 ID
+     * @param userId   用户 ID
      * @param dutyType 权限类型
-     * @param campId 营期 ID（可为 null）
      * @return 职位分配信息，如果存在则返回记录，否则返回 null
      */
-    @Select("<script>" +
-            "SELECT * FROM t_duty_assignment " +
+    @Select("SELECT * FROM t_duty_assignment " +
             "WHERE user_id = #{userId} " +
             "AND duty_type = #{dutyType} " +
-            "<if test='campId != null'>" +
-            "AND camp_id = #{campId} " +
-            "</if>" +
-            "<if test='campId == null'>" +
-            "AND camp_id IS NULL " +
-            "</if>" +
             "AND (end_time IS NULL OR end_time > NOW()) " +
-            "LIMIT 1" +
-            "</script>")
-    DutyAssignment selectByUserIdDutyTypeAndCampId(@Param("userId") Long userId, 
-                                                    @Param("dutyType") String dutyType, 
-                                                    @Param("campId") Integer campId);
+            "LIMIT 1")
+    DutyAssignment selectByUserIdAndDutyTypeForReview(@Param("userId") Long userId, 
+                                                       @Param("dutyType") String dutyType);
+
+    /**
+     * 插入授权记录（发牌）
+     * 用于审批通过后向 t_duty_assignment 表插入数据
+     * 业务规则：所有管理员均为全局权限，不再维护 camp_id
+     *
+     * @param userId   用户ID
+     * @param dutyType 权限类型
+     * @return 影响行数
+     */
+    @Insert("INSERT INTO t_duty_assignment (user_id, duty_type) VALUES (#{userId}, #{dutyType})")
+    int insertAssignment(@Param("userId") Long userId, @Param("dutyType") String dutyType);
 }
