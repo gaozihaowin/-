@@ -81,7 +81,10 @@ public class WebConfig implements WebMvcConfigurer {
                     "/webjars/**",                   // WebJars 资源
                     
                     // ========== OPTIONS 预检请求 ==========
-                    "//**"                          // 允许跨域 OPTIONS 请求
+                    "//**",                         // 允许跨域 OPTIONS 请求
+                    
+                    // ========== 权限申请接口（临时测试） ==========
+                    "/duty-application/**"          // 权限申请接口（小程序端调用）
                 );
                 
         // 注册 PC 端后台管理鉴权拦截器

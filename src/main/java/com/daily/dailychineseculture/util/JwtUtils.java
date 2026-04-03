@@ -4,9 +4,13 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
 
 import javax.crypto.SecretKey;
+import java.nio.charset.StandardCharsets;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -21,8 +25,14 @@ import java.util.Map;
 @Component
 public class JwtUtils {
     
-    // JWT密钥（生产环境应从配置文件读取）
-    private static final SecretKey SECRET_KEY = Keys.secretKeyFor(SignatureAlgorithm.HS256);
+    private static final Logger logger = LoggerFactory.getLogger(JwtUtils.class);
+
+    // 固化密钥字符串（必须足够长，至少256位用于HS256算法）
+    // 生产环境建议从配置文件读取，格式：@Value("${jwt.secret}")
+    private static final String SECRET_KEY_STRING = "DailyChineseCultureSecretKey1234567890abcdefghijklmnopqrstuv";
+    
+    // 基于固定字符串生成 SecretKey 对象
+    private static final SecretKey SECRET_KEY = Keys.hmacShaKeyFor(SECRET_KEY_STRING.getBytes(StandardCharsets.UTF_8));
     
     // token过期时间（7天）
     private static final long EXPIRATION_TIME = 604800000;
@@ -106,6 +116,7 @@ public class JwtUtils {
             Claims claims = parseToken(token);
             return claims.get("userId", Long.class);
         } catch (Exception e) {
+            logger.error("解析用户ID失败: {}", e.getMessage());
             throw new RuntimeException("Token解析失败: " + e.getMessage());
         }
     }
@@ -174,19 +185,45 @@ public class JwtUtils {
     /**
      * 解析token获取Claims
      * 
-     * @param token JWT token
+     * @param token JWT token（可带或不带 Bearer 前缀）
      * @return Claims对象
+     * @throws RuntimeException 当token无效、过期或签名不匹配时抛出
      */
     private Claims parseToken(String token) {
-        if (token != null && token.startsWith("Bearer ")) {
-            token = token.substring(7);
+        if (!StringUtils.hasText(token)) {
+            throw new RuntimeException("Token为空");
         }
-        
-        return Jwts.parserBuilder()
-                .setSigningKey(SECRET_KEY)
-                .build()
-                .parseClaimsJws(token)
-                .getBody();
+            
+        // 规范化：剥离 "Bearer " 前缀（不区分大小写）
+        String pureToken = token;
+        if (token.toLowerCase().startsWith("bearer ")) {
+            pureToken = token.substring(7);
+        }
+            
+        // 校验纯净Token是否有效
+        if (!StringUtils.hasText(pureToken)) {
+            throw new RuntimeException("Token格式无效");
+        }
+    
+        try {
+            return Jwts.parserBuilder()
+                    .setSigningKey(SECRET_KEY)
+                    .build()
+                    .parseClaimsJws(pureToken)
+                    .getBody();
+        } catch (io.jsonwebtoken.ExpiredJwtException e) {
+            logger.warn("Token已过期: {}", e.getMessage());
+            throw new RuntimeException("Token已过期，请重新登录");
+        } catch (io.jsonwebtoken.security.SignatureException e) {
+            logger.error("Token签名验证失败: {}", e.getMessage());
+            throw new RuntimeException("Token签名无效");
+        } catch (io.jsonwebtoken.MalformedJwtException e) {
+            logger.error("Token格式错误: {}", e.getMessage());
+            throw new RuntimeException("Token格式错误");
+        } catch (Exception e) {
+            logger.error("Token解析异常: {}", e.getMessage());
+            throw new RuntimeException("Token解析失败: " + e.getMessage());
+        }
     }
     
     /**

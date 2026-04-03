@@ -67,4 +67,30 @@ public interface DutyAssignmentMapper {
             "LEFT JOIN t_camp c ON da.camp_id = c.camp_id " +
             "WHERE da.assignment_id = #{assignmentId}")
     Map<String, Object> selectById(@Param("assignmentId") Integer assignmentId);
+    
+    /**
+     * 校验用户是否已拥有某个权限（支持 campId 精准匹配）
+     * 用于权限申请的防重复授权校验
+     * 
+     * @param userId 用户 ID
+     * @param dutyType 权限类型
+     * @param campId 营期 ID（可为 null）
+     * @return 职位分配信息，如果存在则返回记录，否则返回 null
+     */
+    @Select("<script>" +
+            "SELECT * FROM t_duty_assignment " +
+            "WHERE user_id = #{userId} " +
+            "AND duty_type = #{dutyType} " +
+            "<if test='campId != null'>" +
+            "AND camp_id = #{campId} " +
+            "</if>" +
+            "<if test='campId == null'>" +
+            "AND camp_id IS NULL " +
+            "</if>" +
+            "AND (end_time IS NULL OR end_time > NOW()) " +
+            "LIMIT 1" +
+            "</script>")
+    DutyAssignment selectByUserIdDutyTypeAndCampId(@Param("userId") Long userId, 
+                                                    @Param("dutyType") String dutyType, 
+                                                    @Param("campId") Integer campId);
 }
