@@ -3,6 +3,8 @@ package com.daily.dailychineseculture.mapper;
 import com.daily.dailychineseculture.entity.DutyApplication;
 import org.apache.ibatis.annotations.*;
 
+import java.util.List;
+
 /**
  * 权限申请 Mapper
  */
@@ -43,4 +45,26 @@ public interface DutyApplicationMapper {
      */
     @Select("SELECT * FROM t_duty_application WHERE apply_id = #{applyId}")
     DutyApplication selectById(@Param("applyId") Integer applyId);
+
+    /**
+     * 查询用户的所有申请记录（按创建时间倒序）
+     *
+     * @param userId 用户ID
+     * @return 申请记录列表
+     */
+    @Select("SELECT * FROM t_duty_application " +
+            "WHERE user_id = #{userId} " +
+            "ORDER BY create_time DESC")
+    List<DutyApplication> selectByUserId(@Param("userId") Long userId);
+
+    /**
+     * 更新申请状态
+     *
+     * @param application 权限申请实体（包含 applyId 和 status）
+     * @return 影响行数
+     */
+    @Update("UPDATE t_duty_application " +
+            "SET status = #{status}, update_time = NOW() " +
+            "WHERE apply_id = #{applyId}")
+    int updateStatus(DutyApplication application);
 }

@@ -44,6 +44,11 @@ public class DutyApplication {
     private Integer status;
 
     /**
+     * 审核备注（审核通过/拒绝时的备注信息）
+     */
+    private String auditRemark;
+
+    /**
      * 创建时间
      */
     private Date createTime;
