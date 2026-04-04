@@ -1,6 +1,8 @@
 package com.daily.dailychineseculture.dto;
 
 import lombok.Data;
+
+import java.util.Date;
 import java.util.List;
 
 /**
@@ -34,14 +36,20 @@ public class HomeworkListDTO {
         private String name;
 
         /**
-         * 是否优秀作业
+         * 是否小组优秀作业
          */
-        private Boolean isExcellent;
+        private Integer isSmallGroupExcellent; // 0否，1是
+
+
+        /**
+         * 是否大组优秀作业
+         */
+        private Integer isBigGroupExcellent;   // 0否，1是
 
         /**
          * 提交时间
          */
-        private String submitTime;
+        private Date submitTime;
 
         /**
          * 所属分组
@@ -50,10 +58,11 @@ public class HomeworkListDTO {
 
         public HomeworkItem() {}
 
-        public HomeworkItem(Integer homeworkId, String name, Boolean isExcellent, String submitTime, String organization) {
+        public HomeworkItem(Integer homeworkId, String name, Integer isSmallGroupExcellent, Integer isBigGroupExcellent, Date submitTime, String organization) {
             this.homeworkId = homeworkId;
             this.name = name;
-            this.isExcellent = isExcellent;
+            this.isSmallGroupExcellent = isSmallGroupExcellent;
+            this.isBigGroupExcellent = isBigGroupExcellent;
             this.submitTime = submitTime;
             this.organization = organization;
         }
