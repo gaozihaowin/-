@@ -34,7 +34,8 @@ public class UserSearchController {
                 return ResponseResult.error("搜索关键词至少需要2个字符");
             }
 
-            List<Map<String, Object>> users = volunteerManageMapper.searchUsers(keyword.trim(), currentUserId);
+            // 搜索用户时不排除自己
+            List<Map<String, Object>> users = volunteerManageMapper.searchUsers(keyword.trim(), null);
             return ResponseResult.success(users);
         } catch (Exception e) {
             e.printStackTrace();
