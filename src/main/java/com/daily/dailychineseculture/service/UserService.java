@@ -410,21 +410,6 @@ public class UserService {
     }
 
     /**
-     * 退出担当（更新志愿者服务结束时间）
-     */
-    public boolean quitVolunteerDuty(Long userId, Integer assignmentId) {
-        // 检查用户是否有该职责任命
-        int exists = userMapper.checkAssignmentExists(assignmentId, userId);
-        if (exists == 0) {
-            return false; // 职责任命不存在或不属于该用户
-        }
-
-        // 更新服务结束时间
-        int result = userMapper.updateVolunteerEndTime(assignmentId, userId);
-        return result > 0;
-    }
-
-    /**
      * 获取志愿者统计信息
      */
     public VolunteerStatsDTO getVolunteerStats(Long userId) {
@@ -746,8 +731,7 @@ public class UserService {
                 : "https://img.icons8.com/color/96/person-male.png");
 
             // 3. 判断当前身份（默认学员端）
-            boolean isVolunteer = isVolunteer(userId);
-            profileDTO.setCurrentIdentity(isVolunteer ? "志愿者端" : "学员端");
+            profileDTO.setCurrentIdentity("学员端");
 
             // 4. 组装统计指标列表
             java.util.List<com.daily.dailychineseculture.dto.UserStatsItem> statsList = 

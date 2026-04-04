@@ -22,64 +22,250 @@ public class HomeworkServiceImpl implements HomeworkService {
     private VolunteerManageMapper volunteerManageMapper;
 
     /**
-     * 获取作业列表（支持搜索）
+     * 获取作业列表
      */
     @Override
-    public HomeworkListDTO getHomeworkList(Long userId, String type, Integer id, String status, String date, String searchKeyword) {
-        // 检查权限
-        checkVolunteerAuth(userId, type, id);
+    public HomeworkListDTO getHomeworkList(Long userId, String type, Integer id, String status, String date) {
+        try {
+            // 检查权限
+            checkVolunteerAuth(userId, type, id);
 
-        // 获取学员ID列表
-        List<Long> studentIds = homeworkMapper.getStudentIdsByScope(type, id);
+            // 获取学员ID列表
+            List<Long> studentIds = homeworkMapper.getStudentIdsByScope(type, id);
 
-        HomeworkListDTO result = new HomeworkListDTO();
-        result.setList(new ArrayList<>());
-        result.setTotal(0);
+            HomeworkListDTO result = new HomeworkListDTO();
+            result.setList(new ArrayList<>());
+            result.setTotal(0);
 
-        if (studentIds.isEmpty()) {
-            return result;
-        }
-
-        // 获取作业列表
-        List<Map<String, Object>> homeworkList = homeworkMapper.getHomeworkList(studentIds, status, date,searchKeyword);
-
-        List<HomeworkListDTO.HomeworkItem> items = new ArrayList<>();
-        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss"); // 精确到秒
-
-        for (Map<String, Object> item : homeworkList) {
-            Integer homeworkId = (Integer) item.get("homeworkId");
-            Long userIdFromDb = item.get("userId") != null ? ((Number) item.get("userId")).longValue() : null;
-            String name = (String) item.get("name");
-            // 确保名称不为空，处理null和空字符串的情况
-            if (name == null || name.isEmpty()) {
-                name = userIdFromDb != null ? "学员" + userIdFromDb : "学员" + homeworkId;
+            if (studentIds.isEmpty()) {
+                return result;
             }
 
-            // 处理 is_excellent 字段
-            Boolean isExcellent = false;
-            Object isExcellentObj = item.get("isExcellent");
-            if (isExcellentObj != null) {
-                isExcellent = (Boolean) isExcellentObj;
+            // 获取作业列表
+            List<Map<String, Object>> homeworkList = homeworkMapper.getHomeworkList(studentIds, status, date);
+
+            List<HomeworkListDTO.HomeworkItem> items = new ArrayList<>();
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss"); // 精确到秒
+
+            for (Map<String, Object> item : homeworkList) {
+                Integer homeworkId = (Integer) item.get("homeworkId");
+                Long userIdFromDb = item.get("userId") != null ? ((Number) item.get("userId")).longValue() : null;
+                String name = (String) item.get("name");
+                // 确保名称不为空，处理null和空字符串的情况
+                if (name == null || name.isEmpty()) {
+                    name = userIdFromDb != null ? "学员" + userIdFromDb : "学员" + homeworkId;
+                }
+
+                // 处理优秀状态字段
+                Integer isSmallGroupExcellent = 0;
+                Object isSmallGroupExcellentObj = item.get("isSmallGroupExcellent");
+                if (isSmallGroupExcellentObj != null) {
+                    if (isSmallGroupExcellentObj instanceof Boolean) {
+                        isSmallGroupExcellent = ((Boolean) isSmallGroupExcellentObj) ? 1 : 0;
+                    } else if (isSmallGroupExcellentObj instanceof Number) {
+                        isSmallGroupExcellent = ((Number) isSmallGroupExcellentObj).intValue();
+                    }
+                }
+
+                Integer isBigGroupExcellent = 0;
+                Object isBigGroupExcellentObj = item.get("isBigGroupExcellent");
+                if (isBigGroupExcellentObj != null) {
+                    if (isBigGroupExcellentObj instanceof Boolean) {
+                        isBigGroupExcellent = ((Boolean) isBigGroupExcellentObj) ? 1 : 0;
+                    } else if (isBigGroupExcellentObj instanceof Number) {
+                        isBigGroupExcellent = ((Number) isBigGroupExcellentObj).intValue();
+                    }
+                }
+
+                // 处理 submit_time 字段
+                Date submitTime = null;
+                Object submitTimeObj = item.get("submitTime");
+                if (submitTimeObj != null) {
+                    if (submitTimeObj instanceof java.util.Date) {
+                        submitTime = (java.util.Date) submitTimeObj;
+                    } else if (submitTimeObj instanceof java.time.LocalDateTime) {
+                        java.time.LocalDateTime localDateTime = (java.time.LocalDateTime) submitTimeObj;
+                        submitTime = java.util.Date.from(localDateTime.atZone(java.time.ZoneId.systemDefault()).toInstant());
+                    }
+                }
+
+                // 获取组织信息
+                String campName = (String) item.get("campName"); // 正确：使用驼峰形式
+                String className = (String) item.get("className");
+                String bigGroupName = (String) item.get("bigGroupName");
+                String smallGroupName = (String) item.get("smallGroupName");
+
+                List<String> organizationParts = new ArrayList<>();
+                if (campName != null && !campName.isEmpty()) organizationParts.add(campName);
+                if (className != null && !className.isEmpty()) organizationParts.add(className);
+                if (bigGroupName != null && !bigGroupName.isEmpty()) organizationParts.add(bigGroupName);
+                if (smallGroupName != null && !smallGroupName.isEmpty()) organizationParts.add(smallGroupName);
+
+                String organization = organizationParts.isEmpty() ? "未分组" : String.join("-", organizationParts);
+
+                items.add(new HomeworkListDTO.HomeworkItem(homeworkId, name, isSmallGroupExcellent, isBigGroupExcellent, submitTime, organization));
+            }
+
+            result.setList(items);
+            result.setTotal(items.size());
+
+            return result;
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw e;
+        }
+    }
+
+    /**
+     * 标记小组优秀作业
+     */
+    @Override
+    public boolean markSmallGroupExcellent(Integer homeworkId, Integer isSmallGroupExcellent) {
+        try {
+            // 检查作业是否存在
+            int exists = homeworkMapper.checkHomeworkExists(homeworkId);
+            if (exists == 0) {
+                return false;
+            }
+
+            // 当标记为小组优秀时，检查数量限制
+            if (isSmallGroupExcellent != null && isSmallGroupExcellent == 1) {
+                // 获取作业所属的小组ID
+                Integer smallGroupId = homeworkMapper.getSmallGroupIdByHomeworkId(homeworkId);
+                if (smallGroupId != null) {
+                    // 检查小组当前优秀作业数量
+                    int count = homeworkMapper.getSmallGroupExcellentCount(smallGroupId);
+                    if (count >= 2) {
+                        throw new RuntimeException("每个小组最多只能有2个小组优秀作业");
+                    }
+                }
+            }
+
+            // 当取消小组优秀时，自动取消大组优秀
+            if (isSmallGroupExcellent != null && isSmallGroupExcellent == 0) {
+                // 检查是否为大组优秀
+                Integer isBigGroupExcellent = homeworkMapper.checkBigGroupExcellent(homeworkId);
+                if (isBigGroupExcellent != null && isBigGroupExcellent == 1) {
+                    // 自动取消大组优秀
+                    homeworkMapper.markBigGroupExcellent(homeworkId, 0);
+                }
+            }
+
+            int result = homeworkMapper.markSmallGroupExcellent(homeworkId, isSmallGroupExcellent);
+            return result > 0;
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw e;
+        }
+    }
+
+    /**
+     * 标记大组优秀作业
+     */
+    @Override
+    public boolean markBigGroupExcellent(Integer homeworkId, Integer isBigGroupExcellent) {
+        try {
+            // 检查作业是否存在
+            int exists = homeworkMapper.checkHomeworkExists(homeworkId);
+            if (exists == 0) {
+                return false;
+            }
+
+            // 检查是否为小组优秀
+            Integer isSmallGroupExcellent = homeworkMapper.checkSmallGroupExcellent(homeworkId);
+            if (isBigGroupExcellent != null && isBigGroupExcellent == 1 && (isSmallGroupExcellent == null || isSmallGroupExcellent != 1)) {
+                throw new RuntimeException("只有小组优秀作业才能被评定为大组优秀");
+            }
+
+            // 当标记为大组优秀时，检查数量限制
+            if (isBigGroupExcellent != null && isBigGroupExcellent == 1) {
+                // 获取作业所属的大组ID
+                Integer bigGroupId = homeworkMapper.getBigGroupIdByHomeworkId(homeworkId);
+                if (bigGroupId != null) {
+                    // 检查大组当前优秀作业数量
+                    int count = homeworkMapper.getBigGroupExcellentCount(bigGroupId);
+                    if (count >= 2) {
+                        throw new RuntimeException("每个大组最多只能有2个大组优秀作业");
+                    }
+                }
+            }
+
+            int result = homeworkMapper.markBigGroupExcellent(homeworkId, isBigGroupExcellent);
+            return result > 0;
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw e;
+        }
+    }
+
+    /**
+     * 检查作业是否为小组优秀
+     */
+    @Override
+    public boolean checkSmallGroupExcellent(Integer homeworkId) {
+        try {
+            Integer result = homeworkMapper.checkSmallGroupExcellent(homeworkId);
+            return result != null && result == 1;
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw e;
+        }
+    }
+
+    /**
+     * 获取作业详情
+     */
+    @Override
+    public HomeworkDetailDTO getHomeworkDetail(Integer homeworkId) {
+        try {
+            Map<String, Object> detailMap = homeworkMapper.getHomeworkDetail(homeworkId);
+            if (detailMap == null) {
+                return null;
+            }
+
+            Integer homeworkIdFromDb = (Integer) detailMap.get("homeworkId");
+            Long userId = detailMap.get("userId") != null ? ((Number) detailMap.get("userId")).longValue() : null;
+            String studentName = (String) detailMap.get("name");
+            String content = (String) detailMap.get("content");
+
+            // 处理优秀状态字段
+            Integer isSmallGroupExcellent = 0;
+            Object isSmallGroupExcellentObj = detailMap.get("isSmallGroupExcellent");
+            if (isSmallGroupExcellentObj != null) {
+                if (isSmallGroupExcellentObj instanceof Boolean) {
+                    isSmallGroupExcellent = ((Boolean) isSmallGroupExcellentObj) ? 1 : 0;
+                } else if (isSmallGroupExcellentObj instanceof Number) {
+                    isSmallGroupExcellent = ((Number) isSmallGroupExcellentObj).intValue();
+                }
+            }
+
+            Integer isBigGroupExcellent = 0;
+            Object isBigGroupExcellentObj = detailMap.get("isBigGroupExcellent");
+            if (isBigGroupExcellentObj != null) {
+                if (isBigGroupExcellentObj instanceof Boolean) {
+                    isBigGroupExcellent = ((Boolean) isBigGroupExcellentObj) ? 1 : 0;
+                } else if (isBigGroupExcellentObj instanceof Number) {
+                    isBigGroupExcellent = ((Number) isBigGroupExcellentObj).intValue();
+                }
             }
 
             // 处理 submit_time 字段
-            String submitTimeStr = "";
-            Object submitTimeObj = item.get("submit_time");
+            Date submitTime = null;
+            Object submitTimeObj = detailMap.get("submitTime");
             if (submitTimeObj != null) {
                 if (submitTimeObj instanceof java.util.Date) {
-                    submitTimeStr = sdf.format((java.util.Date) submitTimeObj);
+                    submitTime = (java.util.Date) submitTimeObj;
                 } else if (submitTimeObj instanceof java.time.LocalDateTime) {
                     java.time.LocalDateTime localDateTime = (java.time.LocalDateTime) submitTimeObj;
-                    java.util.Date dateObj = java.util.Date.from(localDateTime.atZone(java.time.ZoneId.systemDefault()).toInstant());
-                    submitTimeStr = sdf.format(dateObj);
+                    submitTime = java.util.Date.from(localDateTime.atZone(java.time.ZoneId.systemDefault()).toInstant());
                 }
             }
 
             // 获取组织信息
-            String campName = (String) item.get("camp_name");
-            String className = (String) item.get("class_name");
-            String bigGroupName = (String) item.get("big_group_name");
-            String smallGroupName = (String) item.get("small_group_name");
+            String campName = (String) detailMap.get("campName"); // 正确：使用驼峰形式
+            String className = (String) detailMap.get("className");
+            String bigGroupName = (String) detailMap.get("bigGroupName");
+            String smallGroupName = (String) detailMap.get("smallGroupName");
 
             List<String> organizationParts = new ArrayList<>();
             if (campName != null && !campName.isEmpty()) organizationParts.add(campName);
@@ -89,131 +275,10 @@ public class HomeworkServiceImpl implements HomeworkService {
 
             String organization = organizationParts.isEmpty() ? "未分组" : String.join("-", organizationParts);
 
-            items.add(new HomeworkListDTO.HomeworkItem(homeworkId, name, isExcellent, submitTimeStr, organization));
-        }
-
-        result.setList(items);
-        result.setTotal(items.size());
-
-        return result;
-    }
-
-    /**
-     * 标记优秀作业
-     */
-    @Override
-    public boolean markExcellentHomework(Integer homeworkId, Boolean isExcellent) {
-        // 检查作业是否存在
-        int exists = homeworkMapper.checkHomeworkExists(homeworkId);
-        if (exists == 0) {
-            return false;
-        }
-
-        int result = homeworkMapper.markExcellentHomework(homeworkId, isExcellent);
-        return result > 0;
-    }
-
-    /**
-     * 获取作业详情
-     */
-    @Override
-    public HomeworkDetailDTO getHomeworkDetail(Integer homeworkId) {
-        Map<String, Object> homework = homeworkMapper.getHomeworkDetail(homeworkId);
-        if (homework == null) {
-            return null;
-        }
-
-        Integer homeworkIdResult = (Integer) homework.get("homework_id");
-        Long userId = ((Number) homework.get("user_id")).longValue();
-        String content = (String) homework.get("content");
-
-        // 获取学生姓名
-        String studentName = (String) homework.get("name");
-        if (studentName == null) studentName = "学员" + userId;
-
-        // 处理 is_excellent 字段
-        Boolean isExcellent = false;
-        Object isExcellentObj = homework.get("isExcellent");
-        if (isExcellentObj != null) {
-            isExcellent = (Boolean) isExcellentObj;
-        }
-
-        // 处理 submit_time 字段
-        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-        String submitTimeStr = "";
-        Object submitTimeObj = homework.get("submit_time");
-        if (submitTimeObj != null) {
-            if (submitTimeObj instanceof java.util.Date) {
-                submitTimeStr = sdf.format((java.util.Date) submitTimeObj);
-            } else if (submitTimeObj instanceof java.time.LocalDateTime) {
-                java.time.LocalDateTime localDateTime = (java.time.LocalDateTime) submitTimeObj;
-                java.util.Date dateObj = java.util.Date.from(localDateTime.atZone(java.time.ZoneId.systemDefault()).toInstant());
-                submitTimeStr = sdf.format(dateObj);
-            }
-        }
-
-        // 获取组织信息
-        String campName = (String) homework.get("camp_name");
-        String className = (String) homework.get("class_name");
-        String bigGroupName = (String) homework.get("big_group_name");
-        String smallGroupName = (String) homework.get("small_group_name");
-
-        List<String> organizationParts = new ArrayList<>();
-        if (campName != null && !campName.isEmpty()) organizationParts.add(campName);
-        if (className != null && !className.isEmpty()) organizationParts.add(className);
-        if (bigGroupName != null && !bigGroupName.isEmpty()) organizationParts.add(bigGroupName);
-        if (smallGroupName != null && !smallGroupName.isEmpty()) organizationParts.add(smallGroupName);
-
-        String organization = organizationParts.isEmpty() ? "未分配" : String.join("-", organizationParts);
-
-        if (content == null) {
-            content = "无作业内容";
-        }
-
-        return new HomeworkDetailDTO(homeworkIdResult, studentName, userId, organization,
-                submitTimeStr, isExcellent, content);
-    }
-
-    /**
-     * 检查志愿者权限
-     */
-    private void checkVolunteerAuth(Long userId, String type, Integer id) {
-        // 类型映射
-        Map<String, String> targetTypeMap = new HashMap<>();
-        targetTypeMap.put("class", "class");
-        targetTypeMap.put("bigGroup", "big_group");
-        targetTypeMap.put("big_group", "big_group");  // 添加下划线命名支持
-        targetTypeMap.put("smallGroup", "small_group");
-        targetTypeMap.put("small_group", "small_group");
-
-        String targetType = targetTypeMap.get(type);
-        if (targetType == null) {
-            throw new RuntimeException("无效的筛选类型");
-        }
-
-        Integer authCount = 0;
-
-        try {
-            switch (type) {
-                case "class":
-                    authCount = homeworkMapper.checkVolunteerAuth(userId, targetType, id);
-                    break;
-                case "bigGroup":
-                case "big_group":
-                    authCount = homeworkMapper.checkBigGroupAuth(userId, id);
-                    break;
-                case "smallGroup":
-                case "small_group":
-                    authCount = homeworkMapper.checkSmallGroupAuth(userId, id);
-                    break;
-            }
+            return new HomeworkDetailDTO(homeworkIdFromDb, studentName, userId, organization, submitTime, isSmallGroupExcellent, isBigGroupExcellent, content);
         } catch (Exception e) {
-            // 捕获类型转换异常
-            throw new RuntimeException("权限检查失败：" + e.getMessage());
-        }
-
-        if (authCount == null || authCount == 0) {
-            throw new RuntimeException("无权限访问该范围数据");
+            e.printStackTrace();
+            throw e;
         }
     }
 
@@ -221,134 +286,548 @@ public class HomeworkServiceImpl implements HomeworkService {
      * 获取作业统计数据
      */
     @Override
-    public Map<String, Object> getHomeworkStatistics(Long userId, String type, Integer id, String date, String searchKeyword) {
-        // 检查权限
-        checkVolunteerAuth(userId, type, id);
+    public Map<String, Object> getHomeworkStatistics(Long userId, String type, Integer id, String date) {
+        try {
+            // 检查权限
+            checkVolunteerAuth(userId, type, id);
 
-        // 获取学员ID列表
-        List<Long> studentIds = homeworkMapper.getStudentIdsByScope(type, id);
+            // 获取学员ID列表
+            List<Long> studentIds = homeworkMapper.getStudentIdsByScope(type, id);
 
-        // 确保包含当前用户（管理者）自己
-        if (!studentIds.contains(userId)) {
-            studentIds.add(userId);
-        }
-        // 根据搜索关键字过滤学员
-        if (searchKeyword != null && !searchKeyword.isEmpty()) {
-            studentIds = filterStudentsByKeyword(studentIds, searchKeyword);
-        }
+            Map<String, Object> statistics = new HashMap<>();
+            statistics.put("totalCount", studentIds.size());
+            statistics.put("completedCount", 0);
+            statistics.put("pendingCount", studentIds.size());
+            statistics.put("lateCount", 0);
+            statistics.put("completionRate", 0);
+            statistics.put("onTimeRate", 0);
+            statistics.put("hasHomework", false);
 
-        Map<String, Object> statistics = new HashMap<>();
-        statistics.put("totalCount", studentIds.size());
-        statistics.put("completedCount", 0);
-        statistics.put("pendingCount", studentIds.size());
-        statistics.put("lateCount", 0);
-        statistics.put("completionRate", 0);
-        statistics.put("onTimeRate", 0);
-        statistics.put("hasHomework", false);
+            Integer planId = homeworkMapper.getPlanIdByDate(date);
+            if (planId != null) {
+                statistics.put("hasHomework", true);
 
-        Integer planId = homeworkMapper.getPlanIdByDate(date);
-        if (planId != null) {
-            statistics.put("hasHomework", true);
+                if (!studentIds.isEmpty()) {
+                    // 获取已完成作业的人数
+                    int completedCount = homeworkMapper.getCompletedHomeworkCount(studentIds, date);
+                    statistics.put("completedCount", completedCount);
+                    statistics.put("pendingCount", studentIds.size() - completedCount);
 
-            if (!studentIds.isEmpty()) {
-                // 获取已交作业的学生名单（当天提交）
-                List<Map<String, Object>> submittedList = homeworkMapper.getSubmittedHomeworkList(studentIds, date);
-                // 获取迟交作业的学生名单（超过当天提交）
-                List<Map<String, Object>> lateList = homeworkMapper.getLateHomeworkList(studentIds, date);
-                // 获取未交作业的学生名单
-                List<Map<String, Object>> notSubmittedList = homeworkMapper.getNotSubmittedHomeworkList(studentIds, date);
+                    // 计算完成率
+                    double completionRate = studentIds.size() > 0 ? (double) completedCount / studentIds.size() * 100 : 0;
+                    statistics.put("completionRate", Math.round(completionRate * 100.0) / 100.0);
 
-                int onTimeCount = submittedList.size();
-                int lateCount = lateList.size();
-                int completedCount = onTimeCount + lateCount;
-                int pendingCount = notSubmittedList.size();
-                int totalCount = studentIds.size();
+                    // 获取已交作业的学生名单（当天提交）
+                    List<Map<String, Object>> submittedList = homeworkMapper.getSubmittedHomeworkList(studentIds, date);
+                    // 获取迟交作业的学生名单（超过当天提交）
+                    List<Map<String, Object>> lateList = homeworkMapper.getLateHomeworkList(studentIds, date);
 
-                int completionRate = totalCount > 0 ? (completedCount * 100) / totalCount : 0;
-                int onTimeRate = completedCount > 0 ? (onTimeCount * 100) / completedCount : 0;
-                statistics.put("completedCount", completedCount);
-                statistics.put("pendingCount", pendingCount);
-                statistics.put("lateCount", lateCount);
-                statistics.put("onTimeCount", onTimeCount);
-                statistics.put("completionRate", completionRate);
-                statistics.put("onTimeRate", onTimeRate);
+                    statistics.put("lateCount", lateList.size());
+
+                    // 计算按时提交率
+                    double onTimeRate = completedCount > 0 ? (double) (completedCount - lateList.size()) / completedCount * 100 : 0;
+                    statistics.put("onTimeRate", Math.round(onTimeRate * 100.0) / 100.0);
+                }
             }
-        }
 
-        return statistics;
+            return statistics;
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw e;
+        }
     }
 
     /**
      * 获取作业状态名单（已交/未交/迟交）
      */
     @Override
-    public Map<String, Object> getHomeworkStatusList(Long userId, String type, Integer id, String date,String searchKeyword) {
-        // 检查权限
-        checkVolunteerAuth(userId, type, id);
+    public Map<String, Object> getHomeworkStatusList(Long userId, String type, Integer id, String date) {
+        try {
+            // 检查权限
+            checkVolunteerAuth(userId, type, id);
 
-        // 获取学员ID列表
-        List<Long> studentIds = homeworkMapper.getStudentIdsByScope(type, id);
+            // 获取学员ID列表
+            List<Long> studentIds = homeworkMapper.getStudentIdsByScope(type, id);
 
-        // 确保包含当前用户（管理者）自己
-        if (!studentIds.contains(userId)) {
-            studentIds.add(userId);
+            Map<String, Object> result = new HashMap<>();
+            result.put("totalCount", studentIds.size());
+            result.put("submittedList", new ArrayList<>());
+            result.put("pendingList", new ArrayList<>());
+            result.put("lateList", new ArrayList<>());
+
+            if (studentIds.isEmpty()) {
+                return result;
+            }
+
+            // 获取已交作业的学生名单（当天提交）
+            List<Map<String, Object>> submittedList = homeworkMapper.getSubmittedHomeworkList(studentIds, date);
+            result.put("submittedList", submittedList);
+
+            // 获取迟交作业的学生名单（超过当天提交）
+            List<Map<String, Object>> lateList = homeworkMapper.getLateHomeworkList(studentIds, date);
+            result.put("lateList", lateList);
+
+            // 获取未交作业的学生名单
+            List<Map<String, Object>> pendingList = homeworkMapper.getPendingHomeworkList(studentIds, date);
+            result.put("pendingList", pendingList);
+
+            return result;
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw e;
         }
-        // 根据搜索关键字过滤学员
-        if (searchKeyword != null && !searchKeyword.isEmpty()) {
-            studentIds = filterStudentsByKeyword(studentIds, searchKeyword);
-        }
-
-        Map<String, Object> result = new HashMap<>();
-
-        // 获取营期计划信息
-        Integer planId = homeworkMapper.getPlanIdByDate(date);
-        Map<String, Object> campPlan = new HashMap<>();
-        campPlan.put("planId", planId);
-        campPlan.put("deadline", date); // 使用plan_date作为截止时间
-        result.put("campPlan", campPlan);
-
-        // 获取已交作业的学生名单（当天提交）
-        List<Map<String, Object>> submittedList = homeworkMapper.getSubmittedHomeworkList(studentIds, date);
-        result.put("submittedList", submittedList);
-
-        // 获取未交作业的学生名单
-        List<Map<String, Object>> notSubmittedList = homeworkMapper.getNotSubmittedHomeworkList(studentIds, date);
-        result.put("notSubmittedList", notSubmittedList);
-
-        // 获取迟交作业的学生名单（超过当天提交）
-        List<Map<String, Object>> lateList = homeworkMapper.getLateHomeworkList(studentIds, date);
-        result.put("lateList", lateList);
-
-        // 计算统计数据
-        int totalCount = studentIds.size();
-        int submittedCount = submittedList.size();
-        int notSubmittedCount = notSubmittedList.size();
-        int lateCount = lateList.size();
-        int onTimeCount = submittedCount; // 当天提交的都算按时
-
-        Map<String, Object> statistics = new HashMap<>();
-        statistics.put("totalCount", totalCount);
-        statistics.put("submittedCount", submittedCount);
-        statistics.put("notSubmittedCount", notSubmittedCount);
-        statistics.put("lateCount", lateCount);
-        statistics.put("onTimeCount", onTimeCount);
-        statistics.put("completionRate", totalCount > 0 ? (submittedCount * 100) / totalCount : 0);
-        statistics.put("onTimeRate", submittedCount > 0 ? (onTimeCount * 100) / submittedCount : 0);
-
-        result.put("statistics", statistics);
-
-        return result;
     }
 
     /**
-     * 根据搜索关键字过滤学员
+     * 获取作业层级列表（大组-小组-成员）
      */
-    private List<Long> filterStudentsByKeyword(List<Long> studentIds, String searchKeyword) {
-        if (studentIds.isEmpty() || searchKeyword == null || searchKeyword.isEmpty()) {
-            return studentIds;
+    @Override
+    public HomeworkHierarchyDTO getHomeworkHierarchyList(Long userId, String date, String status, String dutyType, Integer targetId) {
+        try {
+            // 打印日志，查看传入的参数
+            System.out.println("获取作业层级列表 - 用户ID: " + userId);
+            System.out.println("获取作业层级列表 - 日期: " + date);
+            System.out.println("获取作业层级列表 - 状态: " + status);
+            System.out.println("获取作业层级列表 - 职位类型: " + dutyType);
+            System.out.println("获取作业层级列表 - 目标ID: " + targetId);
+
+            HomeworkHierarchyDTO result = new HomeworkHierarchyDTO();
+            result.setList(new ArrayList<>());
+
+            // 根据职位类型和目标ID构建层级结构
+            Map<String, Object> scope = new HashMap<>();
+            if ("学委".equals(dutyType) || "检委".equals(dutyType)) {
+                // 学委/检委：显示大组下的所有小组列表
+                scope.put("bigGroupId", targetId);
+                // 获取大组名称
+                // 暂时使用默认名称
+                scope.put("bigGroupName", "大组" + targetId);
+                buildBigGroupHierarchy(result, scope);
+            } else if ("学班".equals(dutyType) || "检班".equals(dutyType)) {
+                // 学班/检班：显示班级下的大组-小组层级
+                scope.put("classId", targetId);
+                // 获取班级名称
+                // 暂时使用默认名称
+                scope.put("className", "班级" + targetId);
+                buildClassHierarchy(result, scope);
+            } else if ("学组".equals(dutyType) || "检组".equals(dutyType)) {
+                // 学组/检组：显示小组下的成员列表
+                scope.put("smallGroupId", targetId);
+                // 获取小组名称
+                // 暂时使用默认名称
+                scope.put("smallGroupName", "小组" + targetId);
+                buildSmallGroupHierarchy(result, scope);
+            }
+
+            System.out.println("获取作业层级列表 - 结果列表大小: " + result.getList().size());
+            return result;
+        } catch (Exception e) {
+            System.out.println("获取作业层级列表 - 错误: " + e.getMessage());
+            e.printStackTrace();
+            throw e;
+        }
+    }
+
+    /**
+     * 构建班级层级（学班/检班视角）
+     */
+    private void buildClassHierarchy(HomeworkHierarchyDTO result, Map<String, Object> scope) {
+        try {
+            // 安全获取classId，处理Long和Integer类型
+            Object classIdObj = scope.get("classId");
+            Long classId = null;
+            if (classIdObj instanceof Integer) {
+                classId = ((Integer) classIdObj).longValue();
+            } else if (classIdObj instanceof Long) {
+                classId = (Long) classIdObj;
+            }
+            if (classId != null) {
+                // 直接获取班级下的大组列表，不显示班级层级
+                List<Map<String, Object>> bigGroups = homeworkMapper.getBigGroupsByClass(classId.intValue());
+                for (Map<String, Object> bigGroup : bigGroups) {
+                    // 安全获取bigGroupId，处理Long和Integer类型
+                    Object bigGroupIdObj = bigGroup.get("bigGroupId");
+                    Long bigGroupId = null;
+                    if (bigGroupIdObj instanceof Integer) {
+                        bigGroupId = ((Integer) bigGroupIdObj).longValue();
+                    } else if (bigGroupIdObj instanceof Long) {
+                        bigGroupId = (Long) bigGroupIdObj;
+                    }
+                    String bigGroupName = (String) bigGroup.get("bigGroupName");
+                    HomeworkHierarchyDTO.HierarchyItem bigGroupItem = new HomeworkHierarchyDTO.HierarchyItem();
+                    bigGroupItem.setId(bigGroupId);
+                    bigGroupItem.setName(bigGroupName);
+                    bigGroupItem.setType("bigGroup");
+                    bigGroupItem.setParentId(null); // 直接作为根节点
+                    bigGroupItem.setChildren(new ArrayList<>());
+                    bigGroupItem.setExpandable(true);
+                    // 获取大组下的小组列表
+                    List<Map<String, Object>> smallGroups = homeworkMapper.getSmallGroupsByBigGroup(bigGroupId.intValue());
+                    for (Map<String, Object> smallGroup : smallGroups) {
+                        // 安全获取smallGroupId，处理Long和Integer类型
+                        Object smallGroupIdObj = smallGroup.get("smallGroupId");
+                        Long smallGroupId = null;
+                        if (smallGroupIdObj instanceof Integer) {
+                            smallGroupId = ((Integer) smallGroupIdObj).longValue();
+                        } else if (smallGroupIdObj instanceof Long) {
+                            smallGroupId = (Long) smallGroupIdObj;
+                        }
+                        String smallGroupName = (String) smallGroup.get("smallGroupName");
+                        HomeworkHierarchyDTO.HierarchyItem smallGroupItem = new HomeworkHierarchyDTO.HierarchyItem();
+                        smallGroupItem.setId(smallGroupId);
+                        smallGroupItem.setName(smallGroupName);
+                        smallGroupItem.setType("smallGroup");
+                        smallGroupItem.setParentId(bigGroupId);
+                        smallGroupItem.setChildren(new ArrayList<>());
+                        smallGroupItem.setExpandable(true);
+                        // 获取小组成员列表
+                        List<Map<String, Object>> members = homeworkMapper.getMembersBySmallGroup(smallGroupId.intValue());
+                        for (Map<String, Object> member : members) {
+                            Long memberUserId = ((Number) member.get("userId")).longValue();
+                            String memberName = (String) member.get("name");
+                            HomeworkHierarchyDTO.HierarchyItem memberItem = new HomeworkHierarchyDTO.HierarchyItem();
+                            memberItem.setId(memberUserId);
+                            memberItem.setName(memberName);
+                            memberItem.setType("member");
+                            memberItem.setParentId(smallGroupId);
+                            memberItem.setExpandable(false);
+                            smallGroupItem.getChildren().add(memberItem);
+                        }
+
+                        bigGroupItem.getChildren().add(smallGroupItem);
+                    }
+
+                    bigGroupItem.setExpandable(!bigGroupItem.getChildren().isEmpty());
+                    result.getList().add(bigGroupItem);
+                }
+            }
+        } catch (Exception e) {
+            System.out.println("构建班级层级 - 错误: " + e.getMessage());
+            e.printStackTrace();
+            throw e;
+        }
+    }
+
+    /**
+     * 构建大组层级（学委/检委视角）
+     */
+    private void buildBigGroupHierarchy(HomeworkHierarchyDTO result, Map<String, Object> scope) {
+        try {
+            // 安全获取bigGroupId，处理Long和Integer类型
+            Object bigGroupIdObj = scope.get("bigGroupId");
+            Long bigGroupId = null;
+            if (bigGroupIdObj instanceof Integer) {
+                bigGroupId = ((Integer) bigGroupIdObj).longValue();
+            } else if (bigGroupIdObj instanceof Long) {
+                bigGroupId = (Long) bigGroupIdObj;
+            }
+            if (bigGroupId != null) {
+                // 直接获取大组下的小组列表，不显示大组层级
+                List<Map<String, Object>> smallGroups = homeworkMapper.getSmallGroupsByBigGroup(bigGroupId.intValue());
+                for (Map<String, Object> smallGroup : smallGroups) {
+                    // 安全获取smallGroupId，处理Long和Integer类型
+                    Object smallGroupIdObj = smallGroup.get("smallGroupId");
+                    Long smallGroupId = null;
+                    if (smallGroupIdObj instanceof Integer) {
+                        smallGroupId = ((Integer) smallGroupIdObj).longValue();
+                    } else if (smallGroupIdObj instanceof Long) {
+                        smallGroupId = (Long) smallGroupIdObj;
+                    }
+                    String smallGroupName = (String) smallGroup.get("smallGroupName");
+                    HomeworkHierarchyDTO.HierarchyItem smallGroupItem = new HomeworkHierarchyDTO.HierarchyItem();
+                    smallGroupItem.setId(smallGroupId);
+                    smallGroupItem.setName(smallGroupName);
+                    smallGroupItem.setType("smallGroup");
+                    smallGroupItem.setParentId(null); // 直接作为根节点
+                    smallGroupItem.setChildren(new ArrayList<>());
+                    smallGroupItem.setExpandable(true);
+                    // 获取小组成员列表
+                    List<Map<String, Object>> members = homeworkMapper.getMembersBySmallGroup(smallGroupId.intValue());
+                    for (Map<String, Object> member : members) {
+                        Long memberUserId = ((Number) member.get("userId")).longValue();
+                        String memberName = (String) member.get("name");
+                        HomeworkHierarchyDTO.HierarchyItem memberItem = new HomeworkHierarchyDTO.HierarchyItem();
+                        memberItem.setId(memberUserId);
+                        memberItem.setName(memberName);
+                        memberItem.setType("member");
+                        memberItem.setParentId(smallGroupId);
+                        memberItem.setExpandable(false);
+                        smallGroupItem.getChildren().add(memberItem);
+                    }
+
+                    smallGroupItem.setExpandable(!smallGroupItem.getChildren().isEmpty());
+                    result.getList().add(smallGroupItem);
+                }
+            }
+        } catch (Exception e) {
+            System.out.println("构建大组层级 - 错误: " + e.getMessage());
+            e.printStackTrace();
+            throw e;
+        }
+    }
+
+    /**
+     * 构建小组层级（学组/检组视角）
+     */
+    private void buildSmallGroupHierarchy(HomeworkHierarchyDTO result, Map<String, Object> scope) {
+        try {
+            // 安全获取smallGroupId，处理Long和Integer类型
+            Object smallGroupIdObj = scope.get("smallGroupId");
+            Long smallGroupId = null;
+            if (smallGroupIdObj instanceof Integer) {
+                smallGroupId = ((Integer) smallGroupIdObj).longValue();
+            } else if (smallGroupIdObj instanceof Long) {
+                smallGroupId = (Long) smallGroupIdObj;
+            }
+            if (smallGroupId != null) {
+                // 直接获取小组成员列表，不显示小组层级
+                List<Map<String, Object>> members = homeworkMapper.getMembersBySmallGroup(smallGroupId.intValue());
+                for (Map<String, Object> member : members) {
+                    Long memberUserId = ((Number) member.get("userId")).longValue();
+                    String memberName = (String) member.get("name");
+                    HomeworkHierarchyDTO.HierarchyItem memberItem = new HomeworkHierarchyDTO.HierarchyItem();
+                    memberItem.setId(memberUserId);
+                    memberItem.setName(memberName);
+                    memberItem.setType("member");
+                    memberItem.setParentId(null); // 直接作为根节点
+                    memberItem.setExpandable(false);
+                    result.getList().add(memberItem);
+                }
+            }
+        } catch (Exception e) {
+            System.out.println("构建小组层级 - 错误: " + e.getMessage());
+            e.printStackTrace();
+            throw e;
+        }
+    }
+
+    /**
+     * 检查志愿者权限
+     */
+    private void checkVolunteerAuth(Long userId, String type, Integer id) {
+        try {
+            System.out.println("检查权限 - 用户ID: " + userId + ", 类型: " + type + ", ID: " + id);
+            // 先检查直接权限
+            Integer authCount = homeworkMapper.checkVolunteerAuth(userId, type, id);
+            System.out.println("直接权限检查结果: " + authCount);
+            // 如果直接权限不足，检查层级权限
+            if (authCount == null || authCount == 0) {
+                if ("small_group".equals(type)) {
+                    // 检查用户是否有大组权限
+                    Integer bigGroupId = getBigGroupIdBySmallGroupId(id);
+                    if (bigGroupId != null) {
+                        Integer bigGroupAuth = homeworkMapper.checkBigGroupAuth(userId, bigGroupId);
+                        System.out.println("大组权限检查结果: " + bigGroupAuth);
+                        if (bigGroupAuth != null && bigGroupAuth > 0) {
+                            return; // 有大组权限，允许访问
+                        }
+                        // 检查用户是否有班级权限
+                        Integer classId = getClassIdByBigGroupId(bigGroupId);
+                        if (classId != null) {
+                            Integer classAuth = homeworkMapper.checkVolunteerAuth(userId, "class", classId);
+                            System.out.println("班级权限检查结果: " + classAuth);
+                            if (classAuth != null && classAuth > 0) {
+                                return; // 有班级权限，允许访问
+                            }
+                        }
+                    }
+                } else if ("big_group".equals(type)) {
+                    // 检查用户是否有班级权限
+                    Integer classId = getClassIdByBigGroupId(id);
+                    if (classId != null) {
+                        Integer classAuth = homeworkMapper.checkVolunteerAuth(userId, "class", classId);
+                        System.out.println("班级权限检查结果: " + classAuth);
+                        if (classAuth != null && classAuth > 0) {
+                            return; // 有班级权限，允许访问
+                        }
+                    }
+                }
+                throw new RuntimeException("无权限访问该范围数据");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw e;
+        }
+    }
+    /**
+     * 根据小组ID获取大组ID
+     */
+    private Integer getBigGroupIdBySmallGroupId(Integer smallGroupId) {
+        try {
+            Map<String, Object> result = homeworkMapper.getBigGroupIdBySmallGroupId(smallGroupId);
+            if (result != null && result.containsKey("bigGroupId")) {
+                return (Integer) result.get("bigGroupId");
+            }
+            return null;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+    /**
+     * 根据大组ID获取班级ID
+     */
+    private Integer getClassIdByBigGroupId(Integer bigGroupId) {
+        try {
+            Map<String, Object> result = homeworkMapper.getClassIdByBigGroupId(bigGroupId);
+            if (result != null && result.containsKey("classId")) {
+                return (Integer) result.get("classId");
+            }
+            return null;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    /**
+     * 获取作业统计层级数据
+     */
+    @Override
+    public HomeworkStatisticsHierarchyDTO getHomeworkStatisticsHierarchy(Long userId, String type, Integer id, String date) {
+        try {
+            // 检查权限
+            checkVolunteerAuth(userId, type, id);
+
+            HomeworkStatisticsHierarchyDTO result = new HomeworkStatisticsHierarchyDTO();
+            result.setList(new ArrayList<>());
+
+            if ("class".equals(type)) {
+                // 班级层级：班级 -> 大组 -> 小组
+                buildClassStatisticsHierarchy(result, id, date);
+            } else if ("big_group".equals(type) || "bigGroup".equals(type)) {
+                // 大组层级：大组 -> 小组
+                buildBigGroupStatisticsHierarchy(result, id, date);
+            } else if ("small_group".equals(type) || "smallGroup".equals(type)) {
+                // 小组层级：只有小组
+                buildSmallGroupStatisticsHierarchy(result, id, date);
+            }
+
+            return result;
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw e;
+        }
+    }
+
+    /**
+     * 构建班级统计层级
+     */
+    private void buildClassStatisticsHierarchy(HomeworkStatisticsHierarchyDTO result, Integer classId, String date) {
+        // 获取班级信息
+        Map<String, Object> classInfo = homeworkMapper.getClassInfo(classId);
+        if (classInfo == null) return;
+
+        String className = (String) classInfo.get("name");
+
+        // 构建班级统计项
+        HomeworkStatisticsHierarchyDTO.StatisticsItem classItem = buildStatisticsItem("class", classId, className, date);
+
+        // 获取班级下的大组列表
+        List<Map<String, Object>> bigGroups = homeworkMapper.getBigGroupsByClass(classId);
+        for (Map<String, Object> bigGroup : bigGroups) {
+            Integer bigGroupId = (Integer) bigGroup.get("bigGroupId");
+            String bigGroupName = (String) bigGroup.get("bigGroupName");
+
+            // 构建大组统计项
+            HomeworkStatisticsHierarchyDTO.StatisticsItem bigGroupItem = buildStatisticsItem("bigGroup", bigGroupId, bigGroupName, date);
+
+            // 获取大组下的小组列表
+            List<Map<String, Object>> smallGroups = homeworkMapper.getSmallGroupsByBigGroup(bigGroupId);
+            for (Map<String, Object> smallGroup : smallGroups) {
+                Integer smallGroupId = (Integer) smallGroup.get("smallGroupId");
+                String smallGroupName = (String) smallGroup.get("smallGroupName");
+
+                // 构建小组统计项
+                HomeworkStatisticsHierarchyDTO.StatisticsItem smallGroupItem = buildStatisticsItem("smallGroup", smallGroupId, smallGroupName, date);
+                bigGroupItem.getChildren().add(smallGroupItem);
+            }
+
+            classItem.getChildren().add(bigGroupItem);
         }
 
-        // 使用HomeworkMapper的filterStudentsByKeyword方法进行过滤
-        return homeworkMapper.filterStudentsByKeyword(studentIds, searchKeyword);
+        result.getList().add(classItem);
+    }
+
+    /**
+     * 构建大组统计层级
+     */
+    private void buildBigGroupStatisticsHierarchy(HomeworkStatisticsHierarchyDTO result, Integer bigGroupId, String date) {
+        // 获取大组信息
+        Map<String, Object> bigGroupInfo = homeworkMapper.getBigGroupInfo(bigGroupId);
+        if (bigGroupInfo == null) return;
+
+        String bigGroupName = (String) bigGroupInfo.get("name");
+
+        // 构建大组统计项
+        HomeworkStatisticsHierarchyDTO.StatisticsItem bigGroupItem = buildStatisticsItem("bigGroup", bigGroupId, bigGroupName, date);
+
+        // 获取大组下的小组列表
+        List<Map<String, Object>> smallGroups = homeworkMapper.getSmallGroupsByBigGroup(bigGroupId);
+        for (Map<String, Object> smallGroup : smallGroups) {
+            Integer smallGroupId = (Integer) smallGroup.get("smallGroupId");
+            String smallGroupName = (String) smallGroup.get("smallGroupName");
+
+            // 构建小组统计项
+            HomeworkStatisticsHierarchyDTO.StatisticsItem smallGroupItem = buildStatisticsItem("smallGroup", smallGroupId, smallGroupName, date);
+            bigGroupItem.getChildren().add(smallGroupItem);
+        }
+
+        result.getList().add(bigGroupItem);
+    }
+
+    /**
+     * 构建小组统计层级
+     */
+    private void buildSmallGroupStatisticsHierarchy(HomeworkStatisticsHierarchyDTO result, Integer smallGroupId, String date) {
+        // 获取小组信息
+        Map<String, Object> smallGroupInfo = homeworkMapper.getSmallGroupInfo(smallGroupId);
+        if (smallGroupInfo == null) return;
+
+        String smallGroupName = (String) smallGroupInfo.get("name");
+
+        // 构建小组统计项
+        HomeworkStatisticsHierarchyDTO.StatisticsItem smallGroupItem = buildStatisticsItem("smallGroup", smallGroupId, smallGroupName, date);
+        result.getList().add(smallGroupItem);
+    }
+
+    /**
+     * 构建统计项
+     */
+    private HomeworkStatisticsHierarchyDTO.StatisticsItem buildStatisticsItem(String type, Integer id, String name, String date) {
+        HomeworkStatisticsHierarchyDTO.StatisticsItem item = new HomeworkStatisticsHierarchyDTO.StatisticsItem();
+        item.setId(id);
+        item.setName(name);
+        item.setType(type);
+        item.setChildren(new ArrayList<>());
+
+        // 获取统计数据
+        Integer totalCount = homeworkMapper.getMemberCountByGroup(type, id, date); // 传入日期参数
+        Integer onTimeCount = homeworkMapper.getSubmittedCountByGroup(type, id, date); // 准时提交人数
+        Integer lateCount = homeworkMapper.getLateCountByGroup(type, id, date); // 迟交人数
+
+        // 计算总提交人数
+        Integer totalSubmittedCount = (onTimeCount != null ? onTimeCount : 0) + (lateCount != null ? lateCount : 0);
+
+        item.setTotalCount(totalCount != null ? totalCount : 0);
+        item.setCompletedCount(onTimeCount != null ? onTimeCount : 0); // 准时提交人数
+        item.setLateCount(lateCount != null ? lateCount : 0);
+
+        // 未交人数 = 总人数 - 总提交人数
+        item.setPendingCount(item.getTotalCount() - totalSubmittedCount);
+
+        // 计算完成率（总提交人数/总人数）
+        double completionRate = item.getTotalCount() > 0 ? (double) totalSubmittedCount / item.getTotalCount() * 100 : 0;
+        item.setCompletionRate(Math.round(completionRate * 100.0) / 100.0);
+
+        // 计算按时完成率（按时提交人数/总人数）
+        double onTimeRate = item.getTotalCount() > 0 ? (double) (onTimeCount != null ? onTimeCount : 0) / item.getTotalCount() * 100 : 0;
+        item.setOnTimeRate(Math.round(onTimeRate * 100.0) / 100.0);
+
+        // 检查是否有作业
+        Integer planId = homeworkMapper.getPlanIdByDate(date);
+        item.setHasHomework(planId != null);
+
+        return item;
     }
 }

@@ -192,7 +192,7 @@ public class AuthController {
     /**
      * 获取用户信息接口
      * 返回用户基本信息及统计指标（地区、职业、年数、学时）
-     * 
+     *
      * @param token JWT 令牌
      * @return 用户个人信息 {
      *         "code": 200,
@@ -220,13 +220,13 @@ public class AuthController {
             if (userId == null) {
                 return Result.error("无效的 Token");
             }
-    
+
             // 2. 调用 Service 获取用户个人信息
             com.daily.dailychineseculture.dto.UserProfileDTO userProfile = userService.getUserProfile(userId);
             if (userProfile == null) {
                 return Result.error("用户不存在");
             }
-    
+
             // 3. 返回成功响应
             return Result.success(userProfile);
         } catch (Exception e) {
@@ -241,7 +241,7 @@ public class AuthController {
     /**
      * 获取用户个人资料详情接口（包含所有字段）
      * 用于个人资料编辑页面展示完整信息
-     * 
+     *
      * @param token JWT 令牌
      * @return 用户资料详情 {
      *         "code": 200,
@@ -288,7 +288,7 @@ public class AuthController {
     /**
      * 更新用户全部资料接口
      * 接收前端全量字段并更新到数据库
-     * 
+     *
      * @param token JWT 令牌
      * @param request 更新请求 {
      *         "avatar": "https://...",
@@ -320,7 +320,7 @@ public class AuthController {
 
             // 3. 调用 Service 更新用户资料
             boolean success = userService.updateUserAllInfo(userId, request);
-            
+
             if (success) {
                 return Result.successMsg("保存成功");
             } else {
@@ -357,7 +357,7 @@ public class AuthController {
     /**
      * 小程序端 - 退出登录接口（C 端专属）
      * POST /api/app/user/logout
-     * 
+     *
      * 业务逻辑：
      * 1. 销毁 Token（JWT 无需服务端操作，前端删除本地存储即可）
      * 2. 容错处理：即使 Token 已过期、不存在或解析失败，也返回成功
@@ -386,47 +386,60 @@ public class AuthController {
             } else {
                 System.out.println("小程序端用户退出登录（未携带 Token）");
             }
-            
+
             // 无论 Token 状态如何，都返回成功
             // JWT 机制下，服务端无需执行额外操作，前端删除本地存储的 Token 即可
             return Result.successMsg("退出登录成功");
-            
+
         } catch (Exception e) {
             // 捕获所有异常，确保不抛出 500 错误
             System.err.println("=== 小程序端退出登录异常 ===");
             System.err.println("异常类型：" + e.getClass().getSimpleName());
             System.err.println("异常信息：" + e.getMessage());
             e.printStackTrace();
-            
+
             // 即使发生异常，也返回成功，确保前端能执行本地清理
             return Result.successMsg("退出登录成功");
         }
     }
 
     /**
-     * 小程序端 - 用户切换身份接口 (严格遵守无 api/ 前缀规范)
+     * 切换身份接口
      */
-    @PostMapping("/user/switch-identity")
-    public Result<Map<String, Object>> appSwitchIdentity(
-            @RequestHeader("Authorization") String token,
-            @RequestBody SwitchIdentityRequest request) {
+    @PostMapping("/app/user/switch-identity")
+    public Result<Map<String, String>> switchIdentity(@RequestHeader("Authorization") String token,
+                                                      @RequestBody SwitchIdentityRequest request) {
         try {
             Long userId = jwtUtils.getUserIdFromToken(token.replace("Bearer ", ""));
-            if (userId == null) {
-                return Result.error("无效的 Token");
+            String identity = request.getIdentity();
+
+            if (identity == null || identity.trim().isEmpty()) {
+                return Result.error("请选择要切换的身份");
             }
 
-            // 执行身份切换（使用 APP 类型）
-            String newToken = authService.executeIdentitySwitch(userId, request, "APP");
+            // 身份映射
+            Map<String, String> identityMap = new HashMap<>();
+            identityMap.put("学员端", "student");
+            identityMap.put("志愿者端", "volunteer");
 
-            Map<String, Object> result = new HashMap<>();
-            result.put("token", newToken);
-            result.put("currentIdentity", request.getIdentity());
+            String targetIdentity = identityMap.get(identity);
+            if (targetIdentity == null) {
+                return Result.error("身份类型无效");
+            }
 
-            return Result.success(result);
-        } catch (IllegalArgumentException e) {
-            return Result.error(e.getMessage());
+            // 校验志愿者权限
+            if ("volunteer".equals(targetIdentity)) {
+                boolean isVolunteer = userService.isVolunteer(userId);
+                if (!isVolunteer) {
+                    return Result.error("无志愿者权限，无法切换");
+                }
+            }
+
+            Map<String, String> result = new HashMap<>();
+            result.put("currentIdentity", identity);
+            return Result.build(200, "身份切换成功", result);
         } catch (Exception e) {
+            e.printStackTrace();
             return Result.error("服务器内部错误，请稍后重试");
         }
     }

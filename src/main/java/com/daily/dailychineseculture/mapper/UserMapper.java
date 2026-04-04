@@ -79,12 +79,12 @@ public interface UserMapper {
                 "da.assignment_id AS assignmentId, " +
                 "c.camp_id AS campId, " +
                 "IFNULL(c.name, '未知营期') AS campName, " +
-                "da.volunteer_start_time AS rawStartTime, " +
-                "IFNULL(DATE_FORMAT(da.volunteer_start_time, '%Y.%m.%d %H:%i:%s'), '未设置') AS actualStartTime, "
+                "da.start_time AS rawStartTime, " +
+                "IFNULL(DATE_FORMAT(da.start_time, '%Y.%m.%d %H:%i:%s'), '未设置') AS actualStartTime, "
                 +
                 "IFNULL(DATE_FORMAT(c.end_time, '%Y.%m.%d %H:%i:%s'), '未设置') AS campEndTime, " +
                 "UNIX_TIMESTAMP(c.end_time) AS rawCampEndTime, " +
-                "IFNULL(DATE_FORMAT(da.volunteer_end_time, '%Y.%m.%d %H:%i:%s'), '未设置') AS quitTime, " +
+                "IFNULL(DATE_FORMAT(da.end_time, '%Y.%m.%d %H:%i:%s'), '未设置') AS quitTime, " +
                 "ds.target_type AS targetType, " +
                 "IFNULL(da.duty_type, '志愿者') AS dutyName, " +
                 "CASE " +
@@ -125,24 +125,16 @@ public interface UserMapper {
                 "WHERE da.user_id = #{userId} " +
                 "AND da.duty_type IN ('检组', '学组', '检委', '学委', '学班', '检班') " +
                 "AND ds.target_type IN ('class', 'big_group', 'small_group', 'camp') " +
-                "ORDER BY da.volunteer_start_time DESC")
+                "ORDER BY da.start_time DESC")
         List<Map<String, Object>> getVolunteerHistory(Long userId);
-
-        /**
-         * 更新志愿者服务结束时间（退出担当）
-         */
-        @Update("UPDATE t_duty_assignment " +
-                "SET volunteer_end_time = NOW() " +
-                "WHERE assignment_id = #{assignmentId} AND user_id = #{userId}")
-        int updateVolunteerEndTime(@Param("assignmentId") Integer assignmentId, @Param("userId") Long userId);
 
         /**
          * 将志愿者服务结束时间更新为营期结束时间
          */
         @Update("UPDATE t_duty_assignment " +
-                "SET volunteer_end_time = STR_TO_DATE(#{campEndTime}, '%Y.%m.%d %H:%i:%s') " +
+                "SET end_time = STR_TO_DATE(#{campEndTime}, '%Y.%m.%d %H:%i:%s') " +
                 "WHERE assignment_id = #{assignmentId} AND user_id = #{userId} " +
-                "AND volunteer_end_time IS NULL")
+                "AND end_time IS NULL")
         int updateVolunteerEndTimeToCampEnd(@Param("assignmentId") Integer assignmentId,
                                             @Param("userId") Long userId,
                                             @Param("campEndTime") String campEndTime);

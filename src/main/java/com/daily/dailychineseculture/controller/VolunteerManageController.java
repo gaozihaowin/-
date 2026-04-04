@@ -46,12 +46,13 @@ public class VolunteerManageController {
      */
     @GetMapping("/manage/members")
     public ResponseResult<MemberManageDTO> getMemberManageInfo(@RequestHeader("Authorization") String token,
-                                                               @RequestParam(value = "assignmentId", required = false) Integer assignmentId) {
+                                                               @RequestParam(value = "assignmentId", required = false) Integer assignmentId,
+                                                               @RequestParam(value = "smallGroupId", required = false) Integer smallGroupId) {
         try {
             Long userId = jwtUtils.getUserIdFromToken(token.replace("Bearer ", ""));
 
             // 调用Service层获取真实数据
-            MemberManageDTO result = volunteerManageService.getMemberManageInfo(userId, assignmentId);
+            MemberManageDTO result = volunteerManageService.getMemberManageInfo(userId, assignmentId, smallGroupId);
 
             return ResponseResult.success(result);
         } catch (Exception e) {
