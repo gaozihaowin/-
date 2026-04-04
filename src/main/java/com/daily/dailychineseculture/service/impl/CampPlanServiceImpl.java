@@ -1,5 +1,6 @@
 package com.daily.dailychineseculture.service.impl;
 
+import com.daily.dailychineseculture.common.BusinessException;
 import com.daily.dailychineseculture.dto.CampOptionDTO;
 import com.daily.dailychineseculture.dto.CampPlanAddDayDTO;
 import com.daily.dailychineseculture.dto.CampPlanDTO;
@@ -14,6 +15,8 @@ import com.daily.dailychineseculture.mapper.CampPlanMapper;
 import com.daily.dailychineseculture.mapper.PlanTaskMapper;
 import com.daily.dailychineseculture.service.CampPlanService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.BeanUtils;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -371,6 +374,7 @@ public class CampPlanServiceImpl implements CampPlanService {
     /**
      * 智能追加一天排课
      * 前端智能推算完整数据后，后端仅负责落库
+     * 包含并发防御：捕获唯一索引冲突异常
      */
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -378,21 +382,21 @@ public class CampPlanServiceImpl implements CampPlanService {
         // 1. 校验营期是否存在
         Camp camp = campMapper.selectById(requestDTO.getCampId());
         if (camp == null) {
-            throw new RuntimeException("未找到指定的营期");
+            throw new BusinessException(400, "未找到指定的营期");
         }
 
-        // 2. 将 DTO 转换为实体
+        // 2. 将 DTO 属性拷贝到实体中
         CampPlan campPlan = new CampPlan();
-        campPlan.setCampId(requestDTO.getCampId());
-        campPlan.setDayIndex(requestDTO.getDayIndex());
-        campPlan.setPlanDate(requestDTO.getPlanDate());
-        campPlan.setModuleName(requestDTO.getModuleName());
-        campPlan.setModuleIndex(requestDTO.getModuleIndex());
-        campPlan.setTeacherName(requestDTO.getTeacherName());
-        campPlan.setTitle(requestDTO.getTitle());
+        BeanUtils.copyProperties(requestDTO, campPlan);
+
+        // 3. 强制设置默认未完成状态
         campPlan.setIsFinished(0);
 
-        // 3. 插入数据库
-        campPlanMapper.insertCampPlan(campPlan);
+        // 4. 铁桶防御：捕获唯一索引冲突异常
+        try {
+            campPlanMapper.insertCampPlan(campPlan);
+        } catch (DuplicateKeyException e) {
+            throw new BusinessException(409, "该营期的当前天数或日期已被占用，请刷新页面获取最新排课进度！");
+        }
     }
 }
