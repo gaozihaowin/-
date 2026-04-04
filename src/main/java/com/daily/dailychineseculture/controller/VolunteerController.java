@@ -37,31 +37,6 @@ public class VolunteerController {
     }
 
     /**
-     * 退出担当（更新志愿者服务结束时间）
-     */
-    @PostMapping("/user/volunteer-quit")
-    public ResponseResult<String> quitVolunteerDuty(@RequestHeader("Authorization") String token,
-                                                    @RequestBody Map<String, Object> request) {
-        try {
-            Long userId = jwtUtils.getUserIdFromToken(token.replace("Bearer ", ""));
-            Integer assignmentId = (Integer) request.get("assignmentId");
-
-            if (assignmentId == null) {
-                return ResponseResult.error("assignmentId不能为空");
-            }
-
-            boolean success = userService.quitVolunteerDuty(userId, assignmentId);
-            if (success) {
-                return ResponseResult.success("退出担当成功");
-            } else {
-                return ResponseResult.error("退出担当失败，职责任命不存在或不属于该用户");
-            }
-        } catch (Exception e) {
-            return ResponseResult.error("退出担当失败：" + e.getMessage());
-        }
-    }
-
-    /**
      * 获取志愿者统计信息
      */
     @GetMapping("/user/volunteer-stats")
