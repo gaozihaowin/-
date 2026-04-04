@@ -9,6 +9,9 @@
         <result property="dayIndex" column="day_index"/>
         <result property="planDate" column="plan_date"/>
         <result property="title" column="title"/>
+        <result property="moduleName" column="module_name"/>
+        <result property="moduleIndex" column="module_index"/>
+        <result property="teacherName" column="teacher_name"/>
     </resultMap>
 
     <!-- 根据营期 ID 查询排课计划列表 -->
@@ -18,7 +21,10 @@
             camp_id,
             day_index,
             plan_date,
-            title
+            title,
+            module_name,
+            module_index,
+            teacher_name
         FROM t_camp_plan
         WHERE camp_id = #{campId}
         ORDER BY day_index ASC
