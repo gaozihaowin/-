@@ -18,7 +18,7 @@ public interface VolunteerManageService {
     /**
      * 获取管理成员信息
      */
-    MemberManageDTO getMemberManageInfo(Long userId, Integer assignmentId);
+    MemberManageDTO getMemberManageInfo(Long userId, Integer assignmentId, Integer smallGroupId);
 
     /**
      * 获取分配岗位信息

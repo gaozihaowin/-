@@ -27,9 +27,26 @@ public class VolunteerManageServiceImpl implements VolunteerManageService {
     }
 
     @Override
-    public MemberManageDTO getMemberManageInfo(Long userId, Integer assignmentId) {
+    public MemberManageDTO getMemberManageInfo(Long userId, Integer assignmentId, Integer smallGroupId) {
         MemberManageDTO result = new MemberManageDTO();
-        System.out.println("获取成员信息 - userId: " + userId + ", assignmentId: " + assignmentId);
+        System.out.println("获取成员信息 - userId: " + userId + ", assignmentId: " + assignmentId + ", smallGroupId: " + smallGroupId);
+
+        // 如果指定了smallGroupId，直接获取该小组的成员列表
+        if (smallGroupId != null) {
+            List<Map<String, Object>> smallGroupMembers = volunteerManageMapper.getSmallGroupMembers(smallGroupId);
+            System.out.println("小组成员查询结果: " + smallGroupMembers);
+            if (smallGroupMembers != null && !smallGroupMembers.isEmpty()) {
+                MemberManageDTO.SmallGroupInfo smallGroupInfo = new MemberManageDTO.SmallGroupInfo();
+                smallGroupInfo.setSmallGroupId(smallGroupId);
+                smallGroupInfo.setSmallGroupName("小组" + smallGroupId);
+                smallGroupInfo.setMembers(smallGroupMembers.stream()
+                        .map(this::convertToMemberInfo)
+                        .collect(Collectors.toList()));
+                result.setSmallGroupList(List.of(smallGroupInfo));
+            }
+            return result;
+        }
+
         // 获取当前用户的管理范围
         List<Map<String, Object>> scopeList = volunteerManageMapper.getManagementScope(userId);
         System.out.println("管理范围: " + scopeList);
@@ -76,6 +93,8 @@ public class VolunteerManageServiceImpl implements VolunteerManageService {
                     result.setClassList(List.of(classInfo));
                 }
             }
+            // 构建层级结构
+            buildClassHierarchy(result, targetScope);
         } else if ("学委".equals(dutyType) || "检委".equals(dutyType)) {
             // 大组管理者：获取大组成员
             Integer bigGroupId = getSafeInteger(targetScope, "bigGroupId");
@@ -95,15 +114,17 @@ public class VolunteerManageServiceImpl implements VolunteerManageService {
                     result.setBigGroupList(List.of(bigGroupInfo));
                 }
             }
+            // 构建层级结构
+            buildBigGroupHierarchy(result, targetScope);
         } else if ("学组".equals(dutyType) || "检组".equals(dutyType)) {
             // 小组管理者：获取小组成员
-            Integer smallGroupId = getSafeInteger(targetScope, "smallGroupId");
-            if (smallGroupId != null) {
-                List<Map<String, Object>> smallGroupMembers = volunteerManageMapper.getSmallGroupMembers(smallGroupId);
+            Integer sgId = getSafeInteger(targetScope, "smallGroupId");
+            if (sgId != null) {
+                List<Map<String, Object>> smallGroupMembers = volunteerManageMapper.getSmallGroupMembers(sgId);
 
                 if (smallGroupMembers != null && !smallGroupMembers.isEmpty()) {
                     MemberManageDTO.SmallGroupInfo smallGroupInfo = new MemberManageDTO.SmallGroupInfo();
-                    smallGroupInfo.setSmallGroupId(smallGroupId);
+                    smallGroupInfo.setSmallGroupId(sgId);
                     smallGroupInfo.setSmallGroupName(getSafeString(targetScope, "smallGroupName"));
                     smallGroupInfo.setBigGroupId(getSafeInteger(targetScope, "bigGroupId"));
                     smallGroupInfo.setBigGroupName(getSafeString(targetScope, "bigGroupName"));
@@ -116,6 +137,8 @@ public class VolunteerManageServiceImpl implements VolunteerManageService {
                     result.setSmallGroupList(List.of(smallGroupInfo));
                 }
             }
+            // 构建层级结构
+            buildSmallGroupHierarchy(result, targetScope);
         }
 
         return result;
@@ -410,6 +433,183 @@ public class VolunteerManageServiceImpl implements VolunteerManageService {
         }
 
         return duty;
+    }
+
+    /**
+     * 构建班级层级结构
+     */
+    private void buildClassHierarchy(MemberManageDTO result, Map<String, Object> targetScope) {
+        Integer classId = getSafeInteger(targetScope, "classId");
+        if (classId == null) return;
+
+        List<MemberManageDTO.HierarchyItem> hierarchyList = new ArrayList<>();
+
+        // 创建班级节点
+        MemberManageDTO.HierarchyItem classNode = new MemberManageDTO.HierarchyItem();
+        classNode.setId(classId.longValue());
+        classNode.setName(getSafeString(targetScope, "className"));
+        classNode.setType("class");
+        classNode.setParentId(null);
+        classNode.setExpandable(true);
+        classNode.setChildren(new ArrayList<>());
+
+        // 获取班级下的大组
+        List<Map<String, Object>> bigGroups = volunteerManageMapper.getAssignableBigGroups(classId);
+        if (bigGroups != null) {
+            for (Map<String, Object> bigGroup : bigGroups) {
+                Integer bigGroupId = getSafeInteger(bigGroup, "targetId");
+                String bigGroupName = getSafeString(bigGroup, "targetName");
+
+                // 创建大组节点
+                MemberManageDTO.HierarchyItem bigGroupNode = new MemberManageDTO.HierarchyItem();
+                bigGroupNode.setId(bigGroupId.longValue());
+                bigGroupNode.setName(bigGroupName);
+                bigGroupNode.setType("bigGroup");
+                bigGroupNode.setParentId(classId.longValue());
+                bigGroupNode.setExpandable(true);
+                bigGroupNode.setChildren(new ArrayList<>());
+
+                // 获取大组下的小组
+                List<Map<String, Object>> smallGroups = volunteerManageMapper.getAssignableSmallGroups(bigGroupId);
+                if (smallGroups != null) {
+                    for (Map<String, Object> smallGroup : smallGroups) {
+                        Integer smallGroupId = getSafeInteger(smallGroup, "targetId");
+                        String smallGroupName = getSafeString(smallGroup, "targetName");
+
+                        // 创建小组节点
+                        MemberManageDTO.HierarchyItem smallGroupNode = new MemberManageDTO.HierarchyItem();
+                        smallGroupNode.setId(smallGroupId.longValue());
+                        smallGroupNode.setName(smallGroupName);
+                        smallGroupNode.setType("smallGroup");
+                        smallGroupNode.setParentId(bigGroupId.longValue());
+                        smallGroupNode.setExpandable(true);
+                        smallGroupNode.setChildren(new ArrayList<>());
+
+                        // 获取小组成员
+                        List<Map<String, Object>> members = volunteerManageMapper.getSmallGroupMembers(smallGroupId);
+                        if (members != null) {
+                            for (Map<String, Object> member : members) {
+                                // 创建成员节点
+                                MemberManageDTO.HierarchyItem memberNode = new MemberManageDTO.HierarchyItem();
+                                memberNode.setId(getSafeString(member, "account").hashCode() * 1000L); // 使用account作为唯一标识
+                                memberNode.setName(getSafeString(member, "nickname") != null && !getSafeString(member, "nickname").isEmpty() ? getSafeString(member, "nickname") : getSafeString(member, "account"));
+                                memberNode.setType("member");
+                                memberNode.setParentId(smallGroupId.longValue());
+                                memberNode.setExpandable(false);
+                                memberNode.setChildren(null);
+
+                                smallGroupNode.getChildren().add(memberNode);
+                            }
+                        }
+
+                        bigGroupNode.getChildren().add(smallGroupNode);
+                    }
+                }
+
+                classNode.getChildren().add(bigGroupNode);
+            }
+        }
+
+        hierarchyList.add(classNode);
+        result.setHierarchyList(hierarchyList);
+    }
+
+    /**
+     * 构建大组层级结构
+     */
+    private void buildBigGroupHierarchy(MemberManageDTO result, Map<String, Object> targetScope) {
+        Integer bigGroupId = getSafeInteger(targetScope, "bigGroupId");
+        if (bigGroupId == null) return;
+
+        List<MemberManageDTO.HierarchyItem> hierarchyList = new ArrayList<>();
+
+        // 创建大组节点
+        MemberManageDTO.HierarchyItem bigGroupNode = new MemberManageDTO.HierarchyItem();
+        bigGroupNode.setId(bigGroupId.longValue());
+        bigGroupNode.setName(getSafeString(targetScope, "bigGroupName"));
+        bigGroupNode.setType("bigGroup");
+        bigGroupNode.setParentId(null);
+        bigGroupNode.setExpandable(true);
+        bigGroupNode.setChildren(new ArrayList<>());
+
+        // 获取大组下的小组
+        List<Map<String, Object>> smallGroups = volunteerManageMapper.getAssignableSmallGroups(bigGroupId);
+        if (smallGroups != null) {
+            for (Map<String, Object> smallGroup : smallGroups) {
+                Integer smallGroupId = getSafeInteger(smallGroup, "targetId");
+                String smallGroupName = getSafeString(smallGroup, "targetName");
+
+                // 创建小组节点
+                MemberManageDTO.HierarchyItem smallGroupNode = new MemberManageDTO.HierarchyItem();
+                smallGroupNode.setId(smallGroupId.longValue());
+                smallGroupNode.setName(smallGroupName);
+                smallGroupNode.setType("smallGroup");
+                smallGroupNode.setParentId(bigGroupId.longValue());
+                smallGroupNode.setExpandable(true);
+                smallGroupNode.setChildren(new ArrayList<>());
+
+                // 获取小组成员
+                List<Map<String, Object>> members = volunteerManageMapper.getSmallGroupMembers(smallGroupId);
+                if (members != null) {
+                    for (Map<String, Object> member : members) {
+                        // 创建成员节点
+                        MemberManageDTO.HierarchyItem memberNode = new MemberManageDTO.HierarchyItem();
+                        memberNode.setId(getSafeString(member, "account").hashCode() * 1000L); // 使用account作为唯一标识
+                        memberNode.setName(getSafeString(member, "nickname") != null && !getSafeString(member, "nickname").isEmpty() ? getSafeString(member, "nickname") : getSafeString(member, "account"));
+                        memberNode.setType("member");
+                        memberNode.setParentId(smallGroupId.longValue());
+                        memberNode.setExpandable(false);
+                        memberNode.setChildren(null);
+
+                        smallGroupNode.getChildren().add(memberNode);
+                    }
+                }
+
+                bigGroupNode.getChildren().add(smallGroupNode);
+            }
+        }
+
+        hierarchyList.add(bigGroupNode);
+        result.setHierarchyList(hierarchyList);
+    }
+
+    /**
+     * 构建小组层级结构
+     */
+    private void buildSmallGroupHierarchy(MemberManageDTO result, Map<String, Object> targetScope) {
+        Integer smallGroupId = getSafeInteger(targetScope, "smallGroupId");
+        if (smallGroupId == null) return;
+
+        List<MemberManageDTO.HierarchyItem> hierarchyList = new ArrayList<>();
+
+        // 创建小组节点
+        MemberManageDTO.HierarchyItem smallGroupNode = new MemberManageDTO.HierarchyItem();
+        smallGroupNode.setId(smallGroupId.longValue());
+        smallGroupNode.setName(getSafeString(targetScope, "smallGroupName"));
+        smallGroupNode.setType("smallGroup");
+        smallGroupNode.setParentId(null);
+        smallGroupNode.setExpandable(true);
+        smallGroupNode.setChildren(new ArrayList<>());
+
+        // 获取小组成员
+        List<Map<String, Object>> members = volunteerManageMapper.getSmallGroupMembers(smallGroupId);
+        if (members != null) {
+            for (Map<String, Object> member : members) {
+                // 创建成员节点
+                MemberManageDTO.HierarchyItem memberNode = new MemberManageDTO.HierarchyItem();
+                memberNode.setId(getSafeString(member, "account").hashCode() * 1000L); // 使用account作为唯一标识
+                memberNode.setName(getSafeString(member, "nickname") != null && !getSafeString(member, "nickname").isEmpty() ? getSafeString(member, "nickname") : getSafeString(member, "account"));
+                memberNode.setType("member");
+                memberNode.setParentId(smallGroupId.longValue());
+                memberNode.setExpandable(false);
+                memberNode.setChildren(null);
+
+                smallGroupNode.getChildren().add(memberNode);
+            }
+        }
+
+        hierarchyList.add(smallGroupNode);
+        result.setHierarchyList(hierarchyList);
     }
 
     /**
