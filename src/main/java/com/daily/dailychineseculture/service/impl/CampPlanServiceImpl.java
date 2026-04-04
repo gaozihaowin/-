@@ -1,6 +1,7 @@
 package com.daily.dailychineseculture.service.impl;
 
 import com.daily.dailychineseculture.dto.CampOptionDTO;
+import com.daily.dailychineseculture.dto.CampPlanAddDayDTO;
 import com.daily.dailychineseculture.dto.CampPlanDTO;
 import com.daily.dailychineseculture.dto.CampPlanSaveDayDTO;
 import com.daily.dailychineseculture.dto.GenerateCalendarRequest;
@@ -365,5 +366,33 @@ public class CampPlanServiceImpl implements CampPlanService {
         result.setTasks(new ArrayList<>());
 
         return result;
+    }
+
+    /**
+     * 智能追加一天排课
+     * 前端智能推算完整数据后，后端仅负责落库
+     */
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void addSmartDay(CampPlanAddDayDTO requestDTO) {
+        // 1. 校验营期是否存在
+        Camp camp = campMapper.selectById(requestDTO.getCampId());
+        if (camp == null) {
+            throw new RuntimeException("未找到指定的营期");
+        }
+
+        // 2. 将 DTO 转换为实体
+        CampPlan campPlan = new CampPlan();
+        campPlan.setCampId(requestDTO.getCampId());
+        campPlan.setDayIndex(requestDTO.getDayIndex());
+        campPlan.setPlanDate(requestDTO.getPlanDate());
+        campPlan.setModuleName(requestDTO.getModuleName());
+        campPlan.setModuleIndex(requestDTO.getModuleIndex());
+        campPlan.setTeacherName(requestDTO.getTeacherName());
+        campPlan.setTitle(requestDTO.getTitle());
+        campPlan.setIsFinished(0);
+
+        // 3. 插入数据库
+        campPlanMapper.insertCampPlan(campPlan);
     }
 }

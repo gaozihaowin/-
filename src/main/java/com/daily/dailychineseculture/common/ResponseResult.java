@@ -55,7 +55,14 @@ public class ResponseResult<T> {
     public static <T> ResponseResult<T> success(T data) {
         return new ResponseResult<>(200, "操作成功", data);
     }
-    
+
+    /**
+     * 成功响应带消息
+     */
+    public static <T> ResponseResult<T> successMsg(String message) {
+        return new ResponseResult<>(200, message, null);
+    }
+
     /**
      * 成功响应带消息和数据
      */
