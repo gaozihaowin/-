@@ -103,6 +103,12 @@ public interface GroupChatMapper {
     int removeGroupMember(@Param("chatId") Integer chatId,
                           @Param("userId") Long userId);
 
+    @Select("SELECT COUNT(*) FROM t_group_chat_member WHERE user_id = #{userId} AND role = 'admin'")
+    Integer countChatAdminByUserId(@Param("userId") Long userId);
+
+    @Select("SELECT chat_id FROM t_group_chat_member WHERE user_id = #{userId} AND role = 'admin'")
+    List<Map<String, Object>> listChatAdminByUserId(@Param("userId") Long userId);
+
     @Update("UPDATE t_group_chat SET name = #{name}, content = #{content} WHERE chat_id = #{chatId}")
     int updateGroupInfo(@Param("chatId") Integer chatId,
                         @Param("name") String name,

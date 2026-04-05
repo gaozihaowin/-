@@ -6,6 +6,7 @@ import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
+import org.apache.ibatis.annotations.Update;
 
 import java.util.List;
 import java.util.Map;
@@ -122,4 +123,10 @@ public interface DutyAssignmentMapper {
             "ORDER BY da.start_time DESC " +
             "</script>")
     List<AdminListItemVO> selectAdminList(@Param("dutyTypeFilter") String dutyTypeFilter);
+
+    @Select("SELECT COUNT(*) FROM t_duty_assignment WHERE user_id = #{userId}")
+    Integer countByUserId(@Param("userId") Long userId);
+
+    @Update("UPDATE t_duty_assignment SET user_id = #{newUserId} WHERE user_id = #{oldUserId}")
+    int transferAllAssignments(@Param("oldUserId") Long oldUserId, @Param("newUserId") Long newUserId);
 }
