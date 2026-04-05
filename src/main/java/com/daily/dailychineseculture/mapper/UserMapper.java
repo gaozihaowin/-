@@ -1,5 +1,6 @@
 package com.daily.dailychineseculture.mapper;
 
+import com.daily.dailychineseculture.dto.UserSearchDTO;
 import com.daily.dailychineseculture.entity.User;
 import org.apache.ibatis.annotations.*;
 
@@ -241,4 +242,6 @@ public interface UserMapper {
          */
         @Select("SELECT COUNT(*) AS homeworkCount FROM t_homework WHERE user_id = #{userId}")
         Integer countUserHomework(Long userId);
+
+        List<UserSearchDTO> fuzzySearch(@Param("keyword") String keyword);
 }
