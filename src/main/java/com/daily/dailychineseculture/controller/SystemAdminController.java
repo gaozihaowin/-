@@ -2,7 +2,9 @@ package com.daily.dailychineseculture.controller;
 
 import com.daily.dailychineseculture.common.ResponseResult;
 import com.daily.dailychineseculture.dto.AssignRequest;
+import com.daily.dailychineseculture.dto.RevokeRequest;
 import com.daily.dailychineseculture.service.SystemAdminService;
+import com.daily.dailychineseculture.util.JwtUtils;
 import com.daily.dailychineseculture.vo.AdminStatsVO;
 import com.daily.dailychineseculture.vo.AdminUserAggVO;
 import com.daily.dailychineseculture.vo.AdminUserDetailVO;
@@ -19,6 +21,7 @@ import java.util.List;
 public class SystemAdminController {
 
     private final SystemAdminService systemAdminService;
+    private final JwtUtils jwtUtils;
 
     @GetMapping("/stats")
     public ResponseResult<AdminStatsVO> getStats() {
@@ -51,14 +54,18 @@ public class SystemAdminController {
     }
 
     @PostMapping("/assign")
-    public ResponseResult<Void> assign(@RequestBody @Valid AssignRequest request) {
-        systemAdminService.assign(request);
+    public ResponseResult<Void> assign(@RequestHeader("Authorization") String token,
+                                       @RequestBody @Valid AssignRequest request) {
+        Long adminId = jwtUtils.getUserIdFromToken(token);
+        systemAdminService.assign(request, adminId);
         return ResponseResult.successMsg("授权成功");
     }
 
-    @DeleteMapping("/revoke/{assignmentId}")
-    public ResponseResult<Void> revoke(@PathVariable Integer assignmentId) {
-        systemAdminService.revoke(assignmentId);
+    @PostMapping("/revoke")
+    public ResponseResult<Void> revoke(@RequestHeader("Authorization") String token,
+                                       @RequestBody @Valid RevokeRequest request) {
+        Long adminId = jwtUtils.getUserIdFromToken(token);
+        systemAdminService.revoke(request, adminId);
         return ResponseResult.successMsg("撤销成功");
     }
 }

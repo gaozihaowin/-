@@ -1,6 +1,7 @@
 package com.daily.dailychineseculture.service;
 
 import com.daily.dailychineseculture.dto.AssignRequest;
+import com.daily.dailychineseculture.dto.RevokeRequest;
 import com.daily.dailychineseculture.vo.AdminStatsVO;
 import com.daily.dailychineseculture.vo.AdminUserAggVO;
 import com.daily.dailychineseculture.vo.AdminUserDetailVO;
@@ -20,7 +21,7 @@ public interface SystemAdminService {
 
     List<UserSearchVO> searchUsers(String keyword);
 
-    void assign(AssignRequest request);
+    void assign(AssignRequest request, Long adminId);
 
-    void revoke(Integer assignmentId);
+    void revoke(RevokeRequest request, Long adminId);
 }

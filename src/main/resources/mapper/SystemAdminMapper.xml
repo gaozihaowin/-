@@ -136,4 +136,16 @@
         ORDER BY da.start_time DESC
     </select>
 
+    <select id="selectAssignmentById" resultType="com.daily.dailychineseculture.entity.DutyAssignment">
+        SELECT
+            assignment_id AS assignmentId,
+            user_id      AS userId,
+            camp_id      AS campId,
+            duty_type    AS dutyType,
+            start_time   AS startTime,
+            end_time     AS endTime
+        FROM t_duty_assignment
+        WHERE assignment_id = #{assignmentId}
+    </select>
+
 </mapper>

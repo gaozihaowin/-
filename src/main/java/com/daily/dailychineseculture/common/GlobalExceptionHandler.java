@@ -2,6 +2,7 @@ package com.daily.dailychineseculture.common;
 
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -26,6 +27,11 @@ public class GlobalExceptionHandler {
                 ? e.getBindingResult().getFieldError().getDefaultMessage()
                 : "参数校验失败";
         return ResponseResult.error(HttpStatus.BAD_REQUEST.value(), message);
+    }
+
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseResult<String> handleHttpMessageNotReadableException(HttpMessageNotReadableException e) {
+        return ResponseResult.error(HttpStatus.BAD_REQUEST.value(), "请求参数格式错误，请检查数据提交格式");
     }
 
     @ExceptionHandler(DuplicateKeyException.class)

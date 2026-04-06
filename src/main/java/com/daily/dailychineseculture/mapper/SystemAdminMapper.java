@@ -1,5 +1,6 @@
 package com.daily.dailychineseculture.mapper;
 
+import com.daily.dailychineseculture.entity.DutyAssignment;
 import com.daily.dailychineseculture.vo.ActiveRoleVO;
 import com.daily.dailychineseculture.vo.AdminStatsVO;
 import com.daily.dailychineseculture.vo.AdminUserAggVO;
@@ -29,6 +30,8 @@ public interface SystemAdminMapper {
                                @Param("dutyType") String dutyType);
 
     int deleteAssignment(@Param("assignmentId") Integer assignmentId);
+
+    DutyAssignment selectAssignmentById(@Param("assignmentId") Integer assignmentId);
 
     List<AdminUserAggVO> selectAdminUserAggRows(@Param("keyword") String keyword);
 

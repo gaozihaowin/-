@@ -11,4 +11,7 @@ public class AssignRequest {
 
     @NotBlank(message = "权限类型不能为空")
     private String dutyType;
+
+    @NotBlank(message = "任命原因不能为空")
+    private String reason;
 }
