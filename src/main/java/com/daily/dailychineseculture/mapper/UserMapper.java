@@ -2,6 +2,7 @@ package com.daily.dailychineseculture.mapper;
 
 import com.daily.dailychineseculture.dto.UserSearchDTO;
 import com.daily.dailychineseculture.entity.User;
+import com.daily.dailychineseculture.vo.UserSimpleVO;
 import org.apache.ibatis.annotations.*;
 
 import java.util.List;
@@ -244,4 +245,6 @@ public interface UserMapper {
         Integer countUserHomework(Long userId);
 
         List<UserSearchDTO> fuzzySearch(@Param("keyword") String keyword);
+
+        List<UserSimpleVO> searchUsersForAdmin(@Param("keyword") String keyword);
 }

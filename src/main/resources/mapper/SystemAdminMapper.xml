@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.daily.dailychineseculture.mapper.SystemAdminMapper">
+
+    <!-- 统计看板：按 duty_type 分组计数 -->
+    <select id="selectAdminStats" resultType="com.daily.dailychineseculture.vo.AdminStatsVO">
+        SELECT
+            SUM(CASE WHEN duty_type = 'SUPER_ADMIN' THEN 1 ELSE 0 END) AS superAdminCount,
+            SUM(CASE WHEN duty_type = 'COURSE_ADMIN' THEN 1 ELSE 0 END) AS courseAdminCount,
+            SUM(CASE WHEN duty_type = 'ARCHIVE_ADMIN' THEN 1 ELSE 0 END) AS archiveAdminCount
+        FROM t_duty_assignment
+        WHERE end_time IS NULL OR end_time > NOW()
+    </select>
+
+    <!-- 现任管理员名册：联表查询 t_duty_assignment + t_user -->
+    <select id="selectAdminList" resultType="com.daily.dailychineseculture.vo.SystemAdminVO">
+        SELECT
+            da.assignment_id   AS assignmentId,
+            da.user_id         AS userId,
+            u.phone            AS phone,
+            u.nickname         AS nickname,
+            u.avatar           AS avatar,
+            da.duty_type       AS dutyType,
+            da.start_time      AS startTime
+        FROM t_duty_assignment da
+        LEFT JOIN t_user u ON da.user_id = u.user_id
+        WHERE (da.end_time IS NULL OR da.end_time > NOW())
+          AND da.duty_type IN ('SUPER_ADMIN', 'COURSE_ADMIN', 'ARCHIVE_ADMIN')
+        <if test="keyword != null and keyword != ''">
+            AND (u.nickname LIKE CONCAT('%', #{keyword}, '%')
+                 OR u.phone LIKE CONCAT('%', #{keyword}, '%'))
+        </if>
+        ORDER BY da.start_time DESC
+        <if test="limit != null">
+            LIMIT #{limit} OFFSET #{offset}
+        </if>
+    </select>
+
+    <!-- 管理员名册总数（用于分页） -->
+    <select id="countAdminList" resultType="java.lang.Long">
+        SELECT COUNT(*)
+        FROM t_duty_assignment da
+        LEFT JOIN t_user u ON da.user_id = u.user_id
+        WHERE (da.end_time IS NULL OR da.end_time > NOW())
+          AND da.duty_type IN ('SUPER_ADMIN', 'COURSE_ADMIN', 'ARCHIVE_ADMIN')
+        <if test="keyword != null and keyword != ''">
+            AND (u.nickname LIKE CONCAT('%', #{keyword}, '%')
+                 OR u.phone LIKE CONCAT('%', #{keyword}, '%'))
+        </if>
+    </select>
+
+    <!-- 搜索用户：远程搜索弹窗用，只返回前10条 -->
+    <select id="searchUsers" resultType="com.daily.dailychineseculture.vo.UserSearchVO">
+        SELECT
+            user_id  AS userId,
+            nickname AS nickname,
+            phone    AS phone
+        FROM t_user
+        WHERE phone LIKE CONCAT('%', #{keyword}, '%')
+           OR nickname LIKE CONCAT('%', #{keyword}, '%')
+        LIMIT 10
+    </select>
+
+    <!-- 插入权限记录 -->
+    <insert id="insertAssignment">
+        INSERT INTO t_duty_assignment (user_id, duty_type, start_time)
+        VALUES (#{userId}, #{dutyType}, NOW())
+    </insert>
+
+    <!-- 检查是否存在有效的权限记录 -->
+    <select id="existsValidAssignment" resultType="java.lang.Integer">
+        SELECT COUNT(*)
+        FROM t_duty_assignment
+        WHERE user_id = #{userId}
+          AND duty_type = #{dutyType}
+          AND (end_time IS NULL OR end_time > NOW())
+    </select>
+
+    <!-- 物理删除权限记录 -->
+    <delete id="deleteAssignment">
+        DELETE FROM t_duty_assignment
+        WHERE assignment_id = #{assignmentId}
+    </delete>
+
+    <!-- 按用户维度聚合查询：MyBatis <collection> 嵌套映射 -->
+    <resultMap id="AdminUserAggVOMap" type="com.daily.dailychineseculture.vo.AdminUserAggVO">
+        <id     property="userId"    column="user_id"/>
+        <result property="nickname" column="nickname"/>
+        <result property="phone"    column="phone"/>
+        <result property="avatar"   column="avatar"/>
+        <collection property="roles" ofType="com.daily.dailychineseculture.vo.RoleDetail">
+            <id     property="assignmentId" column="assignment_id"/>
+            <result property="dutyType"    column="duty_type"/>
+            <result property="startTime"   column="start_time"/>
+            <result property="campId"      column="camp_id"/>
+            <result property="campName"    column="camp_name"/>
+        </collection>
+    </resultMap>
+
+    <select id="selectAdminUserAggRows" resultMap="AdminUserAggVOMap">
+        SELECT
+            u.user_id        AS user_id,
+            u.nickname      AS nickname,
+            u.phone         AS phone,
+            u.avatar        AS avatar,
+            da.assignment_id AS assignment_id,
+            da.duty_type    AS duty_type,
+            da.start_time   AS start_time,
+            da.camp_id      AS camp_id,
+            c.name          AS camp_name
+        FROM t_duty_assignment da
+        LEFT JOIN t_user u ON da.user_id = u.user_id
+        LEFT JOIN t_camp c ON da.camp_id = c.camp_id
+        WHERE (da.end_time IS NULL OR da.end_time > NOW())
+          AND da.duty_type IN ('SUPER_ADMIN', 'COURSE_ADMIN', 'ARCHIVE_ADMIN')
+        <if test="keyword != null and keyword != ''">
+            AND (u.nickname LIKE CONCAT('%', #{keyword}, '%')
+                 OR u.phone  LIKE CONCAT('%', #{keyword}, '%'))
+        </if>
+        ORDER BY u.user_id, da.start_time DESC
+    </select>
+
+</mapper>
