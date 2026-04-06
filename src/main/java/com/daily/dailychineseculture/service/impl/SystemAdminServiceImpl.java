@@ -1,12 +1,11 @@
 package com.daily.dailychineseculture.service.impl;
 
 import com.daily.dailychineseculture.dto.AssignRequest;
+import com.daily.dailychineseculture.mapper.AdminDutyApplicationMapper;
 import com.daily.dailychineseculture.mapper.SystemAdminMapper;
+import com.daily.dailychineseculture.mapper.UserMapper;
 import com.daily.dailychineseculture.service.SystemAdminService;
-import com.daily.dailychineseculture.vo.AdminStatsVO;
-import com.daily.dailychineseculture.vo.AdminUserAggVO;
-import com.daily.dailychineseculture.vo.SystemAdminVO;
-import com.daily.dailychineseculture.vo.UserSearchVO;
+import com.daily.dailychineseculture.vo.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,6 +17,8 @@ import java.util.List;
 public class SystemAdminServiceImpl implements SystemAdminService {
 
     private final SystemAdminMapper systemAdminMapper;
+    private final UserMapper userMapper;
+    private final AdminDutyApplicationMapper adminDutyApplicationMapper;
 
     @Override
     public AdminStatsVO getAdminStats() {
@@ -34,6 +35,15 @@ public class SystemAdminServiceImpl implements SystemAdminService {
     @Override
     public List<AdminUserAggVO> getAdminListAgg(String keyword) {
         return systemAdminMapper.selectAdminUserAggRows(keyword);
+    }
+
+    @Override
+    public AdminUserDetailVO getAdminDetail(Long userId) {
+        AdminUserDetailVO detail = new AdminUserDetailVO();
+        detail.setUserInfo(userMapper.selectUserBaseInfo(userId));
+        detail.setActiveRoles(systemAdminMapper.selectActiveRolesByUserId(userId));
+        detail.setApplicationHistory(adminDutyApplicationMapper.selectApplicationHistoryByUserId(userId));
+        return detail;
     }
 
     @Override

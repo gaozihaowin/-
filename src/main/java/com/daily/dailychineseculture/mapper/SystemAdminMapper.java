@@ -1,5 +1,6 @@
 package com.daily.dailychineseculture.mapper;
 
+import com.daily.dailychineseculture.vo.ActiveRoleVO;
 import com.daily.dailychineseculture.vo.AdminStatsVO;
 import com.daily.dailychineseculture.vo.AdminUserAggVO;
 import com.daily.dailychineseculture.vo.SystemAdminVO;
@@ -30,4 +31,6 @@ public interface SystemAdminMapper {
     int deleteAssignment(@Param("assignmentId") Integer assignmentId);
 
     List<AdminUserAggVO> selectAdminUserAggRows(@Param("keyword") String keyword);
+
+    List<ActiveRoleVO> selectActiveRolesByUserId(@Param("userId") Long userId);
 }

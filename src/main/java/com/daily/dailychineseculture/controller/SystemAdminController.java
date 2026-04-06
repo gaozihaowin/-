@@ -5,6 +5,7 @@ import com.daily.dailychineseculture.dto.AssignRequest;
 import com.daily.dailychineseculture.service.SystemAdminService;
 import com.daily.dailychineseculture.vo.AdminStatsVO;
 import com.daily.dailychineseculture.vo.AdminUserAggVO;
+import com.daily.dailychineseculture.vo.AdminUserDetailVO;
 import com.daily.dailychineseculture.vo.SystemAdminVO;
 import com.daily.dailychineseculture.vo.UserSearchVO;
 import jakarta.validation.Valid;
@@ -37,6 +38,11 @@ public class SystemAdminController {
     public ResponseResult<List<AdminUserAggVO>> getAdminListAgg(
             @RequestParam(required = false) String keyword) {
         return ResponseResult.success(systemAdminService.getAdminListAgg(keyword));
+    }
+
+    @GetMapping("/detail/{userId}")
+    public ResponseResult<AdminUserDetailVO> getAdminDetail(@PathVariable Long userId) {
+        return ResponseResult.success(systemAdminService.getAdminDetail(userId));
     }
 
     @GetMapping("/users/search")

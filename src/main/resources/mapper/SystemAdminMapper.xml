@@ -121,4 +121,19 @@
         ORDER BY u.user_id, da.start_time DESC
     </select>
 
+    <!-- 查询指定用户的有效角色列表 -->
+    <select id="selectActiveRolesByUserId" resultType="com.daily.dailychineseculture.vo.ActiveRoleVO">
+        SELECT
+            da.assignment_id AS assignmentId,
+            da.duty_type     AS dutyType,
+            da.start_time    AS startTime,
+            c.name           AS campName
+        FROM t_duty_assignment da
+        LEFT JOIN t_camp c ON da.camp_id = c.camp_id
+        WHERE da.user_id = #{userId}
+          AND (da.end_time IS NULL OR da.end_time > NOW())
+          AND da.duty_type IN ('SUPER_ADMIN', 'COURSE_ADMIN', 'ARCHIVE_ADMIN')
+        ORDER BY da.start_time DESC
+    </select>
+
 </mapper>

@@ -3,6 +3,7 @@ package com.daily.dailychineseculture.mapper;
 import com.daily.dailychineseculture.dto.UserSearchDTO;
 import com.daily.dailychineseculture.entity.User;
 import com.daily.dailychineseculture.vo.UserSimpleVO;
+import com.daily.dailychineseculture.vo.UserInfoVO;
 import org.apache.ibatis.annotations.*;
 
 import java.util.List;
@@ -247,4 +248,10 @@ public interface UserMapper {
         List<UserSearchDTO> fuzzySearch(@Param("keyword") String keyword);
 
         List<UserSimpleVO> searchUsersForAdmin(@Param("keyword") String keyword);
+
+        @Select("SELECT user_id AS userId, account AS account, nickname AS nickname, phone AS phone, " +
+                "avatar AS avatar, region AS region, profession AS profession, " +
+                "gender AS gender, birthday AS birthday, create_time AS createTime, status AS status " +
+                "FROM t_user WHERE user_id = #{userId}")
+        UserInfoVO selectUserBaseInfo(@Param("userId") Long userId);
 }
