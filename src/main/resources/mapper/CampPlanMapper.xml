@@ -46,19 +46,23 @@
         </foreach>
     </insert>
 
-    <!-- 插入单条排课计划 -->
     <insert id="insertCampPlan" parameterType="com.daily.dailychineseculture.entity.CampPlan" useGeneratedKeys="true" keyProperty="planId">
-        INSERT INTO t_camp_plan (camp_id, day_index, plan_date, title)
-        VALUES (#{campId}, #{dayIndex}, #{planDate}, #{title})
+        INSERT INTO t_camp_plan
+            (camp_id, day_index, plan_date, title, module_index, module_name, teacher_name)
+        VALUES
+            (#{campId}, #{dayIndex}, #{planDate}, #{title}, #{moduleIndex}, #{moduleName}, #{teacherName})
     </insert>
 
-    <!-- 根据 ID 更新排课计划 -->
     <update id="updateCampPlan" parameterType="com.daily.dailychineseculture.dto.CampPlanDTO">
         UPDATE t_camp_plan
         <set>
-            <if test="title != null">
-                title = #{title},
-            </if>
+            <if test="campId != null">camp_id = #{campId},</if>
+            <if test="dayIndex != null">day_index = #{dayIndex},</if>
+            <if test="planDate != null">plan_date = #{planDate},</if>
+            <if test="title != null and title != ''">title = #{title},</if>
+            <if test="moduleIndex != null">module_index = #{moduleIndex},</if>
+            <if test="moduleName != null and moduleName != ''">module_name = #{moduleName},</if>
+            <if test="teacherName != null and teacherName != ''">teacher_name = #{teacherName},</if>
         </set>
         WHERE plan_id = #{planId}
     </update>

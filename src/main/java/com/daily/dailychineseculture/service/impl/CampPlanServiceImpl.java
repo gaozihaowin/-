@@ -273,6 +273,9 @@ public class CampPlanServiceImpl implements CampPlanService {
         planDTO.setPlanId(planId);
         planDTO.setCampId(request.getCampId());
         planDTO.setTitle(request.getTitle());
+        planDTO.setModuleIndex(request.getModuleIndex());
+        planDTO.setModuleName(request.getModuleName());
+        planDTO.setTeacherName(request.getTeacherName());
         campPlanMapper.updateCampPlan(planDTO);
 
         // 2. 准备数据
