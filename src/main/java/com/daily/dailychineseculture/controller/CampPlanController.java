@@ -124,8 +124,8 @@ public class CampPlanController {
      * @return 统一响应结果
      */
     @PostMapping("/add-smart-day")
-    public ResponseResult<Void> addSmartDay(@RequestBody @Validated CampPlanAddDayDTO requestDTO) {
-        campPlanService.addSmartDay(requestDTO);
-        return ResponseResult.successMsg("智能追加排课成功");
+    public ResponseResult<CampPlanDTO> addSmartDay(@RequestBody @Validated CampPlanAddDayDTO requestDTO) {
+        CampPlanDTO dto = campPlanService.addSmartDay(requestDTO);
+        return ResponseResult.success("智能追加排课成功", dto);
     }
 }

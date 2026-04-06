@@ -381,25 +381,32 @@ public class CampPlanServiceImpl implements CampPlanService {
      */
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public void addSmartDay(CampPlanAddDayDTO requestDTO) {
-        // 1. 校验营期是否存在
+    public CampPlanDTO addSmartDay(CampPlanAddDayDTO requestDTO) {
         Camp camp = campMapper.selectById(requestDTO.getCampId());
         if (camp == null) {
             throw new BusinessException(400, "未找到指定的营期");
         }
 
-        // 2. 将 DTO 属性拷贝到实体中
         CampPlan campPlan = new CampPlan();
         BeanUtils.copyProperties(requestDTO, campPlan);
-
-        // 3. 强制设置默认未完成状态
         campPlan.setIsFinished(0);
 
-        // 4. 铁桶防御：捕获唯一索引冲突异常
         try {
             campPlanMapper.insertCampPlan(campPlan);
         } catch (DuplicateKeyException e) {
             throw new BusinessException(409, "该营期的当前天数或日期已被占用，请刷新页面获取最新排课进度！");
         }
+
+        CampPlanDTO dto = new CampPlanDTO();
+        dto.setPlanId(campPlan.getPlanId());
+        dto.setCampId(campPlan.getCampId());
+        dto.setDayIndex(campPlan.getDayIndex());
+        dto.setPlanDate(campPlan.getPlanDate());
+        dto.setTitle(campPlan.getTitle());
+        dto.setModuleIndex(campPlan.getModuleIndex());
+        dto.setModuleName(campPlan.getModuleName());
+        dto.setTeacherName(campPlan.getTeacherName());
+        dto.setTasks(new ArrayList<>());
+        return dto;
     }
 }

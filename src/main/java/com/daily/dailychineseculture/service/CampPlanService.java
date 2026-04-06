@@ -73,5 +73,5 @@ public interface CampPlanService {
      * 前端智能推算完整数据后，后端仅负责落库
      * @param requestDTO 智能追加排课请求 DTO
      */
-    void addSmartDay(CampPlanAddDayDTO requestDTO);
+    CampPlanDTO addSmartDay(CampPlanAddDayDTO requestDTO);
 }
