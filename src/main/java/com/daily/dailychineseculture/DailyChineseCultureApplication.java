@@ -11,7 +11,7 @@ import org.springframework.web.filter.CorsFilter;
 
 @SpringBootApplication
 @EnableAsync
-public class DailyChineseCultureApplication {
+public class  DailyChineseCultureApplication {
 
     public static void main(String[] args) {
         SpringApplication.run(DailyChineseCultureApplication.class, args);
