@@ -3,6 +3,7 @@
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.daily.dailychineseculture.mapper.DashboardMapper">
 
+    <!-- Super Admin Dashboard Queries -->
     <select id="countTotalUsers" resultType="java.lang.Integer">
         SELECT COUNT(*) FROM t_user
     </select>
@@ -32,6 +33,43 @@
         LEFT JOIN t_user u ON a.user_id = u.user_id
         WHERE a.status = 0
         ORDER BY a.create_time DESC
+        LIMIT #{limit}
+    </select>
+
+    <!-- Course Admin Dashboard Queries -->
+    <select id="countTotalCamps" resultType="java.lang.Integer">
+        SELECT COUNT(*) FROM t_camp
+    </select>
+
+    <select id="countActiveCampsForCourse" resultType="java.lang.Integer">
+        SELECT COUNT(*) FROM t_camp WHERE status = 1
+    </select>
+
+    <select id="countTotalCampPlans" resultType="java.lang.Integer">
+        SELECT COUNT(*) FROM t_camp_plan
+    </select>
+
+    <select id="countTotalPlanTasks" resultType="java.lang.Integer">
+        SELECT COUNT(*) FROM t_plan_task
+    </select>
+
+    <select id="selectRecentCamps"
+            resultType="com.daily.dailychineseculture.vo.CourseAdminDashboardVO$RecentCampVO">
+        SELECT
+            c.camp_id       AS campId,
+            c.name          AS campName,
+            COUNT(cp.plan_id) AS planCount,
+            c.enroll_count  AS enrollCount,
+            CASE c.status
+                WHEN 1 THEN '进行中'
+                WHEN 0 THEN '未开始'
+                WHEN 2 THEN '已结束'
+                ELSE '未知'
+            END             AS status
+        FROM t_camp c
+        LEFT JOIN t_camp_plan cp ON c.camp_id = cp.camp_id
+        GROUP BY c.camp_id, c.name, c.status, c.enroll_count
+        ORDER BY c.start_time DESC
         LIMIT #{limit}
     </select>
 
