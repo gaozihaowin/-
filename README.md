@@ -54,7 +54,7 @@ daily-chinese-studies/
 │   │   │   │   └── Result.java                   # 基础响应实体
 │   │   │   ├── config/                 # 配置类
 │   │   │   │   └── WebConfig.java                 # Web配置（拦截器注册）
-│   │   │   ├── controller/             # 控制器层（约20个）
+├── controller/             # 控制器层（25个）
 │   │   │   │   ├── AdminController.java            # 管理员管理
 │   │   │   │   ├── AdminDutyApplicationController.java  # 管理员值班申请
 │   │   │   │   ├── AdminTestController.java        # 测试接口
@@ -77,14 +77,14 @@ daily-chinese-studies/
 │   │   │   │   ├── UserSearchController.java     # 用户搜索
 │   │   │   │   ├── VolunteerController.java      # 志愿者（用户端）
 │   │   │   │   └── VolunteerManageController.java  # 志愿者管理（后台）
-│   │   │   ├── dto/                      # 数据传输对象（约60个）
+├── dto/                      # 数据传输对象（66个）
 │   │   │   │   ├── CampPlanDTO.java               # 排课计划DTO
 │   │   │   │   ├── CampPlanAddDayDTO.java        # 智能追加排课DTO
 │   │   │   │   ├── CampDTO.java                  # 营期DTO
 │   │   │   │   ├── HomeworkDetailDTO.java         # 作业详情DTO
 │   │   │   │   ├── UserInfoDTO.java              # 用户信息DTO
 │   │   │   │   └── ...
-│   │   │   ├── entity/                   # 实体类（约15个）
+├── entity/                   # 实体类（12个）
 │   │   │   │   ├── Camp.java                      # 营期实体
 │   │   │   │   ├── CampPlan.java                  # 排课计划实体
 │   │   │   │   ├── CampType.java                  # 营期类型实体
@@ -105,7 +105,7 @@ daily-chinese-studies/
 │   │   │   │   └── AuthInterceptor.java          # 用户认证拦截器
 │   │   │   ├── listener/                # 事件监听器
 │   │   │   │   └── CampProgressUpdateListener.java  # 营期进度更新监听器
-│   │   │   ├── mapper/                  # 数据访问层（约20个）
+├── mapper/                  # 数据访问层（21个）
 │   │   │   │   ├── CampMapper.java               # 营期Mapper
 │   │   │   │   ├── CampPlanMapper.java          # 排课计划Mapper
 │   │   │   │   ├── CourseMapper.java            # 课程Mapper
@@ -114,14 +114,14 @@ daily-chinese-studies/
 │   │   │   │   ├── HomeworkMapper.java          # 作业Mapper
 │   │   │   │   ├── UserMapper.java              # 用户Mapper
 │   │   │   │   └── ...
-│   │   │   ├── service/                 # 服务层接口（约15个）
+├── service/                 # 服务层接口（19个）
 │   │   │   │   ├── CampPlanService.java         # 排课服务接口
 │   │   │   │   ├── CampService.java             # 营期服务接口
 │   │   │   │   ├── CourseService.java           # 课程服务接口
 │   │   │   │   ├── HomeworkService.java         # 作业服务接口
 │   │   │   │   ├── UserService.java             # 用户服务接口
 │   │   │   │   └── ...
-│   │   │   ├── service/impl/           # 服务层实现（约15个）
+├── service/impl/           # 服务层实现（17个）
 │   │   │   │   ├── CampPlanServiceImpl.java    # 排课服务实现
 │   │   │   │   ├── CampServiceImpl.java       # 营期服务实现
 │   │   │   │   ├── CourseServiceImpl.java     # 课程服务实现
@@ -129,7 +129,7 @@ daily-chinese-studies/
 │   │   │   │   └── ...
 │   │   │   ├── util/                    # 工具类
 │   │   │   │   └── JwtUtils.java                  # JWT工具类
-│   │   │   ├── vo/                       # 视图对象
+├── vo/                       # 视图对象（17个）
 │   │   │   │   ├── AdminDutyApplicationListItemVO.java
 │   │   │   │   ├── AdminDutyApplicationStatsVO.java
 │   │   │   │   ├── AdminListItemVO.java
@@ -301,7 +301,7 @@ daily-chinese-studies/
 ## 项目状态
 
 **当前版本**: v0.0.1-SNAPSHOT
-**最后更新**: 2026-04-05
+**最后更新**: 2026-04-08
 
 当前项目已完成核心功能开发，包括用户认证、课程管理、营期管理、教务排课、作业管理、志愿者管理、值班申请、群聊管理等主要模块，具备完整的测试用例和文档说明。
 
