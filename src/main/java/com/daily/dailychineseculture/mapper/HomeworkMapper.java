@@ -1,5 +1,6 @@
 package com.daily.dailychineseculture.mapper;
 
+import com.daily.dailychineseculture.dto.MyHomeworkDTO;
 import org.apache.ibatis.annotations.*;
 import java.util.List;
 import java.util.Map;
@@ -447,4 +448,6 @@ public interface HomeworkMapper {
             "AND DATE(h.submit_time) > DATE(cp.plan_date) " +
             "</script>")
     Integer getLateCountByGroup(@Param("groupType") String groupType, @Param("groupId") Integer groupId, @Param("date") String date);
+
+    List<MyHomeworkDTO> selectMyHomeworkList(@Param("userId") Long userId);
 }

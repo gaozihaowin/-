@@ -4,6 +4,7 @@ import com.daily.dailychineseculture.dto.HomeworkDetailDTO;
 import com.daily.dailychineseculture.dto.HomeworkListDTO;
 import com.daily.dailychineseculture.dto.HomeworkHierarchyDTO;
 import com.daily.dailychineseculture.dto.HomeworkStatisticsHierarchyDTO;
+import com.daily.dailychineseculture.dto.MyHomeworkPageDTO;
 import com.daily.dailychineseculture.service.HomeworkService;
 import com.daily.dailychineseculture.util.JwtUtils;
 import com.daily.dailychineseculture.common.Result;
@@ -271,6 +272,24 @@ public class HomeworkController {
         } catch (Exception e) {
             e.printStackTrace();
             return Result.error("获取作业统计层级数据失败: " + e.getMessage());
+        }
+    }
+
+    @GetMapping("/homework/my-list")
+    public Result<MyHomeworkPageDTO> getMyHomeworkList(
+            @RequestHeader("Authorization") String token,
+            @RequestParam(value = "page", defaultValue = "1") Integer page,
+            @RequestParam(value = "size", defaultValue = "10") Integer size) {
+        try {
+            Long userId = jwtUtils.getUserIdFromToken(token);
+            if (userId == null) {
+                return Result.error("无效的token");
+            }
+            MyHomeworkPageDTO result = homeworkService.getMyHomeworkPage(userId, page, size);
+            return Result.success(result);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return Result.error("获取我的作业列表失败: " + e.getMessage());
         }
     }
 }

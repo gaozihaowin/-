@@ -4,6 +4,7 @@ import com.daily.dailychineseculture.dto.HomeworkDetailDTO;
 import com.daily.dailychineseculture.dto.HomeworkListDTO;
 import com.daily.dailychineseculture.dto.HomeworkHierarchyDTO;
 import com.daily.dailychineseculture.dto.HomeworkStatisticsHierarchyDTO;
+import com.daily.dailychineseculture.dto.MyHomeworkPageDTO;
 import java.util.Map;
 
 /**
@@ -55,4 +56,6 @@ public interface HomeworkService {
      * 获取作业统计层级数据
      */
     HomeworkStatisticsHierarchyDTO getHomeworkStatisticsHierarchy(Long userId, String type, Integer id, String date);
+
+    MyHomeworkPageDTO getMyHomeworkPage(Long userId, Integer page, Integer size);
 }

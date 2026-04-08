@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.daily.dailychineseculture.mapper.HomeworkMapper">
+
+    <select id="selectMyHomeworkList"
+            resultType="com.daily.dailychineseculture.dto.MyHomeworkDTO">
+        SELECT
+            h.homework_id                 AS homeworkId,
+            c.name                        AS campName,
+            cp.title                      AS planTitle,
+            h.content                     AS content,
+            h.submit_time                 AS submitTime,
+            h.is_small_group_excellent    AS isSmallGroupExcellent,
+            h.is_big_group_excellent      AS isBigGroupExcellent
+        FROM t_homework h
+        LEFT JOIN t_camp_plan cp ON h.plan_id = cp.plan_id
+        LEFT JOIN t_camp c ON cp.camp_id = c.camp_id
+        WHERE h.user_id = #{userId}
+        ORDER BY h.submit_time DESC
+    </select>
+
+</mapper>

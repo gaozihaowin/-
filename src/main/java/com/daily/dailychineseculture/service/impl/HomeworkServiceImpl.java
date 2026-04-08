@@ -4,6 +4,8 @@ import com.daily.dailychineseculture.dto.*;
 import com.daily.dailychineseculture.mapper.HomeworkMapper;
 import com.daily.dailychineseculture.mapper.VolunteerManageMapper;
 import com.daily.dailychineseculture.service.HomeworkService;
+import com.github.pagehelper.PageHelper;
+import com.github.pagehelper.PageInfo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import java.text.SimpleDateFormat;
@@ -829,5 +831,16 @@ public class HomeworkServiceImpl implements HomeworkService {
         item.setHasHomework(planId != null);
 
         return item;
+    }
+
+    @Override
+    public MyHomeworkPageDTO getMyHomeworkPage(Long userId, Integer page, Integer size) {
+        PageHelper.startPage(page, size);
+        List<MyHomeworkDTO> list = homeworkMapper.selectMyHomeworkList(userId);
+        PageInfo<MyHomeworkDTO> pageInfo = new PageInfo<>(list);
+        MyHomeworkPageDTO result = new MyHomeworkPageDTO();
+        result.setTotal(pageInfo.getTotal());
+        result.setList(pageInfo.getList());
+        return result;
     }
 }
