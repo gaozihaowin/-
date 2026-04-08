@@ -26,6 +26,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashSet;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -43,7 +44,33 @@ public class CampPlanServiceImpl implements CampPlanService {
 
     @Override
     public List<CampOptionDTO> getCampOptions() {
-        return campMapper.selectCampOptions();
+        List<CampOptionDTO> camps = campMapper.selectCampOptions();
+        LocalDateTime now = LocalDateTime.now();
+        camps.forEach(camp -> {
+            LocalDateTime start = camp.getStartTime();
+            LocalDateTime end = camp.getEndTime();
+            if (start == null) {
+                camp.setCampStatusCode(0);
+                camp.setCampStatusDesc("未开营");
+                return;
+            }
+            if (end == null) {
+                camp.setCampStatusCode(1);
+                camp.setCampStatusDesc("已开营");
+                return;
+            }
+            if (now.isBefore(start)) {
+                camp.setCampStatusCode(0);
+                camp.setCampStatusDesc("未开营");
+            } else if (now.isAfter(end)) {
+                camp.setCampStatusCode(2);
+                camp.setCampStatusDesc("已结营");
+            } else {
+                camp.setCampStatusCode(1);
+                camp.setCampStatusDesc("已开营");
+            }
+        });
+        return camps;
     }
 
     /**
