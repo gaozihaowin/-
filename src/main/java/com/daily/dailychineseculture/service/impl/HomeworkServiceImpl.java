@@ -843,4 +843,15 @@ public class HomeworkServiceImpl implements HomeworkService {
         result.setList(pageInfo.getList());
         return result;
     }
+
+    @Override
+    public ExcellentShowcasePageDTO getExcellentShowcasePage(Integer page, Integer size) {
+        PageHelper.startPage(page, size);
+        List<ExcellentShowcaseDTO> list = homeworkMapper.selectExcellentShowcaseList();
+        PageInfo<ExcellentShowcaseDTO> pageInfo = new PageInfo<>(list);
+        ExcellentShowcasePageDTO result = new ExcellentShowcasePageDTO();
+        result.setTotal(pageInfo.getTotal());
+        result.setList(pageInfo.getList());
+        return result;
+    }
 }

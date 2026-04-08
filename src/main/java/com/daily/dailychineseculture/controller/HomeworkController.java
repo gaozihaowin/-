@@ -5,6 +5,7 @@ import com.daily.dailychineseculture.dto.HomeworkListDTO;
 import com.daily.dailychineseculture.dto.HomeworkHierarchyDTO;
 import com.daily.dailychineseculture.dto.HomeworkStatisticsHierarchyDTO;
 import com.daily.dailychineseculture.dto.MyHomeworkPageDTO;
+import com.daily.dailychineseculture.dto.ExcellentShowcasePageDTO;
 import com.daily.dailychineseculture.service.HomeworkService;
 import com.daily.dailychineseculture.util.JwtUtils;
 import com.daily.dailychineseculture.common.Result;
@@ -290,6 +291,19 @@ public class HomeworkController {
         } catch (Exception e) {
             e.printStackTrace();
             return Result.error("获取我的作业列表失败: " + e.getMessage());
+        }
+    }
+
+    @GetMapping("/homework/excellent-showcase")
+    public Result<ExcellentShowcasePageDTO> getExcellentShowcase(
+            @RequestParam(value = "page", defaultValue = "1") Integer page,
+            @RequestParam(value = "size", defaultValue = "10") Integer size) {
+        try {
+            ExcellentShowcasePageDTO result = homeworkService.getExcellentShowcasePage(page, size);
+            return Result.success(result);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return Result.error("获取优秀功课展播失败: " + e.getMessage());
         }
     }
 }

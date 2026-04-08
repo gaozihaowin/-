@@ -5,6 +5,7 @@ import com.daily.dailychineseculture.dto.HomeworkListDTO;
 import com.daily.dailychineseculture.dto.HomeworkHierarchyDTO;
 import com.daily.dailychineseculture.dto.HomeworkStatisticsHierarchyDTO;
 import com.daily.dailychineseculture.dto.MyHomeworkPageDTO;
+import com.daily.dailychineseculture.dto.ExcellentShowcasePageDTO;
 import java.util.Map;
 
 /**
@@ -58,4 +59,6 @@ public interface HomeworkService {
     HomeworkStatisticsHierarchyDTO getHomeworkStatisticsHierarchy(Long userId, String type, Integer id, String date);
 
     MyHomeworkPageDTO getMyHomeworkPage(Long userId, Integer page, Integer size);
+
+    ExcellentShowcasePageDTO getExcellentShowcasePage(Integer page, Integer size);
 }

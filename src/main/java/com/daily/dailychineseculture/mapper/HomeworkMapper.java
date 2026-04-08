@@ -1,6 +1,7 @@
 package com.daily.dailychineseculture.mapper;
 
 import com.daily.dailychineseculture.dto.MyHomeworkDTO;
+import com.daily.dailychineseculture.dto.ExcellentShowcaseDTO;
 import org.apache.ibatis.annotations.*;
 import java.util.List;
 import java.util.Map;
@@ -450,4 +451,6 @@ public interface HomeworkMapper {
     Integer getLateCountByGroup(@Param("groupType") String groupType, @Param("groupId") Integer groupId, @Param("date") String date);
 
     List<MyHomeworkDTO> selectMyHomeworkList(@Param("userId") Long userId);
+
+    List<ExcellentShowcaseDTO> selectExcellentShowcaseList();
 }

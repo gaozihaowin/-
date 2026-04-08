@@ -2,6 +2,7 @@ package com.daily.dailychineseculture.controller;
 
 import com.daily.dailychineseculture.common.ResponseResult;
 import com.daily.dailychineseculture.dto.SwitchIdentityRequest;
+import com.daily.dailychineseculture.dto.StudyArchiveDTO;
 import com.daily.dailychineseculture.dto.UserCurrentInfoDTO;
 import com.daily.dailychineseculture.dto.UserIdentityDTO;
 import com.daily.dailychineseculture.dto.UserUpdateRequest;
@@ -9,6 +10,8 @@ import com.daily.dailychineseculture.entity.User;
 import com.daily.dailychineseculture.service.IdGeneratorService;
 import com.daily.dailychineseculture.service.UserAuthService;
 import com.daily.dailychineseculture.service.UserService;
+import com.daily.dailychineseculture.service.UserStatsService;
+import com.daily.dailychineseculture.util.JwtUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -32,6 +35,12 @@ public class UserController {
     
     @Autowired
     private UserAuthService userAuthService;
+
+    @Autowired
+    private UserStatsService userStatsService;
+
+    @Autowired
+    private JwtUtils jwtUtils;
 
     /**
      * 获取所有用户
@@ -219,5 +228,16 @@ public class UserController {
         } catch (Exception e) {
             return ResponseResult.error(500, "服务器内部错误：" + e.getMessage());
         }
+    }
+
+    @GetMapping("/study-archive")
+    public ResponseResult<StudyArchiveDTO> getStudyArchive(
+            @RequestHeader("Authorization") String token) {
+        Long userId = jwtUtils.getUserIdFromToken(token);
+        if (userId == null) {
+            return ResponseResult.error(401, "无效的token");
+        }
+        StudyArchiveDTO result = userStatsService.getStudyArchive(userId);
+        return ResponseResult.success(result);
     }
 }
