@@ -29,8 +29,8 @@ public class DashboardServiceImpl implements DashboardService {
         CourseAdminDashboardVO vo = new CourseAdminDashboardVO();
         vo.setTotalCamps(dashboardMapper.countTotalCamps());
         vo.setActiveCamps(dashboardMapper.countActiveCampsForCourse());
-        vo.setTotalCampPlans(dashboardMapper.countTotalCampPlans());
-        vo.setTotalPlanTasks(dashboardMapper.countTotalPlanTasks());
+        vo.setActiveStudents(dashboardMapper.sumActiveStudents());
+        vo.setPendingApprovals(dashboardMapper.countPendingApprovals());
         vo.setRecentCamps(dashboardMapper.selectRecentCamps(5));
         return vo;
     }

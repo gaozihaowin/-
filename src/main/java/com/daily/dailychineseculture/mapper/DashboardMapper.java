@@ -22,9 +22,7 @@ public interface DashboardMapper {
 
     Integer countActiveCampsForCourse();
 
-    Integer countTotalCampPlans();
-
-    Integer countTotalPlanTasks();
+    Integer sumActiveStudents();
 
     List<CourseAdminDashboardVO.RecentCampVO> selectRecentCamps(@Param("limit") Integer limit);
 }

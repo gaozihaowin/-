@@ -45,12 +45,8 @@
         SELECT COUNT(*) FROM t_camp WHERE status = 1
     </select>
 
-    <select id="countTotalCampPlans" resultType="java.lang.Integer">
-        SELECT COUNT(*) FROM t_camp_plan
-    </select>
-
-    <select id="countTotalPlanTasks" resultType="java.lang.Integer">
-        SELECT COUNT(*) FROM t_plan_task
+    <select id="sumActiveStudents" resultType="java.lang.Integer">
+        SELECT IFNULL(SUM(enroll_count), 0) FROM t_camp WHERE status = 1
     </select>
 
     <select id="selectRecentCamps"
@@ -58,6 +54,7 @@
         SELECT
             c.camp_id       AS campId,
             c.name          AS campName,
+            ct.level_name   AS campType,
             COUNT(cp.plan_id) AS planCount,
             c.enroll_count  AS enrollCount,
             CASE c.status
@@ -67,8 +64,9 @@
                 ELSE '未知'
             END             AS status
         FROM t_camp c
+        LEFT JOIN t_camp_type ct ON c.type_id = ct.type_id
         LEFT JOIN t_camp_plan cp ON c.camp_id = cp.camp_id
-        GROUP BY c.camp_id, c.name, c.status, c.enroll_count
+        GROUP BY c.camp_id, c.name, ct.level_name, c.status, c.enroll_count, c.start_time
         ORDER BY c.start_time DESC
         LIMIT #{limit}
     </select>
