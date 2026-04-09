@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.daily.dailychineseculture.mapper.MaterialCategoryMapper">
+
+    <!-- 查询所有分类（用于构建树） -->
+    <select id="selectAll" resultType="com.daily.dailychineseculture.entity.MaterialCategory">
+        SELECT
+            category_id AS categoryId,
+            parent_id AS parentId,
+            name,
+            sort,
+            create_time AS createTime,
+            update_time AS updateTime
+        FROM t_material_category
+        ORDER BY sort ASC, category_id ASC
+    </select>
+
+    <!-- 根据父ID查询子分类数量 -->
+    <select id="countByParentId" resultType="int">
+        SELECT COUNT(*)
+        FROM t_material_category
+        WHERE parent_id = #{parentId}
+    </select>
+
+    <!-- 根据ID查询分类 -->
+    <select id="selectById" resultType="com.daily.dailychineseculture.entity.MaterialCategory">
+        SELECT
+            category_id AS categoryId,
+            parent_id AS parentId,
+            name,
+            sort,
+            create_time AS createTime,
+            update_time AS updateTime
+        FROM t_material_category
+        WHERE category_id = #{categoryId}
+    </select>
+
+    <!-- 新增分类 -->
+    <insert id="insert" parameterType="com.daily.dailychineseculture.entity.MaterialCategory" useGeneratedKeys="true" keyProperty="categoryId">
+        INSERT INTO t_material_category (
+            parent_id,
+            name,
+            sort
+        ) VALUES (
+            #{parentId},
+            #{name},
+            #{sort}
+        )
+    </insert>
+
+    <!-- 修改分类 -->
+    <update id="update" parameterType="com.daily.dailychineseculture.entity.MaterialCategory">
+        UPDATE t_material_category
+        <set>
+            <if test="parentId != null">
+                parent_id = #{parentId},
+            </if>
+            <if test="name != null and name != ''">
+                name = #{name},
+            </if>
+            <if test="sort != null">
+                sort = #{sort},
+            </if>
+        </set>
+        WHERE category_id = #{categoryId}
+    </update>
+
+    <!-- 删除分类 -->
+    <delete id="deleteById">
+        DELETE FROM t_material_category
+        WHERE category_id = #{categoryId}
+    </delete>
+
+</mapper>

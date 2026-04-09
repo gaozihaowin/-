@@ -228,4 +228,18 @@
         </foreach>
     </update>
 
+    <!-- 根据素材ID统计排课任务数量（防爆拦截） -->
+    <select id="countByMaterialId" resultType="int">
+        SELECT COUNT(*)
+        FROM t_plan_task
+        WHERE material_id = #{materialId}
+    </select>
+
+    <!-- 根据素材ID更新排课任务的task_url（同步更新） -->
+    <update id="updateTaskUrlByMaterialId">
+        UPDATE t_plan_task
+        SET task_url = #{newUrl}
+        WHERE material_id = #{materialId}
+    </update>
+
 </mapper>
