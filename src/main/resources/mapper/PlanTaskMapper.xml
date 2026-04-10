@@ -71,6 +71,7 @@
             task_name AS taskName,
             task_desc AS taskDesc,
             task_url AS taskUrl,
+            material_id AS materialId,
             duration,
             is_required AS isRequired,
             sort_order AS sortOrder
@@ -96,6 +97,7 @@
             task_name,
             task_desc,
             task_url,
+            material_id,
             duration,
             is_required,
             sort_order,
@@ -106,6 +108,7 @@
             #{taskName},
             #{taskDesc},
             #{taskUrl},
+            #{materialId},
             #{duration},
             #{isRequired},
             #{sortOrder},
@@ -128,6 +131,9 @@
             </if>
             <if test="taskUrl != null">
                 task_url = #{taskUrl},
+            </if>
+            <if test="materialId != null">
+                material_id = #{materialId},
             </if>
             <if test="duration != null">
                 duration = #{duration},

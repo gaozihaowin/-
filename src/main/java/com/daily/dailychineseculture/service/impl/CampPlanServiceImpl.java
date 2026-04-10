@@ -9,9 +9,11 @@ import com.daily.dailychineseculture.dto.GenerateCalendarRequest;
 import com.daily.dailychineseculture.dto.PlanTaskDTO;
 import com.daily.dailychineseculture.entity.Camp;
 import com.daily.dailychineseculture.entity.CampPlan;
+import com.daily.dailychineseculture.entity.CourseMaterial;
 import com.daily.dailychineseculture.entity.PlanTask;
 import com.daily.dailychineseculture.mapper.CampMapper;
 import com.daily.dailychineseculture.mapper.CampPlanMapper;
+import com.daily.dailychineseculture.mapper.CourseMaterialMapper;
 import com.daily.dailychineseculture.mapper.PlanTaskMapper;
 import com.daily.dailychineseculture.service.CampPlanService;
 import lombok.RequiredArgsConstructor;
@@ -41,6 +43,7 @@ public class CampPlanServiceImpl implements CampPlanService {
     private final CampPlanMapper campPlanMapper;
     private final CampMapper campMapper;
     private final PlanTaskMapper planTaskMapper;
+    private final CourseMaterialMapper courseMaterialMapper;
 
     @Override
     public List<CampOptionDTO> getCampOptions() {
@@ -203,7 +206,7 @@ public class CampPlanServiceImpl implements CampPlanService {
     }
 
     /**
-     * 将 DTO 转换为实体
+     * 将 DTO 转换为实体（带课件中台强制同步逻辑）
      */
     private PlanTask convertToEntity(Integer planId, PlanTaskDTO dto) {
         PlanTask task = new PlanTask();
@@ -212,10 +215,27 @@ public class CampPlanServiceImpl implements CampPlanService {
         task.setTaskType(dto.getTaskType());
         task.setTaskName(dto.getTaskName());
         task.setTaskDesc(dto.getTaskDesc());
-        task.setTaskUrl(dto.getTaskUrl());
-        task.setDuration(dto.getDuration());
         task.setIsRequired(dto.getIsRequired());
         task.setSortOrder(dto.getSortOrder());
+
+        if (dto.getMaterialId() != null) {
+            CourseMaterial material = courseMaterialMapper.selectById(dto.getMaterialId());
+            if (material != null) {
+                task.setMaterialId(dto.getMaterialId());
+                task.setTaskUrl(material.getUrl());
+                if (dto.getDuration() == null || dto.getDuration() == 0) {
+                    task.setDuration(material.getDuration());
+                } else {
+                    task.setDuration(dto.getDuration());
+                }
+            } else {
+                throw new BusinessException("所选的课件资源不存在或已被删除，请刷新后重试！");
+            }
+        } else {
+            task.setMaterialId(null);
+            task.setTaskUrl(dto.getTaskUrl());
+            task.setDuration(dto.getDuration());
+        }
         return task;
     }
 

@@ -57,10 +57,13 @@ public class CourseMaterialController {
 
     /**
      * 修改课件
-     * PUT /api/admin/materials
+     * PUT /api/admin/materials/{materialId}
      */
-    @PutMapping
-    public ResponseResult<String> updateMaterial(@RequestBody CourseMaterialRequestDTO requestDTO) {
+    @PutMapping("/{materialId}")
+    public ResponseResult<String> updateMaterial(
+            @PathVariable("materialId") Long materialId,
+            @RequestBody CourseMaterialRequestDTO requestDTO) {
+        requestDTO.setMaterialId(materialId);
         courseMaterialService.updateMaterial(requestDTO);
         return ResponseResult.success("修改课件成功");
     }
