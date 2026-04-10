@@ -5,44 +5,53 @@
     <!-- 分页查询课件（手写动态SQL） -->
     <select id="selectPage" resultType="com.daily.dailychineseculture.entity.CourseMaterial">
         SELECT
-            material_id AS materialId,
-            category_id AS categoryId,
-            name,
-            type,
-            url,
-            size,
-            duration,
-            create_by AS createBy,
-            create_time AS createTime,
-            update_time AS updateTime
-        FROM t_course_material
+            t.material_id   AS materialId,
+            t.category_id   AS categoryId,
+            mc.name         AS categoryName,
+            t.name,
+            t.type,
+            t.url,
+            t.size,
+            t.duration,
+            t.create_by     AS createBy,
+            t.create_time   AS createTime,
+            t.update_time   AS updateTime
+        FROM t_course_material t
+        LEFT JOIN t_material_category mc ON t.category_id = mc.category_id
         <where>
-            <if test="categoryId != null">
-                AND category_id = #{categoryId}
+            <if test="categoryIds != null and categoryIds.size() > 0">
+                AND t.category_id IN
+                <foreach collection="categoryIds" item="id" open="(" separator="," close=")">
+                    #{id}
+                </foreach>
             </if>
             <if test="type != null and type != ''">
-                AND type = #{type}
+                AND t.type = #{type}
             </if>
             <if test="keyword != null and keyword != ''">
-                AND name LIKE CONCAT('%', #{keyword}, '%')
+                AND t.name LIKE CONCAT('%', #{keyword}, '%')
             </if>
         </where>
-        ORDER BY material_id DESC
+        ORDER BY t.material_id DESC
     </select>
 
     <!-- 统计课件总数（用于分页） -->
     <select id="countPage" resultType="int">
         SELECT COUNT(*)
-        FROM t_course_material
+        FROM t_course_material t
+        LEFT JOIN t_material_category mc ON t.category_id = mc.category_id
         <where>
-            <if test="categoryId != null">
-                AND category_id = #{categoryId}
+            <if test="categoryIds != null and categoryIds.size() > 0">
+                AND t.category_id IN
+                <foreach collection="categoryIds" item="id" open="(" separator="," close=")">
+                    #{id}
+                </foreach>
             </if>
             <if test="type != null and type != ''">
-                AND type = #{type}
+                AND t.type = #{type}
             </if>
             <if test="keyword != null and keyword != ''">
-                AND name LIKE CONCAT('%', #{keyword}, '%')
+                AND t.name LIKE CONCAT('%', #{keyword}, '%')
             </if>
         </where>
     </select>

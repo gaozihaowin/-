@@ -8,9 +8,7 @@
             category_id AS categoryId,
             parent_id AS parentId,
             name,
-            sort,
-            create_time AS createTime,
-            update_time AS updateTime
+            sort
         FROM t_material_category
         ORDER BY sort ASC, category_id ASC
     </select>
@@ -28,9 +26,7 @@
             category_id AS categoryId,
             parent_id AS parentId,
             name,
-            sort,
-            create_time AS createTime,
-            update_time AS updateTime
+            sort
         FROM t_material_category
         WHERE category_id = #{categoryId}
     </select>

@@ -24,6 +24,11 @@ public class CourseMaterial {
     private Long categoryId;
 
     /**
+     * 关联分类名称
+     */
+    private String categoryName;
+
+    /**
      * 资源名称
      */
     private String name;

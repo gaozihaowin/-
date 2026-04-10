@@ -19,20 +19,20 @@ public interface CourseMaterialMapper {
      * @param keyword 关键词（可选）
      * @return 课件列表
      */
-    List<CourseMaterial> selectPage(@Param("categoryId") Long categoryId,
+    List<CourseMaterial> selectPage(@Param("categoryIds") List<Long> categoryIds,
                                    @Param("type") String type,
                                    @Param("keyword") String keyword);
 
     /**
      * 统计课件总数（用于分页）
-     * @param categoryId 分类ID（可选）
+     * @param categoryIds 分类ID列表（可选）
      * @param type 类型（可选）: READ, VIDEO, AUDIO
      * @param keyword 关键词（可选）
      * @return 总数
      */
-    Integer countPage(@Param("categoryId") Long categoryId,
-                     @Param("type") String type,
-                     @Param("keyword") String keyword);
+    Integer countPage(@Param("categoryIds") List<Long> categoryIds,
+                      @Param("type") String type,
+                      @Param("keyword") String keyword);
 
     /**
      * 根据ID查询课件

@@ -5,7 +5,9 @@ import com.daily.dailychineseculture.dto.CourseMaterialPageDTO;
 import com.daily.dailychineseculture.dto.CourseMaterialPageResultDTO;
 import com.daily.dailychineseculture.dto.CourseMaterialRequestDTO;
 import com.daily.dailychineseculture.entity.CourseMaterial;
+import com.daily.dailychineseculture.entity.MaterialCategory;
 import com.daily.dailychineseculture.mapper.CourseMaterialMapper;
+import com.daily.dailychineseculture.mapper.MaterialCategoryMapper;
 import com.daily.dailychineseculture.mapper.PlanTaskMapper;
 import com.daily.dailychineseculture.service.CourseMaterialService;
 import com.github.pagehelper.PageHelper;
@@ -14,7 +16,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * 课件资源服务实现类
@@ -24,6 +29,9 @@ public class CourseMaterialServiceImpl implements CourseMaterialService {
 
     @Autowired
     private CourseMaterialMapper courseMaterialMapper;
+
+    @Autowired
+    private MaterialCategoryMapper materialCategoryMapper;
 
     @Autowired
     private PlanTaskMapper planTaskMapper;
@@ -36,9 +44,22 @@ public class CourseMaterialServiceImpl implements CourseMaterialService {
         if (pageDTO.getPageSize() == null || pageDTO.getPageSize() < 1) {
             pageDTO.setPageSize(10);
         }
+        List<Long> categoryIds = null;
+        if (pageDTO.getCategoryId() != null) {
+            List<MaterialCategory> all = materialCategoryMapper.selectAll();
+            Map<Long, List<Long>> parentIdMap = all.stream()
+                    .collect(Collectors.groupingBy(
+                            MaterialCategory::getParentId,
+                            Collectors.mapping(MaterialCategory::getCategoryId, Collectors.toList())
+                    ));
+            List<Long> resultIds = new ArrayList<>();
+            resultIds.add(pageDTO.getCategoryId());
+            findChildrenIds(pageDTO.getCategoryId(), parentIdMap, resultIds);
+            categoryIds = resultIds;
+        }
         PageHelper.startPage(pageDTO.getPageNum(), pageDTO.getPageSize());
         List<CourseMaterial> list = courseMaterialMapper.selectPage(
-                pageDTO.getCategoryId(),
+                categoryIds,
                 pageDTO.getType(),
                 pageDTO.getKeyword()
         );
@@ -47,6 +68,16 @@ public class CourseMaterialServiceImpl implements CourseMaterialService {
         result.setTotal(pageInfo.getTotal());
         result.setList(pageInfo.getList());
         return result;
+    }
+
+    private void findChildrenIds(Long parentId, Map<Long, List<Long>> parentIdMap, List<Long> resultIds) {
+        List<Long> children = parentIdMap.get(parentId);
+        if (children != null) {
+            for (Long childId : children) {
+                resultIds.add(childId);
+                findChildrenIds(childId, parentIdMap, resultIds);
+            }
+        }
     }
 
     @Override
