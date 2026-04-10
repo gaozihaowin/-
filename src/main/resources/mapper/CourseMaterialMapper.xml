@@ -138,6 +138,20 @@
         WHERE category_id = #{categoryId}
     </select>
 
+    <!-- 根据多个分类ID统计课件数量（级联删除防爆校验） -->
+    <select id="countByCategoryIds" resultType="int">
+        SELECT COUNT(*)
+        FROM t_course_material
+        <where>
+            <if test="categoryIds != null and categoryIds.size() > 0">
+                category_id IN
+                <foreach collection="categoryIds" item="id" open="(" separator="," close=")">
+                    #{id}
+                </foreach>
+            </if>
+        </where>
+    </select>
+
     <!-- 更新排课任务表的 task_url（同步更新 - 防御机制2：写时同步） -->
     <update id="updatePlanTaskUrl">
         UPDATE t_plan_task

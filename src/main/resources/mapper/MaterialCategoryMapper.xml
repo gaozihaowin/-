@@ -67,4 +67,41 @@
         WHERE category_id = #{categoryId}
     </delete>
 
+    <!-- 查询某父节点下的最大 sort 值（用于自动排序） -->
+    <select id="selectMaxSortByParentId" resultType="int">
+        SELECT MAX(sort)
+        FROM t_material_category
+        WHERE parent_id = #{parentId}
+    </select>
+
+    <!-- 批量更新分类的 parent_id 和 sort（拖拽排序） -->
+    <update id="batchUpdateSort">
+        UPDATE t_material_category
+        <trim prefix="SET" suffixOverrides=",">
+            sort = CASE category_id
+            <foreach collection="list" item="item">
+                WHEN #{item.categoryId} THEN #{item.sort}
+            </foreach>
+            END,
+            parent_id = CASE category_id
+            <foreach collection="list" item="item">
+                WHEN #{item.categoryId} THEN #{item.parentId}
+            </foreach>
+            END
+        </trim>
+        WHERE category_id IN
+        <foreach collection="list" item="item" open="(" separator="," close=")">
+            #{item.categoryId}
+        </foreach>
+    </update>
+
+    <!-- 批量删除分类（级联删除） -->
+    <delete id="deleteByIds">
+        DELETE FROM t_material_category
+        WHERE category_id IN
+        <foreach collection="ids" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+
 </mapper>

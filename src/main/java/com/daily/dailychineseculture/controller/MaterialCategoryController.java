@@ -2,6 +2,7 @@ package com.daily.dailychineseculture.controller;
 
 import com.daily.dailychineseculture.common.ResponseResult;
 import com.daily.dailychineseculture.dto.MaterialCategoryRequestDTO;
+import com.daily.dailychineseculture.dto.MaterialCategorySortDTO;
 import com.daily.dailychineseculture.dto.MaterialCategoryTreeVO;
 import com.daily.dailychineseculture.service.MaterialCategoryService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -64,5 +65,15 @@ public class MaterialCategoryController {
     public ResponseResult<String> deleteCategory(@PathVariable("id") Long id) {
         materialCategoryService.deleteCategory(id);
         return ResponseResult.success("删除分类成功");
+    }
+
+    /**
+     * 批量更新分类排序
+     * PUT /api/admin/material-categories/sort
+     */
+    @PutMapping("/sort")
+    public ResponseResult<String> batchUpdateSort(@RequestBody List<MaterialCategorySortDTO> list) {
+        materialCategoryService.batchUpdateSort(list);
+        return ResponseResult.success("排序更新成功");
     }
 }

@@ -2,6 +2,7 @@ package com.daily.dailychineseculture.service.impl;
 
 import com.daily.dailychineseculture.common.BusinessException;
 import com.daily.dailychineseculture.dto.MaterialCategoryRequestDTO;
+import com.daily.dailychineseculture.dto.MaterialCategorySortDTO;
 import com.daily.dailychineseculture.dto.MaterialCategoryTreeVO;
 import com.daily.dailychineseculture.entity.MaterialCategory;
 import com.daily.dailychineseculture.mapper.CourseMaterialMapper;
@@ -16,9 +17,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-/**
- * 课件分类服务实现类
- */
 @Service
 public class MaterialCategoryServiceImpl implements MaterialCategoryService {
 
@@ -31,54 +29,52 @@ public class MaterialCategoryServiceImpl implements MaterialCategoryService {
     @Override
     public List<MaterialCategoryTreeVO> getCategoryTree() {
         List<MaterialCategory> allCategories = materialCategoryMapper.selectAll();
-        return buildTree(allCategories);
+        Map<Long, List<MaterialCategory>> parentIdMap = allCategories.stream()
+                .collect(Collectors.groupingBy(MaterialCategory::getParentId));
+        List<MaterialCategoryTreeVO> rootNodes = allCategories.stream()
+                .filter(c -> c.getParentId() != null && c.getParentId() == 0)
+                .map(this::convertToTreeVO)
+                .collect(Collectors.toList());
+        for (MaterialCategoryTreeVO node : rootNodes) {
+            buildChildren(node, parentIdMap);
+        }
+        return rootNodes;
     }
 
-    private List<MaterialCategoryTreeVO> buildTree(List<MaterialCategory> categories) {
-        Map<Long, List<MaterialCategory>> parentIdMap = categories.stream()
-                .collect(Collectors.groupingBy(MaterialCategory::getParentId));
+    private MaterialCategoryTreeVO convertToTreeVO(MaterialCategory category) {
+        MaterialCategoryTreeVO vo = new MaterialCategoryTreeVO();
+        vo.setCategoryId(category.getCategoryId());
+        vo.setParentId(category.getParentId());
+        vo.setName(category.getName());
+        vo.setSort(category.getSort());
+        vo.setChildren(new ArrayList<>());
+        return vo;
+    }
 
-        List<MaterialCategoryTreeVO> rootNodes = new ArrayList<>();
-        for (MaterialCategory category : categories) {
-            MaterialCategoryTreeVO vo = new MaterialCategoryTreeVO();
-            vo.setCategoryId(category.getCategoryId());
-            vo.setParentId(category.getParentId());
-            vo.setName(category.getName());
-            vo.setSort(category.getSort());
-            vo.setChildren(new ArrayList<>());
-            rootNodes.add(vo);
+    private void buildChildren(MaterialCategoryTreeVO node, Map<Long, List<MaterialCategory>> parentIdMap) {
+        List<MaterialCategory> children = parentIdMap.get(node.getCategoryId());
+        if (children == null || children.isEmpty()) {
+            return;
         }
-
-        for (MaterialCategoryTreeVO node : rootNodes) {
-            List<MaterialCategory> children = parentIdMap.get(node.getCategoryId());
-            if (children != null && !children.isEmpty()) {
-                List<MaterialCategoryTreeVO> childNodes = children.stream()
-                        .map(category -> {
-                            MaterialCategoryTreeVO childVO = new MaterialCategoryTreeVO();
-                            childVO.setCategoryId(category.getCategoryId());
-                            childVO.setParentId(category.getParentId());
-                            childVO.setName(category.getName());
-                            childVO.setSort(category.getSort());
-                            childVO.setChildren(new ArrayList<>());
-                            return childVO;
-                        })
-                        .collect(Collectors.toList());
-                node.setChildren(childNodes);
-            }
-        }
-
-        return rootNodes.stream()
-                .filter(node -> node.getParentId() == 0)
+        List<MaterialCategoryTreeVO> childNodes = children.stream()
+                .map(this::convertToTreeVO)
                 .collect(Collectors.toList());
+        for (MaterialCategoryTreeVO childNode : childNodes) {
+            buildChildren(childNode, parentIdMap);
+        }
+        node.setChildren(childNodes);
     }
 
     @Override
     @Transactional
     public void addCategory(MaterialCategoryRequestDTO requestDTO) {
         MaterialCategory category = new MaterialCategory();
-        category.setParentId(requestDTO.getParentId() != null ? requestDTO.getParentId() : 0L);
+        Long parentId = requestDTO.getParentId() != null ? requestDTO.getParentId() : 0L;
+        category.setParentId(parentId);
         category.setName(requestDTO.getName());
-        category.setSort(requestDTO.getSort() != null ? requestDTO.getSort() : 0);
+        Integer maxSort = materialCategoryMapper.selectMaxSortByParentId(parentId);
+        Integer sort = (maxSort == null) ? 10 : maxSort + 10;
+        category.setSort(sort);
         materialCategoryMapper.insert(category);
     }
 
@@ -108,14 +104,36 @@ public class MaterialCategoryServiceImpl implements MaterialCategoryService {
         if (id == null) {
             throw new BusinessException("分类ID不能为空");
         }
-        Integer childCount = materialCategoryMapper.countByParentId(id);
-        if (childCount != null && childCount > 0) {
-            throw new BusinessException("存在子分类，无法删除");
-        }
-        Integer materialCount = courseMaterialMapper.countByCategoryId(id);
+        List<MaterialCategory> all = materialCategoryMapper.selectAll();
+        Map<Long, List<MaterialCategory>> parentIdMap = all.stream()
+                .collect(Collectors.groupingBy(MaterialCategory::getParentId));
+        List<Long> idsToDelete = new ArrayList<>();
+        idsToDelete.add(id);
+        collectDescendantIds(id, parentIdMap, idsToDelete);
+        Integer materialCount = courseMaterialMapper.countByCategoryIds(idsToDelete);
         if (materialCount != null && materialCount > 0) {
-            throw new BusinessException("分类下存在课件，无法删除");
+            throw new BusinessException("删除失败：该分类（或其子分类）中仍存放有课件资源。请先将课件删除或转移至其他分类！");
         }
-        materialCategoryMapper.deleteById(id);
+        materialCategoryMapper.deleteByIds(idsToDelete);
+    }
+
+    private void collectDescendantIds(Long parentId, Map<Long, List<MaterialCategory>> parentIdMap, List<Long> resultIds) {
+        List<MaterialCategory> children = parentIdMap.get(parentId);
+        if (children == null || children.isEmpty()) {
+            return;
+        }
+        for (MaterialCategory child : children) {
+            resultIds.add(child.getCategoryId());
+            collectDescendantIds(child.getCategoryId(), parentIdMap, resultIds);
+        }
+    }
+
+    @Override
+    @Transactional
+    public void batchUpdateSort(List<MaterialCategorySortDTO> list) {
+        if (list == null || list.isEmpty()) {
+            return;
+        }
+        materialCategoryMapper.batchUpdateSort(list);
     }
 }
