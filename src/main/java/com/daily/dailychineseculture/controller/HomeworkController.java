@@ -6,9 +6,11 @@ import com.daily.dailychineseculture.dto.HomeworkHierarchyDTO;
 import com.daily.dailychineseculture.dto.HomeworkStatisticsHierarchyDTO;
 import com.daily.dailychineseculture.dto.MyHomeworkPageDTO;
 import com.daily.dailychineseculture.dto.ExcellentShowcasePageDTO;
+import com.daily.dailychineseculture.dto.HomeworkSubmitDTO;
 import com.daily.dailychineseculture.service.HomeworkService;
-import com.daily.dailychineseculture.util.JwtUtils;
 import com.daily.dailychineseculture.common.Result;
+import com.daily.dailychineseculture.common.BusinessException;
+import com.daily.dailychineseculture.util.JwtUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -304,6 +306,25 @@ public class HomeworkController {
         } catch (Exception e) {
             e.printStackTrace();
             return Result.error("获取优秀功课展播失败: " + e.getMessage());
+        }
+    }
+
+    @PostMapping("/courses/homework/submit")
+    public Result<Void> submitHomework(
+            @RequestHeader("Authorization") String token,
+            @RequestBody HomeworkSubmitDTO dto) {
+        try {
+            Long userId = jwtUtils.getUserIdFromToken(token);
+            if (userId == null) {
+                return Result.error("无效的token");
+            }
+            homeworkService.submitHomework(userId, dto);
+            return Result.success(null);
+        } catch (BusinessException e) {
+            return Result.error(e.getMessage());
+        } catch (Exception e) {
+            e.printStackTrace();
+            return Result.error("提交作业失败: " + e.getMessage());
         }
     }
 }

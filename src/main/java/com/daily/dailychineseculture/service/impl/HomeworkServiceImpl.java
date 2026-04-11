@@ -1,14 +1,18 @@
 package com.daily.dailychineseculture.service.impl;
 
 import com.daily.dailychineseculture.dto.*;
+import com.daily.dailychineseculture.entity.Homework;
 import com.daily.dailychineseculture.mapper.HomeworkMapper;
+import com.daily.dailychineseculture.mapper.UserTaskRecordMapper;
 import com.daily.dailychineseculture.mapper.VolunteerManageMapper;
 import com.daily.dailychineseculture.service.HomeworkService;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import com.daily.dailychineseculture.service.VolunteerManageService;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import com.daily.dailychineseculture.common.BusinessException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
@@ -20,6 +24,9 @@ public class HomeworkServiceImpl implements HomeworkService {
 
     @Autowired
     private HomeworkMapper homeworkMapper;
+
+    @Autowired
+    private UserTaskRecordMapper userTaskRecordMapper;
 
     @Autowired
     private VolunteerManageMapper volunteerManageMapper;
@@ -905,5 +912,31 @@ public class HomeworkServiceImpl implements HomeworkService {
         result.setTotal(pageInfo.getTotal());
         result.setList(pageInfo.getList());
         return result;
+    }
+
+    @Override
+    @Transactional
+    public void submitHomework(Long userId, HomeworkSubmitDTO dto) {
+        if (dto.getPlanId() == null) {
+            throw new BusinessException("排课计划ID不能为空");
+        }
+        if (dto.getTaskId() == null) {
+            throw new BusinessException("任务ID不能为空");
+        }
+        if (dto.getContent() == null || dto.getContent().trim().isEmpty()) {
+            throw new BusinessException("作业内容不能为空");
+        }
+        Integer existingId = homeworkMapper.selectHomeworkIdByUserAndPlan(userId, dto.getPlanId());
+        if (existingId != null) {
+            homeworkMapper.updateHomeworkContent(existingId, dto.getTaskId(), dto.getContent());
+        } else {
+            Homework homework = new Homework();
+            homework.setUserId(userId);
+            homework.setPlanId(dto.getPlanId());
+            homework.setTaskId(dto.getTaskId());
+            homework.setContent(dto.getContent());
+            homeworkMapper.insertHomework(homework);
+        }
+        userTaskRecordMapper.upsertDoneRecord(userId, dto.getPlanId(), dto.getTaskId());
     }
 }

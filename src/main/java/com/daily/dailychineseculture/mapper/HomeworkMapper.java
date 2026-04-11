@@ -509,4 +509,10 @@ public interface HomeworkMapper {
         List<MyHomeworkDTO> selectMyHomeworkList(@Param("userId") Long userId);
 
         List<ExcellentShowcaseDTO> selectExcellentShowcaseList();
+
+        Integer selectHomeworkIdByUserAndPlan(@Param("userId") Long userId, @Param("planId") Integer planId);
+
+        int updateHomeworkContent(@Param("homeworkId") Integer homeworkId, @Param("taskId") Integer taskId, @Param("content") String content);
+
+        int insertHomework(com.daily.dailychineseculture.entity.Homework homework);
 }
