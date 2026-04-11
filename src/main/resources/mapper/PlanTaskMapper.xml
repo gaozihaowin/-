@@ -194,6 +194,7 @@
             task_name,
             task_desc,
             task_url,
+            material_id,
             duration,
             is_required,
             sort_order,
@@ -206,6 +207,7 @@
                 #{task.taskName},
                 #{task.taskDesc},
                 #{task.taskUrl},
+                #{task.materialId},
                 #{task.duration},
                 #{task.isRequired},
                 #{task.sortOrder},
@@ -228,8 +230,8 @@
             UPDATE t_plan_task
             SET task_name=#{task.taskName}, task_type=#{task.taskType},
                 task_desc=#{task.taskDesc}, task_url=#{task.taskUrl},
-                duration=#{task.duration}, is_required=#{task.isRequired},
-                sort_order=#{task.sortOrder}
+                material_id=#{task.materialId}, duration=#{task.duration},
+                is_required=#{task.isRequired}, sort_order=#{task.sortOrder}
             WHERE task_id=#{task.taskId}
         </foreach>
     </update>
