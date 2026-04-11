@@ -6,6 +6,7 @@ import com.daily.dailychineseculture.mapper.VolunteerManageMapper;
 import com.daily.dailychineseculture.service.HomeworkService;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
+import com.daily.dailychineseculture.service.VolunteerManageService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import java.text.SimpleDateFormat;
@@ -22,6 +23,9 @@ public class HomeworkServiceImpl implements HomeworkService {
 
     @Autowired
     private VolunteerManageMapper volunteerManageMapper;
+
+    @Autowired
+    private VolunteerManageService volunteerManageService;
 
     /**
      * 获取作业列表
@@ -105,7 +109,25 @@ public class HomeworkServiceImpl implements HomeworkService {
 
                 String organization = organizationParts.isEmpty() ? "未分组" : String.join("-", organizationParts);
 
-                items.add(new HomeworkListDTO.HomeworkItem(homeworkId, name, isSmallGroupExcellent, isBigGroupExcellent, submitTime, organization));
+                // 获取作业的证书列表
+                List<HomeworkListDTO.HomeworkItem.CertificateInfo> certificates = new ArrayList<>();
+                List<Map<String, Object>> certList = volunteerManageMapper.getCertificatesByHomeworkId(homeworkId.longValue());
+                for (Map<String, Object> certInfo : certList) {
+                    String certType = (String) certInfo.get("type");
+                    Date issueTime = null;
+                    Object issueTimeObj = certInfo.get("issue_time");
+                    if (issueTimeObj != null) {
+                        if (issueTimeObj instanceof java.util.Date) {
+                            issueTime = (java.util.Date) issueTimeObj;
+                        } else if (issueTimeObj instanceof java.time.LocalDateTime) {
+                            java.time.LocalDateTime localDateTime = (java.time.LocalDateTime) issueTimeObj;
+                            issueTime = java.util.Date.from(localDateTime.atZone(java.time.ZoneId.systemDefault()).toInstant());
+                        }
+                    }
+                    certificates.add(new HomeworkListDTO.HomeworkItem.CertificateInfo(certType, issueTime));
+                }
+
+                items.add(new HomeworkListDTO.HomeworkItem(homeworkId, name, isSmallGroupExcellent, isBigGroupExcellent, submitTime, organization, certificates));
             }
 
             result.setList(items);
@@ -154,6 +176,7 @@ public class HomeworkServiceImpl implements HomeworkService {
             }
 
             int result = homeworkMapper.markSmallGroupExcellent(homeworkId, isSmallGroupExcellent);
+
             return result > 0;
         } catch (Exception e) {
             e.printStackTrace();
@@ -305,33 +328,43 @@ public class HomeworkServiceImpl implements HomeworkService {
             statistics.put("onTimeRate", 0);
             statistics.put("hasHomework", false);
 
-            Integer planId = homeworkMapper.getPlanIdByDate(date);
-            if (planId != null) {
-                statistics.put("hasHomework", true);
-
-                if (!studentIds.isEmpty()) {
-                    // 获取已完成作业的人数
-                    int completedCount = homeworkMapper.getCompletedHomeworkCount(studentIds, date);
-                    statistics.put("completedCount", completedCount);
-                    statistics.put("pendingCount", studentIds.size() - completedCount);
-
-                    // 计算完成率
-                    double completionRate = studentIds.size() > 0 ? (double) completedCount / studentIds.size() * 100 : 0;
-                    statistics.put("completionRate", Math.round(completionRate * 100.0) / 100.0);
-
-                    // 获取已交作业的学生名单（当天提交）
-                    List<Map<String, Object>> submittedList = homeworkMapper.getSubmittedHomeworkList(studentIds, date);
-                    // 获取迟交作业的学生名单（超过当天提交）
-                    List<Map<String, Object>> lateList = homeworkMapper.getLateHomeworkList(studentIds, date);
-
-                    statistics.put("lateCount", lateList.size());
-
-                    // 计算按时提交率
-                    double onTimeRate = completedCount > 0 ? (double) (completedCount - lateList.size()) / completedCount * 100 : 0;
-                    statistics.put("onTimeRate", Math.round(onTimeRate * 100.0) / 100.0);
-                }
+            // 获取管理范围所属的营期ID
+            Integer campId = null;
+            if ("class".equals(type)) {
+                campId = volunteerManageMapper.getCampIdByClassId(id);
+            } else if ("big_group".equals(type) || "bigGroup".equals(type)) {
+                campId = volunteerManageMapper.getCampIdByBigGroupId(id);
+            } else if ("small_group".equals(type) || "smallGroup".equals(type)) {
+                campId = volunteerManageMapper.getCampIdBySmallGroupId(id);
             }
 
+            // 检查当天是否有作业（基于管理范围所属营期的计划）
+            Integer planId = null;
+            if (campId != null) {
+                planId = homeworkMapper.getPlanIdByDateAndCamp(date, campId);
+            }
+
+            boolean hasHomework = planId != null;
+            if (hasHomework && !studentIds.isEmpty()) {
+                // 获取已完成作业的人数
+                int completedCount = homeworkMapper.getCompletedHomeworkCount(studentIds, date);
+                statistics.put("completedCount", completedCount);
+                statistics.put("pendingCount", studentIds.size() - completedCount);
+
+                // 计算完成率
+                double completionRate = studentIds.size() > 0 ? (double) completedCount / studentIds.size() * 100 : 0;
+                statistics.put("completionRate", Math.round(completionRate * 100.0) / 100.0);
+
+                // 获取已交作业的学生名单（当天提交）
+                List<Map<String, Object>> submittedList = homeworkMapper.getSubmittedHomeworkList(studentIds, date);
+                // 获取迟交作业的学生名单（超过当天提交）
+                List<Map<String, Object>> lateList = homeworkMapper.getLateHomeworkList(studentIds, date);
+                statistics.put("lateCount", lateList.size());
+                // 计算按时提交率
+                double onTimeRate = completedCount > 0 ? (double) (completedCount - lateList.size()) / completedCount * 100 : 0;
+                statistics.put("onTimeRate", Math.round(onTimeRate * 100.0) / 100.0);
+            }
+            statistics.put("hasHomework", hasHomework);
             return statistics;
         } catch (Exception e) {
             e.printStackTrace();
@@ -345,34 +378,41 @@ public class HomeworkServiceImpl implements HomeworkService {
     @Override
     public Map<String, Object> getHomeworkStatusList(Long userId, String type, Integer id, String date) {
         try {
-            // 检查权限
             checkVolunteerAuth(userId, type, id);
-
-            // 获取学员ID列表
             List<Long> studentIds = homeworkMapper.getStudentIdsByScope(type, id);
-
             Map<String, Object> result = new HashMap<>();
             result.put("totalCount", studentIds.size());
             result.put("submittedList", new ArrayList<>());
             result.put("pendingList", new ArrayList<>());
             result.put("lateList", new ArrayList<>());
+            result.put("hasHomework", false);
 
-            if (studentIds.isEmpty()) {
-                return result;
+            // 获取管理范围所属的营期ID
+            Integer campId = null;
+            if ("class".equals(type)) {
+                campId = volunteerManageMapper.getCampIdByClassId(id);
+            } else if ("big_group".equals(type) || "bigGroup".equals(type)) {
+                campId = volunteerManageMapper.getCampIdByBigGroupId(id);
+            } else if ("small_group".equals(type) || "smallGroup".equals(type)) {
+                campId = volunteerManageMapper.getCampIdBySmallGroupId(id);
             }
 
-            // 获取已交作业的学生名单（当天提交）
-            List<Map<String, Object>> submittedList = homeworkMapper.getSubmittedHomeworkList(studentIds, date);
-            result.put("submittedList", submittedList);
+            // 检查当天是否有作业（基于管理范围所属营期的计划）
+            Integer planId = null;
+            if (campId != null) {
+                planId = homeworkMapper.getPlanIdByDateAndCamp(date, campId);
+            }
 
-            // 获取迟交作业的学生名单（超过当天提交）
-            List<Map<String, Object>> lateList = homeworkMapper.getLateHomeworkList(studentIds, date);
-            result.put("lateList", lateList);
-
-            // 获取未交作业的学生名单
-            List<Map<String, Object>> pendingList = homeworkMapper.getPendingHomeworkList(studentIds, date);
-            result.put("pendingList", pendingList);
-
+            boolean hasHomework = planId != null;
+            if (hasHomework && !studentIds.isEmpty()) {
+                List<Map<String, Object>> submittedList = homeworkMapper.getSubmittedHomeworkList(studentIds, date);
+                List<Map<String, Object>> lateList = homeworkMapper.getLateHomeworkList(studentIds, date);
+                List<Map<String, Object>> pendingList = homeworkMapper.getPendingHomeworkList(studentIds, date);
+                result.put("submittedList", submittedList);
+                result.put("lateList", lateList);
+                result.put("pendingList", pendingList);
+            }
+            result.put("hasHomework", hasHomework);
             return result;
         } catch (Exception e) {
             e.printStackTrace();
@@ -826,8 +866,20 @@ public class HomeworkServiceImpl implements HomeworkService {
         double onTimeRate = item.getTotalCount() > 0 ? (double) (onTimeCount != null ? onTimeCount : 0) / item.getTotalCount() * 100 : 0;
         item.setOnTimeRate(Math.round(onTimeRate * 100.0) / 100.0);
 
-        // 检查是否有作业
-        Integer planId = homeworkMapper.getPlanIdByDate(date);
+        // 检查是否有作业（基于管理范围所属营期的计划）
+        Integer campId = null;
+        if ("class".equals(type)) {
+            campId = volunteerManageMapper.getCampIdByClassId(id);
+        } else if ("bigGroup".equals(type)) {
+            campId = volunteerManageMapper.getCampIdByBigGroupId(id);
+        } else if ("smallGroup".equals(type)) {
+            campId = volunteerManageMapper.getCampIdBySmallGroupId(id);
+        }
+
+        Integer planId = null;
+        if (campId != null) {
+            planId = homeworkMapper.getPlanIdByDateAndCamp(date, campId);
+        }
         item.setHasHomework(planId != null);
 
         return item;
