@@ -474,6 +474,7 @@ public class UserService {
         return statsDTO;
     }
 
+
     // ========== 以下是新增的分班相关方法（完全对齐队友代码风格） ==========
 
     /**
@@ -721,51 +722,51 @@ public class UserService {
             }
 
             // 2. 创建返回对象
-            com.daily.dailychineseculture.dto.UserProfileDTO profileDTO = 
-                new com.daily.dailychineseculture.dto.UserProfileDTO();
+            com.daily.dailychineseculture.dto.UserProfileDTO profileDTO =
+                    new com.daily.dailychineseculture.dto.UserProfileDTO();
             profileDTO.setUserId(user.getUserId().toString());
             profileDTO.setAccount(user.getAccount());
             profileDTO.setNickname(user.getNickname() != null ? user.getNickname() : user.getAccount());
-            profileDTO.setAvatar(user.getAvatar() != null && !user.getAvatar().isEmpty() 
-                ? user.getAvatar() 
-                : "https://img.icons8.com/color/96/person-male.png");
+            profileDTO.setAvatar(user.getAvatar() != null && !user.getAvatar().isEmpty()
+                    ? user.getAvatar()
+                    : "https://img.icons8.com/color/96/person-male.png");
 
             // 3. 判断当前身份（默认学员端）
             profileDTO.setCurrentIdentity("学员端");
 
             // 4. 组装统计指标列表
-            java.util.List<com.daily.dailychineseculture.dto.UserStatsItem> statsList = 
-                new java.util.ArrayList<>();
+            java.util.List<com.daily.dailychineseculture.dto.UserStatsItem> statsList =
+                    new java.util.ArrayList<>();
 
             // 4.1 地区
-            com.daily.dailychineseculture.dto.UserStatsItem regionItem = 
-                new com.daily.dailychineseculture.dto.UserStatsItem();
+            com.daily.dailychineseculture.dto.UserStatsItem regionItem =
+                    new com.daily.dailychineseculture.dto.UserStatsItem();
             regionItem.setLabel("地区");
-            regionItem.setValue(user.getRegion() != null && !user.getRegion().isEmpty() 
-                ? user.getRegion() 
-                : "-");
+            regionItem.setValue(user.getRegion() != null && !user.getRegion().isEmpty()
+                    ? user.getRegion()
+                    : "-");
             statsList.add(regionItem);
 
             // 4.2 职业
-            com.daily.dailychineseculture.dto.UserStatsItem professionItem = 
-                new com.daily.dailychineseculture.dto.UserStatsItem();
+            com.daily.dailychineseculture.dto.UserStatsItem professionItem =
+                    new com.daily.dailychineseculture.dto.UserStatsItem();
             professionItem.setLabel("职业");
-            professionItem.setValue(user.getProfession() != null && !user.getProfession().isEmpty() 
-                ? user.getProfession() 
-                : "-");
+            professionItem.setValue(user.getProfession() != null && !user.getProfession().isEmpty()
+                    ? user.getProfession()
+                    : "-");
             statsList.add(professionItem);
 
             // 4.3 年数（注册时间至今，向下取整）
-            com.daily.dailychineseculture.dto.UserStatsItem yearsItem = 
-                new com.daily.dailychineseculture.dto.UserStatsItem();
+            com.daily.dailychineseculture.dto.UserStatsItem yearsItem =
+                    new com.daily.dailychineseculture.dto.UserStatsItem();
             yearsItem.setLabel("年数");
             long yearsSinceRegistration = calculateYearsSinceRegistration(user.getCreateTime());
             yearsItem.setValue(String.valueOf(yearsSinceRegistration));
             statsList.add(yearsItem);
 
             // 4.4 学时（作业次数 * 2，拼接"h"）
-            com.daily.dailychineseculture.dto.UserStatsItem hoursItem = 
-                new com.daily.dailychineseculture.dto.UserStatsItem();
+            com.daily.dailychineseculture.dto.UserStatsItem hoursItem =
+                    new com.daily.dailychineseculture.dto.UserStatsItem();
             hoursItem.setLabel("学时");
             Integer homeworkCount = userMapper.countUserHomework(userId);
             int studyHours = (homeworkCount != null ? homeworkCount : 0) * 2;
@@ -797,10 +798,10 @@ public class UserService {
         if (createTime == null) {
             return 0;
         }
-        
+
         long now = System.currentTimeMillis();
         long registrationTime = createTime.getTime();
-        
+
         // 计算毫秒差值，转换为年（向下取整）
         long millisPerYear = 365L * 24 * 60 * 60 * 1000;
         return (now - registrationTime) / millisPerYear;
@@ -820,18 +821,18 @@ public class UserService {
             }
 
             // 2. 创建返回对象
-            com.daily.dailychineseculture.dto.UserDetailDTO detailDTO = 
-                new com.daily.dailychineseculture.dto.UserDetailDTO();
+            com.daily.dailychineseculture.dto.UserDetailDTO detailDTO =
+                    new com.daily.dailychineseculture.dto.UserDetailDTO();
             detailDTO.setAccount(user.getAccount());
             detailDTO.setNickname(user.getNickname() != null ? user.getNickname() : user.getAccount());
-            detailDTO.setAvatar(user.getAvatar() != null && !user.getAvatar().isEmpty() 
-                ? user.getAvatar() 
-                : "https://img.icons8.com/color/96/person-male.png");
+            detailDTO.setAvatar(user.getAvatar() != null && !user.getAvatar().isEmpty()
+                    ? user.getAvatar()
+                    : "https://img.icons8.com/color/96/person-male.png");
             detailDTO.setPhone(user.getPhone() != null ? user.getPhone() : "");
             detailDTO.setRegion(user.getRegion() != null ? user.getRegion() : "");
             detailDTO.setProfession(user.getProfession() != null ? user.getProfession() : "");
             detailDTO.setGender(user.getGender() != null ? user.getGender() : 0);
-            
+
             // 3. 生日格式化处理
             if (user.getBirthday() != null) {
                 java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("yyyy-MM-dd");
@@ -839,7 +840,7 @@ public class UserService {
             } else {
                 detailDTO.setBirthday("");
             }
-            
+
             // 4. 密码字段留空（不返回真实密码）
             detailDTO.setPassword("");
 
@@ -891,7 +892,7 @@ public class UserService {
             if (request.getGender() != null) {
                 existingUser.setGender(request.getGender());
             }
-            
+
             // 3. 生日处理（需要解析字符串为 Date）
             if (request.getBirthday() != null && !request.getBirthday().trim().isEmpty()) {
                 try {
@@ -904,12 +905,12 @@ public class UserService {
                     throw new RuntimeException("生日格式错误，应为 yyyy-MM-dd", e);
                 }
             }
-            
+
             // 4. 密码处理逻辑（核心安全逻辑）
             if (request.getPassword() != null && !request.getPassword().trim().isEmpty()) {
                 // 密码不为空，说明用户要修改密码，需要加密后保存
                 String rawPassword = request.getPassword();
-                
+
                 // TODO: 如果项目中有密码加密工具类（如 BCryptPasswordEncoder），请在这里使用
                 // 示例：String encodedPassword = passwordEncoder.encode(rawPassword);
                 // 目前先使用明文存储（建议后续添加加密）
@@ -938,6 +939,47 @@ public class UserService {
             e.printStackTrace();
             System.err.println("=====================");
             throw new RuntimeException("更新用户资料失败：" + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * 获取用户当前正在学习的小组信息
+     */
+    public Map<String, Object> getCurrentGroupInfo(Long userId, Integer campId) {
+        try {
+            // 查询用户在该营期的报名信息
+            Map<String, Object> enrollmentInfo = userMapper.getCampEnrollmentInfo(userId, campId);
+            if (enrollmentInfo == null) {
+                return null;
+            }
+
+            // 从报名信息中提取小组信息
+            Integer smallGroupId = enrollmentInfo.get("smallGroupId") != null ? ((Number) enrollmentInfo.get("smallGroupId")).intValue() : null;
+            Integer bigGroupId = enrollmentInfo.get("bigGroupId") != null ? ((Number) enrollmentInfo.get("bigGroupId")).intValue() : null;
+            Integer classId = enrollmentInfo.get("classId") != null ? ((Number) enrollmentInfo.get("classId")).intValue() : null;
+
+            // 构建返回结果
+            Map<String, Object> result = new HashMap<>();
+            result.put("smallGroupId", smallGroupId);
+            result.put("smallGroupName", enrollmentInfo.get("smallGroupName"));
+            result.put("bigGroupId", bigGroupId);
+            result.put("bigGroupName", enrollmentInfo.get("bigGroupName"));
+            result.put("classId", classId);
+            result.put("className", enrollmentInfo.get("className"));
+            result.put("campId", campId);
+            result.put("campName", enrollmentInfo.get("campName"));
+            // 获取小组对应的群聊信息
+            if (smallGroupId != null) {
+                Map<String, Object> groupChatInfo = userMapper.getGroupChatBySmallGroupId(smallGroupId);
+                if (groupChatInfo != null) {
+                    result.put("chatId", groupChatInfo.get("chatId"));
+                    result.put("chatName", groupChatInfo.get("name"));
+                }
+            }
+            return result;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
         }
     }
 }

@@ -92,19 +92,19 @@ public interface UserMapper {
                 "IFNULL(da.duty_type, '志愿者') AS dutyName, " +
                 "CASE " +
                 "    WHEN ds.target_type = 'class' THEN CONCAT( " +
-                "        IFNULL(c.name, '未知营期'), " +
+                "        IFNULL(CONCAT('第', c.term, '期', c.name), '未知营期'), " +
                 "        ' - ', " +
                 "        IFNULL(cl.name, '未知班级') " +
                 "    ) " +
                 "    WHEN ds.target_type = 'big_group' THEN CONCAT( " +
-                "        IFNULL(c.name, '未知营期'), " +
+                "        IFNULL(CONCAT('第', c.term, '期', c.name), '未知营期'), " +
                 "        ' - ', " +
                 "        IFNULL(cl_bg.name, '未知班级'), " +
                 "        ' - ', " +
                 "        IFNULL(bg.name, '未知大组') " +
                 "    ) " +
                 "    WHEN ds.target_type = 'small_group' THEN CONCAT( " +
-                "        IFNULL(c.name, '未知营期'), " +
+                "        IFNULL(CONCAT('第', c.term, '期', c.name), '未知营期'), " +
                 "        ' - ', " +
                 "        IFNULL(cl_sg.name, '未知班级'), " +
                 "        ' - ', " +
@@ -112,7 +112,7 @@ public interface UserMapper {
                 "        ' - ', " +
                 "        IFNULL(sg.name, '未知小组') " +
                 "    ) " +
-                "    WHEN ds.target_type = 'camp' THEN IFNULL(c.name, '未知营期') " +
+                "    WHEN ds.target_type = 'camp' THEN IFNULL(CONCAT('第', c.term, '期【', c.name, '】'), '未知营期') " +
                 "    ELSE '未知职责范围' " +
                 "END AS fullTargetName " +
                 "FROM t_duty_assignment da " +
@@ -148,6 +148,33 @@ public interface UserMapper {
         @Select("SELECT COUNT(*) FROM t_duty_assignment " +
                 "WHERE assignment_id = #{assignmentId} AND user_id = #{userId}")
         int checkAssignmentExists(@Param("assignmentId") Integer assignmentId, @Param("userId") Long userId);
+
+        /**
+         * 获取用户在指定营期的报名信息，包括小组信息
+         */
+        @Select("<script>" +
+                "SELECT " +
+                "   ce.small_group_id AS smallGroupId, " +
+                "   sg.name AS smallGroupName, " +
+                "   ce.big_group_id AS bigGroupId, " +
+                "   bg.name AS bigGroupName, " +
+                "   ce.class_id AS classId, " +
+                "   cl.name AS className, " +
+                "   CONCAT('第', c.term, '期【', c.name, '】') AS campName " +
+                "FROM t_camp_enrollment ce " +
+                "LEFT JOIN t_camp c ON ce.camp_id = c.camp_id " +
+                "LEFT JOIN t_class cl ON ce.class_id = cl.class_id " +
+                "LEFT JOIN t_big_group bg ON ce.big_group_id = bg.big_group_id " +
+                "LEFT JOIN t_small_group sg ON ce.small_group_id = sg.small_group_id " +
+                "WHERE ce.user_id = #{userId} AND ce.camp_id = #{campId} AND ce.is_completed = 0 " +
+                "</script>")
+        Map<String, Object> getCampEnrollmentInfo(@Param("userId") Long userId, @Param("campId") Integer campId);
+
+        /**
+         * 根据小组ID获取对应的群聊信息
+         */
+        @Select("SELECT chat_id AS chatId, name FROM t_group_chat WHERE type = '小组群' AND small_group_id = #{smallGroupId}")
+        Map<String, Object> getGroupChatBySmallGroupId(@Param("smallGroupId") Integer smallGroupId);
 
         /**
          * 获取志愿者统计信息
