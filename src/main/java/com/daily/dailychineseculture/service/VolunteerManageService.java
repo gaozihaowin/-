@@ -35,4 +35,68 @@ public interface VolunteerManageService {
      * 移除岗位
      */
     boolean removeDuty(Long managerUserId, Integer assignmentId);
+
+    /**
+     * 获取用户的所有证书（不包括作业证书）
+     */
+    List<Map<String, Object>> getCertificatesByUser(Long userId);
+
+    /**
+     * 获取用户的所有证书（包括作业证书）
+     */
+    List<Map<String, Object>> getAllCertificatesByUser(Long userId);
+
+    /**
+     * 为志愿者颁发证书
+     */
+    boolean issueCertificate(Long volunteerId, String certificateType, Integer assignmentId, Long homeworkId);
+
+    /**
+     * 取消颁发证书
+     */
+    boolean cancelCertificate(Long volunteerId, String certificateType, Integer assignmentId, Long homeworkId);
+
+    /**
+     * 检查志愿者是否已颁发证书
+     */
+    boolean checkCertificateIssued(Long volunteerId,String certificateType, Integer assignmentId, Long homeworkId);
+
+    /**
+     * 根据作业ID获取证书列表
+     */
+    List<Map<String, Object>> getCertificatesByHomeworkId(Long homeworkId);
+
+    /**
+     * 获取志愿者详情
+     */
+    Map<String, Object> getVolunteerDetail(Long volunteerId);
+
+
+    /**
+     * 获取管理范围内的志愿者列表
+     */
+    List<Map<String, Object>> getManagedVolunteers(Long userId, Integer assignmentId);
+    /**
+     * 获取管理范围内的志愿者档案
+     */
+    List<Map<String, Object>> getUserAllAssignments(Long userId);
+    /**
+     * 检查用户是否为超级管理员
+     */
+    boolean checkAdminPermission(Long userId);
+
+    /**
+     * 获取正在进行的营期列表
+     */
+    List<Map<String, Object>> getActiveCamps();
+
+    /**
+     * 获取营期下的班级列表
+     */
+    List<Map<String, Object>> getClassesByCampId(Integer campId);
+
+    /**
+     * 获取营期下的班长列表
+     */
+    List<Map<String, Object>> getMonitorsByCampId(Integer campId);
 }
