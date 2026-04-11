@@ -32,7 +32,7 @@ public class MaterialCategoryServiceImpl implements MaterialCategoryService {
         Map<Long, List<MaterialCategory>> parentIdMap = allCategories.stream()
                 .collect(Collectors.groupingBy(MaterialCategory::getParentId));
         List<MaterialCategoryTreeVO> rootNodes = allCategories.stream()
-                .filter(c -> c.getParentId() != null && c.getParentId() == 0)
+                .filter(c -> c.getParentId() == null || c.getParentId() == 0)
                 .map(this::convertToTreeVO)
                 .collect(Collectors.toList());
         for (MaterialCategoryTreeVO node : rootNodes) {

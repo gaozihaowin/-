@@ -17,8 +17,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -54,7 +56,9 @@ public class CourseMaterialServiceImpl implements CourseMaterialService {
                     ));
             List<Long> resultIds = new ArrayList<>();
             resultIds.add(pageDTO.getCategoryId());
-            findChildrenIds(pageDTO.getCategoryId(), parentIdMap, resultIds);
+            Set<Long> visitedIds = new HashSet<>();
+            visitedIds.add(pageDTO.getCategoryId());
+            findChildrenIds(pageDTO.getCategoryId(), parentIdMap, visitedIds, resultIds);
             categoryIds = resultIds;
         }
         PageHelper.startPage(pageDTO.getPageNum(), pageDTO.getPageSize());
@@ -70,13 +74,19 @@ public class CourseMaterialServiceImpl implements CourseMaterialService {
         return result;
     }
 
-    private void findChildrenIds(Long parentId, Map<Long, List<Long>> parentIdMap, List<Long> resultIds) {
+    private void findChildrenIds(Long parentId, Map<Long, List<Long>> parentIdMap,
+                                  Set<Long> visitedIds, List<Long> resultIds) {
         List<Long> children = parentIdMap.get(parentId);
-        if (children != null) {
-            for (Long childId : children) {
-                resultIds.add(childId);
-                findChildrenIds(childId, parentIdMap, resultIds);
+        if (children == null) {
+            return;
+        }
+        for (Long childId : children) {
+            if (visitedIds.contains(childId)) {
+                continue;
             }
+            visitedIds.add(childId);
+            resultIds.add(childId);
+            findChildrenIds(childId, parentIdMap, visitedIds, resultIds);
         }
     }
 
