@@ -31,6 +31,7 @@ public class CommonController {
 
     private static final List<String> ALLOWED_AVATAR_EXTENSIONS = Arrays.asList("jpg", "png", "jpeg");
     private static final List<String> ALLOWED_VIDEO_EXTENSIONS = Arrays.asList("mp4", "mov", "avi");
+    private static final List<String> ALLOWED_DOCUMENT_EXTENSIONS = Arrays.asList("pdf", "doc", "docx", "md");
 
     @PostMapping("/upload")
     public ResponseResult<String> uploadFile(
@@ -61,8 +62,11 @@ public class CommonController {
         } else if ("video".equals(type)) {
             subDir = "videos";
             allowedExtensions = ALLOWED_VIDEO_EXTENSIONS;
+        } else if ("document".equals(type)) {
+            subDir = "documents";
+            allowedExtensions = ALLOWED_DOCUMENT_EXTENSIONS;
         } else {
-            return ResponseResult.error(400, "不支持的上传类型，仅支持 avatar 和 video");
+            return ResponseResult.error(400, "不支持的上传类型，仅支持 avatar、video 和 document");
         }
 
         if (!allowedExtensions.contains(extension)) {

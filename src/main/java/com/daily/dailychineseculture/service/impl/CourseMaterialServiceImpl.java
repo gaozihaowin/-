@@ -12,9 +12,12 @@ import com.daily.dailychineseculture.mapper.PlanTaskMapper;
 import com.daily.dailychineseculture.service.CourseMaterialService;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -98,8 +101,15 @@ public class CourseMaterialServiceImpl implements CourseMaterialService {
         material.setName(requestDTO.getName());
         material.setType(requestDTO.getType());
         material.setUrl(requestDTO.getUrl());
-        material.setSize(requestDTO.getSize());
-        material.setDuration(requestDTO.getDuration());
+        material.setSize(requestDTO.getSize() != null ? requestDTO.getSize() : 0L);
+        material.setDuration(requestDTO.getDuration() != null ? requestDTO.getDuration() : 0);
+        try {
+            HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.getRequestAttributes()).getRequest();
+            Long userId = (Long) request.getAttribute("userId");
+            material.setCreateBy(userId != null ? userId : 0L);
+        } catch (Exception e) {
+            material.setCreateBy(0L);
+        }
         courseMaterialMapper.insert(material);
     }
 
