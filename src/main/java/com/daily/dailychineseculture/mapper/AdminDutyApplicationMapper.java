@@ -2,8 +2,6 @@ package com.daily.dailychineseculture.mapper;
 
 import com.daily.dailychineseculture.vo.AdminDutyApplicationListItemVO;
 import com.daily.dailychineseculture.vo.AdminDutyApplicationStatsVO;
-import com.daily.dailychineseculture.vo.ApplicationHistoryVO;
-import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
@@ -74,29 +72,4 @@ public interface AdminDutyApplicationMapper {
             @Param("dutyTypeFilter") String dutyTypeFilter,
             @Param("status") Integer status,
             @Param("dutyType") String dutyType);
-
-    @Select("SELECT " +
-            "  apply_id AS applyId, " +
-            "  duty_type AS dutyType, " +
-            "  apply_reason AS applyReason, " +
-            "  status AS status, " +
-            "  create_time AS createTime, " +
-            "  update_time AS reviewTime, " +
-            "  audit_remark AS auditRemark " +
-            "FROM t_duty_application " +
-            "WHERE user_id = #{userId} " +
-            "ORDER BY create_time DESC")
-    List<ApplicationHistoryVO> selectApplicationHistoryByUserId(@Param("userId") Long userId);
-
-    @Insert("INSERT INTO t_duty_application " +
-            "(user_id, duty_type, apply_reason, status, reviewer_id, review_time, audit_remark, create_time) " +
-            "VALUES (#{userId}, #{dutyType}, #{applyReason}, #{status}, #{reviewerId}, #{reviewTime}, #{auditRemark}, #{createTime})")
-    int insertApplicationAudit(@Param("userId") Long userId,
-                              @Param("dutyType") String dutyType,
-                              @Param("applyReason") String applyReason,
-                              @Param("status") Integer status,
-                              @Param("reviewerId") Long reviewerId,
-                              @Param("reviewTime") java.util.Date reviewTime,
-                              @Param("auditRemark") String auditRemark,
-                              @Param("createTime") java.util.Date createTime);
 }

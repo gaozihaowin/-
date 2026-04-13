@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.daily.dailychineseculture.mapper.CertificateMapper">
+
+    <!-- 根据用户ID查询证书列表（完全匹配你的表结构） -->
+    <select id="selectByUserId" resultType="com.daily.dailychineseculture.entity.Certificate">
+        SELECT
+        cert_id,
+        user_id,
+        type,
+        number,
+        image_url,
+        issue_time
+        FROM
+        t_certificate
+        WHERE
+        user_id = #{userId}
+        ORDER BY
+        issue_time DESC
+    </select>
+
+</mapper>

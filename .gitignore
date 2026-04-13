@@ -34,3 +34,4 @@ build/
 
 # 忽略本地上传的资源文件
 /uploads/
+camp_system.sql 

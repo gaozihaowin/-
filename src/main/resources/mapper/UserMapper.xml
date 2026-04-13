@@ -27,18 +27,4 @@
         LIMIT 20
     </select>
 
-    <select id="searchUsersForAdmin" resultType="com.daily.dailychineseculture.vo.UserSimpleVO">
-        SELECT
-            user_id   AS userId,
-            nickname  AS nickname,
-            phone     AS phone
-        FROM t_user
-        <where>
-            <if test="keyword != null and keyword != ''">
-                (phone    LIKE CONCAT('%', #{keyword}, '%')
-                 OR nickname LIKE CONCAT('%', #{keyword}, '%'))
-            </if>
-        </where>
-        LIMIT 10
-    </select>
 </mapper>
