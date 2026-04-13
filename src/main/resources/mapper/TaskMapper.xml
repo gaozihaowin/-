@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.daily.dailychineseculture.mapper.TaskMapper">
+
+    <select id="selectTaskContent" resultType="com.daily.dailychineseculture.dto.TaskContentDTO">
+        SELECT
+            pt.task_id          AS taskId,
+            pt.task_type        AS taskType,
+            pt.task_name        AS title,
+            pt.task_desc        AS subtitle,
+            pt.is_required      AS isRequired,
+            IF(utr.record_id IS NOT NULL, 1, 0) AS isDone,
+            COALESCE(cm.url, pt.task_url, '') AS taskUrl
+        FROM t_plan_task pt
+        LEFT JOIN t_course_material cm
+            ON pt.material_id = cm.material_id
+        LEFT JOIN t_user_task_record utr
+            ON pt.task_id = utr.task_id
+            AND utr.user_id = #{userId}
+            AND utr.is_done = 1
+        WHERE pt.task_id = #{taskId}
+          AND pt.is_deleted = 0
+    </select>
+
+</mapper>
