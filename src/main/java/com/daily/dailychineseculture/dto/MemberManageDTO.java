@@ -30,6 +30,11 @@ public class MemberManageDTO {
     private List<SmallGroupInfo> smallGroupList;
 
     /**
+     * 层级列表
+     */
+    private List<HierarchyItem> hierarchyList;
+
+    /**
      * 营期信息
      */
     @Data
@@ -95,5 +100,18 @@ public class MemberManageDTO {
         private String bigGroupName; // 大组名称
         private String smallGroupName; // 小组名称
         private String status;
+    }
+
+    /**
+     * 层级结构项
+     */
+    @Data
+    public static class HierarchyItem {
+        private Long id;
+        private String name;
+        private String type; // class/bigGroup/smallGroup/member
+        private Long parentId;
+        private List<HierarchyItem> children;
+        private Boolean expandable;
     }
 }

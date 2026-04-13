@@ -22,7 +22,10 @@ public class AdminAuthInterceptor implements HandlerInterceptor {
      */
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
-        // 放行登录接口
+        if ("OPTIONS".equalsIgnoreCase(request.getMethod())) {
+            return true;
+        }
+
         String requestUri = request.getRequestURI();
         if ("/api/admin/login".equals(requestUri)
                 || "/admin/login".equals(requestUri)

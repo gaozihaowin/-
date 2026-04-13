@@ -6,6 +6,7 @@
 
 **更新记录**：
 - 2026-03-21：完成一对多架构重构，支持任务管理和排课天数增删
+- **2026-04-05：新增智能追加排课接口 `POST /api/admin/camp-plans/add-smart-day`，支持前端周主题智能推算；新增并发防御机制，捕获唯一索引冲突异常**
 
 ---
 
@@ -508,6 +509,98 @@ DELETE FROM t_camp_plan WHERE plan_id = 1;
   "data": null,
   "timestamp": 1709884800000
 }
+```
+
+---
+
+### 7. 智能追加一天排课（★ 新增核心接口）
+
+**接口地址**: `POST /api/admin/camp-plans/add-smart-day`
+
+**接口描述**: 前端智能推算完整排课数据后，后端仅负责落库。支持周主题智能继承，并具备并发防御机制。
+
+**请求头**:
+```
+Content-Type: application/json
+```
+
+**请求体**:
+```json
+{
+  "campId": 101,
+  "dayIndex": 8,
+  "planDate": "2026-03-08",
+  "moduleName": "第二周：知行合一",
+  "moduleIndex": 2,
+  "teacherName": "博仁老师",
+  "title": "第8课：知行本体"
+}
+```
+
+**请求字段说明**:
+| 字段 | 类型 | 必填 | 校验注解 | 说明 |
+|------|------|------|----------|------|
+| campId | Integer | 是 | `@NotNull` | 营期 ID |
+| dayIndex | Integer | 是 | `@NotNull`, `@Min(1)` | 第几天，必须大于0 |
+| planDate | String | 是 | `@NotNull` | 具体日期（格式：yyyy-MM-dd） |
+| moduleName | String | 是 | `@NotBlank` | 模块名称（如"第二周：知行合一"） |
+| moduleIndex | Integer | 是 | `@NotNull` | 模块索引（第几周） |
+| teacherName | String | 否 | 无 | 讲师姓名 |
+| title | String | 是 | `@NotBlank` | 导读主题 |
+
+**响应格式（成功）**:
+```json
+{
+  "code": 200,
+  "message": "智能追加排课成功",
+  "data": null,
+  "timestamp": 1743772800000
+}
+```
+
+**响应格式（并发冲突 - 409）**:
+```json
+{
+  "code": 409,
+  "message": "该营期的当前天数或日期已被占用，请刷新页面获取最新排课进度！",
+  "data": null,
+  "timestamp": 1743772800000
+}
+```
+
+**核心业务逻辑**:
+
+1. **营期校验**: 验证 campId 对应的营期是否存在
+2. **属性拷贝**: 使用 `BeanUtils.copyProperties` 将 DTO 属性拷贝到实体
+3. **默认值设置**: 强制设置 `isFinished = 0`（默认未完成）
+4. **铁桶防御**: 捕获 `DuplicateKeyException`（数据库唯一索引冲突），返回友好错误提示
+
+**数据库唯一索引约束**:
+
+| 索引名 | 字段 | 用途 |
+|--------|------|------|
+| `uk_camp_day` | `camp_id`, `day_index` | 防止同一营期重复天数 |
+| `uk_camp_date` | `camp_id`, `plan_date` | 防止同一营期重复日期 |
+
+**SQL 动作**:
+```sql
+INSERT INTO t_camp_plan (camp_id, day_index, plan_date, module_name, module_index, teacher_name, title, is_finished)
+VALUES (101, 8, '2026-03-08', '第二周：知行合一', 2, '博仁老师', '第8课：知行本体', 0);
+```
+
+**cURL 示例**:
+```bash
+curl -X POST http://localhost:8080/api/admin/camp-plans/add-smart-day \
+  -H "Content-Type: application/json" \
+  -d '{
+    "campId": 101,
+    "dayIndex": 8,
+    "planDate": "2026-03-08",
+    "moduleName": "第二周：知行合一",
+    "moduleIndex": 2,
+    "teacherName": "博仁老师",
+    "title": "第8课：知行本体"
+  }'
 ```
 
 ---

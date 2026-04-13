@@ -11,4 +11,17 @@
         <result property="isAllCompleted" column="is_all_completed"/>
     </resultMap>
 
+    <select id="selectHeatmap" resultType="com.daily.dailychineseculture.dto.DailyHeatmapDTO">
+        SELECT
+            DATE_FORMAT(p.plan_date, '%Y-%m-%d') AS date,
+            d.completion_rate                   AS completionRate,
+            d.is_all_completed                  AS isAllCompleted
+        FROM t_user_daily_record d
+        LEFT JOIN t_camp_plan p ON d.plan_id = p.plan_id
+        WHERE d.user_id = #{userId}
+          AND YEAR(p.plan_date) = #{year}
+          AND MONTH(p.plan_date) = #{month}
+        ORDER BY p.plan_date ASC
+    </select>
+
 </mapper>

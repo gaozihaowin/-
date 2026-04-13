@@ -6,6 +6,7 @@ import com.daily.dailychineseculture.dto.AdminLoginResult;
 import com.daily.dailychineseculture.dto.CampListPageDTO;
 import com.daily.dailychineseculture.dto.CampTypeOptionDTO;
 import com.daily.dailychineseculture.dto.RecentCampDTO;
+import com.daily.dailychineseculture.dto.UserSearchDTO;
 import com.daily.dailychineseculture.entity.User;
 import com.daily.dailychineseculture.mapper.UserMapper;
 import com.daily.dailychineseculture.service.AdminAuthService;
@@ -198,5 +199,12 @@ public class AdminController {
         user.setPassword(newPwd);
         userMapper.update(user);
         return com.daily.dailychineseculture.common.ResponseResult.success("密码修改成功");
+    }
+
+    @GetMapping("/user/search")
+    public com.daily.dailychineseculture.common.ResponseResult<List<UserSearchDTO>> searchUsers(
+            @RequestParam(required = false) String keyword) {
+        List<UserSearchDTO> result = userMapper.fuzzySearch(keyword);
+        return com.daily.dailychineseculture.common.ResponseResult.success("查询成功", result);
     }
 }

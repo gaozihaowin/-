@@ -30,12 +30,7 @@ public class DutyAssignment {
      * COURSE_ADMIN(课程管理), ARCHIVE_ADMIN(档案管理), SUPER_ADMIN(总管理员) 等
      */
     private String dutyType;
-    
-    /**
-     * 职位名称
-     */
-    private String dutyName;
-    
+
     /**
      * 任职开始时间
      */

@@ -107,4 +107,10 @@ public interface ClassMapper {
             "SET class_id = NULL " +
             "WHERE camp_id = #{campId}")
     int resetStudentClassId(@Param("campId") Integer campId);
+
+    /**
+     * 根据班级ID获取班级名称
+     */
+    @Select("SELECT name FROM t_class WHERE class_id = #{classId}")
+    String getClassNameById(@Param("classId") Integer classId);
 }

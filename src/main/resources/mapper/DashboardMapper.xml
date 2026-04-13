@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.daily.dailychineseculture.mapper.DashboardMapper">
+
+    <!-- Super Admin Dashboard Queries -->
+    <select id="countTotalUsers" resultType="java.lang.Integer">
+        SELECT COUNT(*) FROM t_user
+    </select>
+
+    <select id="countActiveCamps" resultType="java.lang.Integer">
+        SELECT COUNT(*) FROM t_camp WHERE status = 1
+    </select>
+
+    <select id="countActiveAdmins" resultType="java.lang.Integer">
+        SELECT COUNT(*) FROM t_duty_assignment
+        WHERE end_time IS NULL
+          AND duty_type IN ('SUPER_ADMIN', 'COURSE_ADMIN', 'ARCHIVE_ADMIN')
+    </select>
+
+    <select id="countPendingApprovals" resultType="java.lang.Integer">
+        SELECT COUNT(*) FROM t_duty_application WHERE status = 0
+    </select>
+
+    <select id="selectLatestPendingApprovals"
+            resultType="com.daily.dailychineseculture.vo.SuperAdminDashboardVO$ApprovalItemVO">
+        SELECT
+            a.apply_id      AS applyId,
+            u.nickname      AS applicantName,
+            a.duty_type     AS dutyType,
+            a.create_time   AS createTime
+        FROM t_duty_application a
+        LEFT JOIN t_user u ON a.user_id = u.user_id
+        WHERE a.status = 0
+        ORDER BY a.create_time DESC
+        LIMIT #{limit}
+    </select>
+
+    <!-- Course Admin Dashboard Queries -->
+    <select id="countTotalCamps" resultType="java.lang.Integer">
+        SELECT COUNT(*) FROM t_camp
+    </select>
+
+    <select id="countActiveCampsForCourse" resultType="java.lang.Integer">
+        SELECT COUNT(*) FROM t_camp WHERE status = 1
+    </select>
+
+    <select id="sumActiveStudents" resultType="java.lang.Integer">
+        SELECT IFNULL(SUM(enroll_count), 0) FROM t_camp WHERE status = 1
+    </select>
+
+    <select id="selectRecentCamps"
+            resultType="com.daily.dailychineseculture.vo.CourseAdminDashboardVO$RecentCampVO">
+        SELECT
+            c.camp_id       AS campId,
+            c.name          AS campName,
+            ct.level_name   AS campType,
+            COUNT(cp.plan_id) AS planCount,
+            c.enroll_count  AS enrollCount,
+            CASE c.status
+                WHEN 1 THEN '进行中'
+                WHEN 0 THEN '未开始'
+                WHEN 2 THEN '已结束'
+                ELSE '未知'
+            END             AS status
+        FROM t_camp c
+        LEFT JOIN t_camp_type ct ON c.type_id = ct.type_id
+        LEFT JOIN t_camp_plan cp ON c.camp_id = cp.camp_id
+        GROUP BY c.camp_id, c.name, ct.level_name, c.status, c.enroll_count, c.start_time
+        ORDER BY c.start_time DESC
+        LIMIT #{limit}
+    </select>
+
+</mapper>

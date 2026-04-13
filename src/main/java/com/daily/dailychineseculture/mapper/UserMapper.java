@@ -1,6 +1,9 @@
 package com.daily.dailychineseculture.mapper;
 
+import com.daily.dailychineseculture.dto.UserSearchDTO;
 import com.daily.dailychineseculture.entity.User;
+import com.daily.dailychineseculture.vo.UserSimpleVO;
+import com.daily.dailychineseculture.vo.UserInfoVO;
 import org.apache.ibatis.annotations.*;
 
 import java.util.List;
@@ -79,29 +82,29 @@ public interface UserMapper {
                 "da.assignment_id AS assignmentId, " +
                 "c.camp_id AS campId, " +
                 "IFNULL(c.name, '未知营期') AS campName, " +
-                "da.volunteer_start_time AS rawStartTime, " +
-                "IFNULL(DATE_FORMAT(da.volunteer_start_time, '%Y.%m.%d %H:%i:%s'), '未设置') AS actualStartTime, "
+                "da.start_time AS rawStartTime, " +
+                "IFNULL(DATE_FORMAT(da.start_time, '%Y.%m.%d %H:%i:%s'), '未设置') AS actualStartTime, "
                 +
                 "IFNULL(DATE_FORMAT(c.end_time, '%Y.%m.%d %H:%i:%s'), '未设置') AS campEndTime, " +
                 "UNIX_TIMESTAMP(c.end_time) AS rawCampEndTime, " +
-                "IFNULL(DATE_FORMAT(da.volunteer_end_time, '%Y.%m.%d %H:%i:%s'), '未设置') AS quitTime, " +
+                "IFNULL(DATE_FORMAT(da.end_time, '%Y.%m.%d %H:%i:%s'), '未设置') AS quitTime, " +
                 "ds.target_type AS targetType, " +
                 "IFNULL(da.duty_type, '志愿者') AS dutyName, " +
                 "CASE " +
                 "    WHEN ds.target_type = 'class' THEN CONCAT( " +
-                "        IFNULL(c.name, '未知营期'), " +
+                "        IFNULL(CONCAT('第', c.term, '期', c.name), '未知营期'), " +
                 "        ' - ', " +
                 "        IFNULL(cl.name, '未知班级') " +
                 "    ) " +
                 "    WHEN ds.target_type = 'big_group' THEN CONCAT( " +
-                "        IFNULL(c.name, '未知营期'), " +
+                "        IFNULL(CONCAT('第', c.term, '期', c.name), '未知营期'), " +
                 "        ' - ', " +
                 "        IFNULL(cl_bg.name, '未知班级'), " +
                 "        ' - ', " +
                 "        IFNULL(bg.name, '未知大组') " +
                 "    ) " +
                 "    WHEN ds.target_type = 'small_group' THEN CONCAT( " +
-                "        IFNULL(c.name, '未知营期'), " +
+                "        IFNULL(CONCAT('第', c.term, '期', c.name), '未知营期'), " +
                 "        ' - ', " +
                 "        IFNULL(cl_sg.name, '未知班级'), " +
                 "        ' - ', " +
@@ -109,7 +112,7 @@ public interface UserMapper {
                 "        ' - ', " +
                 "        IFNULL(sg.name, '未知小组') " +
                 "    ) " +
-                "    WHEN ds.target_type = 'camp' THEN IFNULL(c.name, '未知营期') " +
+                "    WHEN ds.target_type = 'camp' THEN IFNULL(CONCAT('第', c.term, '期【', c.name, '】'), '未知营期') " +
                 "    ELSE '未知职责范围' " +
                 "END AS fullTargetName " +
                 "FROM t_duty_assignment da " +
@@ -125,24 +128,16 @@ public interface UserMapper {
                 "WHERE da.user_id = #{userId} " +
                 "AND da.duty_type IN ('检组', '学组', '检委', '学委', '学班', '检班') " +
                 "AND ds.target_type IN ('class', 'big_group', 'small_group', 'camp') " +
-                "ORDER BY da.volunteer_start_time DESC")
+                "ORDER BY da.start_time DESC")
         List<Map<String, Object>> getVolunteerHistory(Long userId);
-
-        /**
-         * 更新志愿者服务结束时间（退出担当）
-         */
-        @Update("UPDATE t_duty_assignment " +
-                "SET volunteer_end_time = NOW() " +
-                "WHERE assignment_id = #{assignmentId} AND user_id = #{userId}")
-        int updateVolunteerEndTime(@Param("assignmentId") Integer assignmentId, @Param("userId") Long userId);
 
         /**
          * 将志愿者服务结束时间更新为营期结束时间
          */
         @Update("UPDATE t_duty_assignment " +
-                "SET volunteer_end_time = STR_TO_DATE(#{campEndTime}, '%Y.%m.%d %H:%i:%s') " +
+                "SET end_time = STR_TO_DATE(#{campEndTime}, '%Y.%m.%d %H:%i:%s') " +
                 "WHERE assignment_id = #{assignmentId} AND user_id = #{userId} " +
-                "AND volunteer_end_time IS NULL")
+                "AND end_time IS NULL")
         int updateVolunteerEndTimeToCampEnd(@Param("assignmentId") Integer assignmentId,
                                             @Param("userId") Long userId,
                                             @Param("campEndTime") String campEndTime);
@@ -153,6 +148,33 @@ public interface UserMapper {
         @Select("SELECT COUNT(*) FROM t_duty_assignment " +
                 "WHERE assignment_id = #{assignmentId} AND user_id = #{userId}")
         int checkAssignmentExists(@Param("assignmentId") Integer assignmentId, @Param("userId") Long userId);
+
+        /**
+         * 获取用户在指定营期的报名信息，包括小组信息
+         */
+        @Select("<script>" +
+                "SELECT " +
+                "   ce.small_group_id AS smallGroupId, " +
+                "   sg.name AS smallGroupName, " +
+                "   ce.big_group_id AS bigGroupId, " +
+                "   bg.name AS bigGroupName, " +
+                "   ce.class_id AS classId, " +
+                "   cl.name AS className, " +
+                "   CONCAT('第', c.term, '期【', c.name, '】') AS campName " +
+                "FROM t_camp_enrollment ce " +
+                "LEFT JOIN t_camp c ON ce.camp_id = c.camp_id " +
+                "LEFT JOIN t_class cl ON ce.class_id = cl.class_id " +
+                "LEFT JOIN t_big_group bg ON ce.big_group_id = bg.big_group_id " +
+                "LEFT JOIN t_small_group sg ON ce.small_group_id = sg.small_group_id " +
+                "WHERE ce.user_id = #{userId} AND ce.camp_id = #{campId} AND ce.is_completed = 0 " +
+                "</script>")
+        Map<String, Object> getCampEnrollmentInfo(@Param("userId") Long userId, @Param("campId") Integer campId);
+
+        /**
+         * 根据小组ID获取对应的群聊信息
+         */
+        @Select("SELECT chat_id AS chatId, name FROM t_group_chat WHERE type = '小组群' AND small_group_id = #{smallGroupId}")
+        Map<String, Object> getGroupChatBySmallGroupId(@Param("smallGroupId") Integer smallGroupId);
 
         /**
          * 获取志愿者统计信息
@@ -249,4 +271,14 @@ public interface UserMapper {
          */
         @Select("SELECT COUNT(*) AS homeworkCount FROM t_homework WHERE user_id = #{userId}")
         Integer countUserHomework(Long userId);
+
+        List<UserSearchDTO> fuzzySearch(@Param("keyword") String keyword);
+
+        List<UserSimpleVO> searchUsersForAdmin(@Param("keyword") String keyword);
+
+        @Select("SELECT user_id AS userId, account AS account, nickname AS nickname, phone AS phone, " +
+                "avatar AS avatar, region AS region, profession AS profession, " +
+                "gender AS gender, birthday AS birthday, create_time AS createTime, status AS status " +
+                "FROM t_user WHERE user_id = #{userId}")
+        UserInfoVO selectUserBaseInfo(@Param("userId") Long userId);
 }

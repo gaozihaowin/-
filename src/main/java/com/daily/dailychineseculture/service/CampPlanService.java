@@ -1,6 +1,7 @@
 package com.daily.dailychineseculture.service;
 
 import com.daily.dailychineseculture.dto.CampOptionDTO;
+import com.daily.dailychineseculture.dto.CampPlanAddDayDTO;
 import com.daily.dailychineseculture.dto.CampPlanDTO;
 import com.daily.dailychineseculture.dto.CampPlanSaveDayDTO;
 import com.daily.dailychineseculture.dto.GenerateCalendarRequest;
@@ -66,4 +67,11 @@ public interface CampPlanService {
      * @return 新增的排课计划（包含 planId）
      */
     CampPlanDTO appendDay(Integer campId);
+
+    /**
+     * 智能追加一天排课
+     * 前端智能推算完整数据后，后端仅负责落库
+     * @param requestDTO 智能追加排课请求 DTO
+     */
+    CampPlanDTO addSmartDay(CampPlanAddDayDTO requestDTO);
 }

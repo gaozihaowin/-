@@ -102,9 +102,9 @@ public class CourseServiceImpl implements CourseService {
             Integer moduleIndex = entry.getKey();
             List<CampPlan> plans = entry.getValue();
             
-            // 获取模块名称并拼接中文周次
-            String moduleName = plans.get(0).getModuleName();
-            String fullModuleName = buildWeekName(moduleIndex, moduleName);
+            // 获取模块名称并拼接中文周次（容错兜底）
+            String rawModuleName = plans.get(0).getModuleName();
+            String fullModuleName = buildWeekName(moduleIndex, rawModuleName);
             
             // 转换为 PlanItemDTO 列表
             List<PlanItemDTO> planItems = plans.stream()
@@ -131,6 +131,15 @@ public class CourseServiceImpl implements CourseService {
      * 最终返回："第一周：基础认知"
      */
   private String buildWeekName(Integer moduleIndex, String moduleName) {
+        if (moduleIndex == null || moduleIndex <= 0) {
+            moduleIndex = 1;
+        }
+        if (moduleName == null) {
+            moduleName = "拓展排课";
+        }
+        if (moduleName.contains("周：") || moduleName.contains("周:")) {
+            return moduleName;
+        }
         String[] chineseNumbers = {"", "一", "二", "三", "四", "五", "六", "七", "八", "九", "十"};
         
         String chineseNumber;

@@ -1,18 +1,24 @@
 package com.daily.dailychineseculture.service.impl;
 
+import com.daily.dailychineseculture.common.BusinessException;
 import com.daily.dailychineseculture.dto.CampOptionDTO;
+import com.daily.dailychineseculture.dto.CampPlanAddDayDTO;
 import com.daily.dailychineseculture.dto.CampPlanDTO;
 import com.daily.dailychineseculture.dto.CampPlanSaveDayDTO;
 import com.daily.dailychineseculture.dto.GenerateCalendarRequest;
 import com.daily.dailychineseculture.dto.PlanTaskDTO;
 import com.daily.dailychineseculture.entity.Camp;
 import com.daily.dailychineseculture.entity.CampPlan;
+import com.daily.dailychineseculture.entity.CourseMaterial;
 import com.daily.dailychineseculture.entity.PlanTask;
 import com.daily.dailychineseculture.mapper.CampMapper;
 import com.daily.dailychineseculture.mapper.CampPlanMapper;
+import com.daily.dailychineseculture.mapper.CourseMaterialMapper;
 import com.daily.dailychineseculture.mapper.PlanTaskMapper;
 import com.daily.dailychineseculture.service.CampPlanService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.BeanUtils;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,6 +28,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashSet;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -36,10 +43,37 @@ public class CampPlanServiceImpl implements CampPlanService {
     private final CampPlanMapper campPlanMapper;
     private final CampMapper campMapper;
     private final PlanTaskMapper planTaskMapper;
+    private final CourseMaterialMapper courseMaterialMapper;
 
     @Override
     public List<CampOptionDTO> getCampOptions() {
-        return campMapper.selectCampOptions();
+        List<CampOptionDTO> camps = campMapper.selectCampOptions();
+        LocalDateTime now = LocalDateTime.now();
+        camps.forEach(camp -> {
+            LocalDateTime start = camp.getStartTime();
+            LocalDateTime end = camp.getEndTime();
+            if (start == null) {
+                camp.setCampStatusCode(0);
+                camp.setCampStatusDesc("未开营");
+                return;
+            }
+            if (end == null) {
+                camp.setCampStatusCode(1);
+                camp.setCampStatusDesc("已开营");
+                return;
+            }
+            if (now.isBefore(start)) {
+                camp.setCampStatusCode(0);
+                camp.setCampStatusDesc("未开营");
+            } else if (now.isAfter(end)) {
+                camp.setCampStatusCode(2);
+                camp.setCampStatusDesc("已结营");
+            } else {
+                camp.setCampStatusCode(1);
+                camp.setCampStatusDesc("已开营");
+            }
+        });
+        return camps;
     }
 
     /**
@@ -172,7 +206,7 @@ public class CampPlanServiceImpl implements CampPlanService {
     }
 
     /**
-     * 将 DTO 转换为实体
+     * 将 DTO 转换为实体（带课件中台强制同步逻辑）
      */
     private PlanTask convertToEntity(Integer planId, PlanTaskDTO dto) {
         PlanTask task = new PlanTask();
@@ -181,10 +215,27 @@ public class CampPlanServiceImpl implements CampPlanService {
         task.setTaskType(dto.getTaskType());
         task.setTaskName(dto.getTaskName());
         task.setTaskDesc(dto.getTaskDesc());
-        task.setTaskUrl(dto.getTaskUrl());
-        task.setDuration(dto.getDuration());
         task.setIsRequired(dto.getIsRequired());
         task.setSortOrder(dto.getSortOrder());
+
+        if (dto.getMaterialId() != null) {
+            CourseMaterial material = courseMaterialMapper.selectById(dto.getMaterialId());
+            if (material != null) {
+                task.setMaterialId(dto.getMaterialId());
+                task.setTaskUrl(material.getUrl());
+                if (dto.getDuration() == null || dto.getDuration() == 0) {
+                    task.setDuration(material.getDuration());
+                } else {
+                    task.setDuration(dto.getDuration());
+                }
+            } else {
+                throw new BusinessException("所选的课件资源不存在或已被删除，请刷新后重试！");
+            }
+        } else {
+            task.setMaterialId(null);
+            task.setTaskUrl(dto.getTaskUrl());
+            task.setDuration(dto.getDuration());
+        }
         return task;
     }
 
@@ -269,6 +320,9 @@ public class CampPlanServiceImpl implements CampPlanService {
         planDTO.setPlanId(planId);
         planDTO.setCampId(request.getCampId());
         planDTO.setTitle(request.getTitle());
+        planDTO.setModuleIndex(request.getModuleIndex());
+        planDTO.setModuleName(request.getModuleName());
+        planDTO.setTeacherName(request.getTeacherName());
         campPlanMapper.updateCampPlan(planDTO);
 
         // 2. 准备数据
@@ -365,5 +419,41 @@ public class CampPlanServiceImpl implements CampPlanService {
         result.setTasks(new ArrayList<>());
 
         return result;
+    }
+
+    /**
+     * 智能追加一天排课
+     * 前端智能推算完整数据后，后端仅负责落库
+     * 包含并发防御：捕获唯一索引冲突异常
+     */
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public CampPlanDTO addSmartDay(CampPlanAddDayDTO requestDTO) {
+        Camp camp = campMapper.selectById(requestDTO.getCampId());
+        if (camp == null) {
+            throw new BusinessException(400, "未找到指定的营期");
+        }
+
+        CampPlan campPlan = new CampPlan();
+        BeanUtils.copyProperties(requestDTO, campPlan);
+        campPlan.setIsFinished(0);
+
+        try {
+            campPlanMapper.insertCampPlan(campPlan);
+        } catch (DuplicateKeyException e) {
+            throw new BusinessException(409, "该营期的当前天数或日期已被占用，请刷新页面获取最新排课进度！");
+        }
+
+        CampPlanDTO dto = new CampPlanDTO();
+        dto.setPlanId(campPlan.getPlanId());
+        dto.setCampId(campPlan.getCampId());
+        dto.setDayIndex(campPlan.getDayIndex());
+        dto.setPlanDate(campPlan.getPlanDate());
+        dto.setTitle(campPlan.getTitle());
+        dto.setModuleIndex(campPlan.getModuleIndex());
+        dto.setModuleName(campPlan.getModuleName());
+        dto.setTeacherName(campPlan.getTeacherName());
+        dto.setTasks(new ArrayList<>());
+        return dto;
     }
 }

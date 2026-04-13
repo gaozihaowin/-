@@ -27,6 +27,9 @@ public class PlanTaskDTO {
     @Schema(description = "资源链接", example = "http://localhost:8080/uploads/video.mp4")
     private String taskUrl;
 
+    @Schema(description = "关联课件ID（来自课件中台，非空则优先使用中台资源）", example = "1")
+    private Long materialId;
+
     @Schema(description = "建议时长（分钟）", example = "30")
     private Integer duration;
 

@@ -36,6 +36,24 @@ public class CampPlanDTO {
     private String title;
 
     /**
+     * 模块名称（如"第二周：知行合一"）
+     * 用于前端周主题智能推算
+     */
+    private String moduleName;
+
+    /**
+     * 模块索引（第几周）
+     * 用于前端周主题智能推算
+     */
+    private Integer moduleIndex;
+
+    /**
+     * 讲师姓名
+     * 用于前端显示授课老师
+     */
+    private String teacherName;
+
+    /**
      * 任务列表
      * 该排课下的所有任务（视频、阅读、作业等）
      */

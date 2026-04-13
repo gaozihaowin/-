@@ -71,6 +71,7 @@
             task_name AS taskName,
             task_desc AS taskDesc,
             task_url AS taskUrl,
+            material_id AS materialId,
             duration,
             is_required AS isRequired,
             sort_order AS sortOrder
@@ -96,6 +97,7 @@
             task_name,
             task_desc,
             task_url,
+            material_id,
             duration,
             is_required,
             sort_order,
@@ -106,6 +108,7 @@
             #{taskName},
             #{taskDesc},
             #{taskUrl},
+            #{materialId},
             #{duration},
             #{isRequired},
             #{sortOrder},
@@ -128,6 +131,9 @@
             </if>
             <if test="taskUrl != null">
                 task_url = #{taskUrl},
+            </if>
+            <if test="materialId != null">
+                material_id = #{materialId},
             </if>
             <if test="duration != null">
                 duration = #{duration},
@@ -188,6 +194,7 @@
             task_name,
             task_desc,
             task_url,
+            material_id,
             duration,
             is_required,
             sort_order,
@@ -200,6 +207,7 @@
                 #{task.taskName},
                 #{task.taskDesc},
                 #{task.taskUrl},
+                #{task.materialId},
                 #{task.duration},
                 #{task.isRequired},
                 #{task.sortOrder},
@@ -222,10 +230,24 @@
             UPDATE t_plan_task
             SET task_name=#{task.taskName}, task_type=#{task.taskType},
                 task_desc=#{task.taskDesc}, task_url=#{task.taskUrl},
-                duration=#{task.duration}, is_required=#{task.isRequired},
-                sort_order=#{task.sortOrder}
+                material_id=#{task.materialId}, duration=#{task.duration},
+                is_required=#{task.isRequired}, sort_order=#{task.sortOrder}
             WHERE task_id=#{task.taskId}
         </foreach>
+    </update>
+
+    <!-- 根据素材ID统计排课任务数量（防爆拦截） -->
+    <select id="countByMaterialId" resultType="int">
+        SELECT COUNT(*)
+        FROM t_plan_task
+        WHERE material_id = #{materialId}
+    </select>
+
+    <!-- 根据素材ID更新排课任务的task_url（同步更新） -->
+    <update id="updateTaskUrlByMaterialId">
+        UPDATE t_plan_task
+        SET task_url = #{newUrl}
+        WHERE material_id = #{materialId}
     </update>
 
 </mapper>

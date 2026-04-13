@@ -1,6 +1,7 @@
 package com.daily.dailychineseculture.mapper;
 
 import com.daily.dailychineseculture.entity.UserDailyRecord;
+import com.daily.dailychineseculture.dto.DailyHeatmapDTO;
 import org.apache.ibatis.annotations.*;
 
 import java.util.List;
@@ -40,4 +41,8 @@ public interface UserDailyRecordMapper {
                       @Param("planId") Integer planId,
                       @Param("completionRate") Integer completionRate,
                       @Param("isAllCompleted") Integer isAllCompleted);
+
+    List<DailyHeatmapDTO> selectHeatmap(@Param("userId") Long userId,
+                                       @Param("year") Integer year,
+                                       @Param("month") Integer month);
 }

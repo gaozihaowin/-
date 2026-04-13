@@ -133,4 +133,19 @@ public interface PlanTaskMapper {
      * @param tasks 任务列表
      */
     void batchUpdateTasks(@Param("tasks") List<PlanTask> tasks);
+
+    /**
+     * 根据素材ID统计排课任务数量（防爆拦截）
+     * @param materialId 素材ID
+     * @return 被引用数量
+     */
+    Integer countByMaterialId(@Param("materialId") Long materialId);
+
+    /**
+     * 根据素材ID更新排课任务的task_url（同步更新）
+     * @param materialId 素材ID
+     * @param newUrl 新的URL
+     * @return 影响行数
+     */
+    Integer updateTaskUrlByMaterialId(@Param("materialId") Long materialId, @Param("newUrl") String newUrl);
 }

@@ -1,24 +1,23 @@
 package com.daily.dailychineseculture.dto;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Data;
 
-/**
- * 营期下拉选项 DTO
- */
 @Data
 public class CampOptionDTO {
-    /**
-     * 营期 ID
-     */
     private Integer campId;
-    
-    /**
-     * 营期名称
-     */
+
     private String name;
-    
-    /**
-     * 期数
-     */
+
     private Integer term;
+
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
+    private java.time.LocalDateTime startTime;
+
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
+    private java.time.LocalDateTime endTime;
+
+    private Integer campStatusCode;
+
+    private String campStatusDesc;
 }

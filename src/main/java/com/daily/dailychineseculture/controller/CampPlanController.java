@@ -3,12 +3,14 @@ package com.daily.dailychineseculture.controller;
 import com.daily.dailychineseculture.common.ResponseResult;
 import com.daily.dailychineseculture.dto.AppendCampPlanRequest;
 import com.daily.dailychineseculture.dto.CampOptionDTO;
+import com.daily.dailychineseculture.dto.CampPlanAddDayDTO;
 import com.daily.dailychineseculture.dto.CampPlanDTO;
 import com.daily.dailychineseculture.dto.CampPlanSaveDayDTO;
 import com.daily.dailychineseculture.dto.GenerateCalendarRequest;
 import com.daily.dailychineseculture.service.CampPlanService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -110,5 +112,20 @@ public class CampPlanController {
     public ResponseResult<CampPlanDTO> appendDay(@RequestBody AppendCampPlanRequest request) {
         CampPlanDTO result = campPlanService.appendDay(request.getCampId());
         return ResponseResult.success("追加成功", result);
+    }
+
+    /**
+     * 智能追加一天排课
+     * POST /api/admin/camp-plans/add-smart-day
+     *
+     * 前端智能推算完整数据后，后端仅负责落库
+     *
+     * @param requestDTO 智能追加排课请求 DTO
+     * @return 统一响应结果
+     */
+    @PostMapping("/add-smart-day")
+    public ResponseResult<CampPlanDTO> addSmartDay(@RequestBody @Validated CampPlanAddDayDTO requestDTO) {
+        CampPlanDTO dto = campPlanService.addSmartDay(requestDTO);
+        return ResponseResult.success("智能追加排课成功", dto);
     }
 }

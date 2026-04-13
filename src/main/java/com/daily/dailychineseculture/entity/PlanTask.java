@@ -44,6 +44,11 @@ public class PlanTask {
     private String taskUrl;
 
     /**
+     * 关联课件ID
+     */
+    private Long materialId;
+
+    /**
      * 建议时长（分钟）
      */
     private Integer duration;

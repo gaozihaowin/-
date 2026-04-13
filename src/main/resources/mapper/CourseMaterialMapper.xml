@@ -1,0 +1,169 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.daily.dailychineseculture.mapper.CourseMaterialMapper">
+
+    <!-- 分页查询课件（手写动态SQL） -->
+    <select id="selectPage" resultType="com.daily.dailychineseculture.entity.CourseMaterial">
+        SELECT
+            t.material_id   AS materialId,
+            t.category_id   AS categoryId,
+            mc.name         AS categoryName,
+            t.name,
+            t.type,
+            t.url,
+            t.size,
+            t.duration,
+            t.create_by     AS createBy,
+            t.create_time   AS createTime,
+            t.update_time   AS updateTime
+        FROM t_course_material t
+        LEFT JOIN t_material_category mc ON t.category_id = mc.category_id
+        <where>
+            <if test="categoryIds != null and categoryIds.size() > 0">
+                AND t.category_id IN
+                <foreach collection="categoryIds" item="id" open="(" separator="," close=")">
+                    #{id}
+                </foreach>
+            </if>
+            <if test="type != null and type != ''">
+                AND t.type = #{type}
+            </if>
+            <if test="keyword != null and keyword != ''">
+                AND t.name LIKE CONCAT('%', #{keyword}, '%')
+            </if>
+        </where>
+        ORDER BY t.material_id DESC
+    </select>
+
+    <!-- 统计课件总数（用于分页） -->
+    <select id="countPage" resultType="int">
+        SELECT COUNT(*)
+        FROM t_course_material t
+        LEFT JOIN t_material_category mc ON t.category_id = mc.category_id
+        <where>
+            <if test="categoryIds != null and categoryIds.size() > 0">
+                AND t.category_id IN
+                <foreach collection="categoryIds" item="id" open="(" separator="," close=")">
+                    #{id}
+                </foreach>
+            </if>
+            <if test="type != null and type != ''">
+                AND t.type = #{type}
+            </if>
+            <if test="keyword != null and keyword != ''">
+                AND t.name LIKE CONCAT('%', #{keyword}, '%')
+            </if>
+        </where>
+    </select>
+
+    <!-- 根据ID查询课件 -->
+    <select id="selectById" resultType="com.daily.dailychineseculture.entity.CourseMaterial">
+        SELECT
+            material_id AS materialId,
+            category_id AS categoryId,
+            name,
+            type,
+            url,
+            size,
+            duration,
+            create_by AS createBy,
+            create_time AS createTime,
+            update_time AS updateTime
+        FROM t_course_material
+        WHERE material_id = #{materialId}
+    </select>
+
+    <!-- 新增课件 -->
+    <insert id="insert" parameterType="com.daily.dailychineseculture.entity.CourseMaterial" useGeneratedKeys="true" keyProperty="materialId">
+        INSERT INTO t_course_material (
+            category_id,
+            name,
+            type,
+            url,
+            size,
+            duration,
+            create_by,
+            create_time,
+            update_time
+        ) VALUES (
+            #{categoryId},
+            #{name},
+            #{type},
+            #{url},
+            #{size},
+            #{duration},
+            #{createBy},
+            NOW(),
+            NOW()
+        )
+    </insert>
+
+    <!-- 修改课件 -->
+    <update id="update" parameterType="com.daily.dailychineseculture.entity.CourseMaterial">
+        UPDATE t_course_material
+        <set>
+            <if test="categoryId != null">
+                category_id = #{categoryId},
+            </if>
+            <if test="name != null and name != ''">
+                name = #{name},
+            </if>
+            <if test="type != null and type != ''">
+                type = #{type},
+            </if>
+            <if test="url != null and url != ''">
+                url = #{url},
+            </if>
+            <if test="size != null">
+                size = #{size},
+            </if>
+            <if test="duration != null">
+                duration = #{duration},
+            </if>
+            update_time = NOW()
+        </set>
+        WHERE material_id = #{materialId}
+    </update>
+
+    <!-- 删除课件 -->
+    <delete id="deleteById">
+        DELETE FROM t_course_material
+        WHERE material_id = #{materialId}
+    </delete>
+
+    <!-- 根据分类ID统计课件数量 -->
+    <select id="countByCategoryId" resultType="int">
+        SELECT COUNT(*)
+        FROM t_course_material
+        WHERE category_id = #{categoryId}
+    </select>
+
+    <!-- 根据多个分类ID统计课件数量（级联删除防爆校验） -->
+    <select id="countByCategoryIds" resultType="int">
+        SELECT COUNT(*)
+        FROM t_course_material
+        <where>
+            <if test="categoryIds != null and categoryIds.size() > 0">
+                category_id IN
+                <foreach collection="categoryIds" item="id" open="(" separator="," close=")">
+                    #{id}
+                </foreach>
+            </if>
+        </where>
+    </select>
+
+    <!-- 更新排课任务表的 task_url（同步更新 - 防御机制2：写时同步） -->
+    <update id="updatePlanTaskUrl">
+        UPDATE t_plan_task
+        SET task_url = #{newUrl}
+        WHERE material_id = #{materialId}
+    </update>
+
+    <!-- 统计排课任务引用该素材的数量（防爆拦截） -->
+    <select id="countPlanTaskByMaterialId" resultType="int">
+        SELECT COUNT(*)
+        FROM t_plan_task
+        WHERE material_id = #{materialId}
+    </select>
+
+</mapper>

@@ -2,6 +2,7 @@ package com.daily.dailychineseculture.controller;
 
 import com.daily.dailychineseculture.common.ResponseResult;
 import com.daily.dailychineseculture.dto.SwitchIdentityRequest;
+import com.daily.dailychineseculture.dto.StudyArchiveDTO;
 import com.daily.dailychineseculture.dto.UserCurrentInfoDTO;
 import com.daily.dailychineseculture.dto.UserIdentityDTO;
 import com.daily.dailychineseculture.dto.UserUpdateRequest;
@@ -9,6 +10,8 @@ import com.daily.dailychineseculture.entity.User;
 import com.daily.dailychineseculture.service.IdGeneratorService;
 import com.daily.dailychineseculture.service.UserAuthService;
 import com.daily.dailychineseculture.service.UserService;
+import com.daily.dailychineseculture.service.UserStatsService;
+import com.daily.dailychineseculture.util.JwtUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -26,12 +29,18 @@ public class UserController {
 
     @Autowired
     private UserService userService;
-    
+
     @Autowired
     private IdGeneratorService idGeneratorService;
-    
+
     @Autowired
     private UserAuthService userAuthService;
+
+    @Autowired
+    private UserStatsService userStatsService;
+
+    @Autowired
+    private JwtUtils jwtUtils;
 
     /**
      * 获取所有用户
@@ -63,7 +72,7 @@ public class UserController {
         // 生成用户ID
         Long userId = idGeneratorService.generateUserId();
         user.setUserId(userId);
-        
+
         User createdUser = userService.createUser(user);
         return ResponseResult.success("用户创建成功", createdUser);
     }
@@ -92,9 +101,38 @@ public class UserController {
     }
 
     /**
+     * 获取用户当前正在学习的小组信息
+     * GET /user/current-group
+     *
+     * @param campId 营期ID
+     * @param httpRequest HTTP 请求对象（用于获取登录用户 ID）
+     * @return 统一响应结果，包含用户当前小组信息
+     */
+    @GetMapping("/current-group")
+    public ResponseResult<Map<String, Object>> getCurrentGroupInfo(
+            @RequestParam("campId") Integer campId,
+            HttpServletRequest httpRequest) {
+        try {
+            // 从请求属性中获取用户 ID（由认证拦截器设置）
+            Long userId = (Long) httpRequest.getAttribute("userId");
+            if (userId == null) {
+                System.err.println("未找到用户 ID，请确保已登录");
+                return ResponseResult.error(401, "未登录或登录已过期");
+            }
+
+            Map<String, Object> groupInfo = userService.getCurrentGroupInfo(userId, campId);
+            return ResponseResult.success("获取小组信息成功", groupInfo);
+        } catch (Exception e) {
+            System.err.println("获取用户小组信息异常：" + e.getMessage());
+            e.printStackTrace();
+            return ResponseResult.error(500, "服务器内部错误：" + e.getMessage());
+        }
+    }
+
+    /**
      * 更新用户个人信息（完善信息）
      * POST /user/update
-     * 
+     *
      * @param request 用户信息更新请求
      * @param httpRequest HTTP 请求对象（用于获取登录用户 ID）
      * @return 统一响应结果
@@ -140,11 +178,11 @@ public class UserController {
             return ResponseResult.error(500, "服务器内部错误：" + e.getMessage());
         }
     }
-    
+
     /**
      * 获取当前登录用户的状态信息
      * GET /api/admin/user/me
-     * 
+     *
      * @param httpRequest HTTP 请求对象（用于获取登录用户 ID）
      * @return 统一响应结果，包含用户当前信息
      */
@@ -157,7 +195,7 @@ public class UserController {
                 System.err.println("未找到用户 ID，请确保已登录");
                 return ResponseResult.error(401, "未登录或登录已过期");
             }
-            
+
             UserCurrentInfoDTO userInfo = userAuthService.getCurrentUserInfo(userId);
             return ResponseResult.success("操作成功", userInfo);
         } catch (Exception e) {
@@ -166,11 +204,11 @@ public class UserController {
             return ResponseResult.error(500, "服务器内部错误：" + e.getMessage());
         }
     }
-    
+
     /**
      * 获取用户可切换的身份列表
      * GET /api/admin/user/identities
-     * 
+     *
      * @param httpRequest HTTP 请求对象（用于获取登录用户 ID）
      * @return 统一响应结果，包含身份信息列表
      */
@@ -183,7 +221,7 @@ public class UserController {
                 System.err.println("未找到用户 ID，请确保已登录");
                 return ResponseResult.error(401, "未登录或登录已过期");
             }
-            
+
             List<UserIdentityDTO> identities = userAuthService.getUserIdentities(userId);
             return ResponseResult.success("操作成功", identities);
         } catch (Exception e) {
@@ -192,7 +230,7 @@ public class UserController {
             return ResponseResult.error(500, "服务器内部错误：" + e.getMessage());
         }
     }
-    
+
     /**
      * PC 管理端 - 执行身份切换 (修复越权漏洞，统一使用 /api/admin 前缀)
      */
@@ -219,5 +257,16 @@ public class UserController {
         } catch (Exception e) {
             return ResponseResult.error(500, "服务器内部错误：" + e.getMessage());
         }
+    }
+
+    @GetMapping("/study-archive")
+    public ResponseResult<StudyArchiveDTO> getStudyArchive(
+            @RequestHeader("Authorization") String token) {
+        Long userId = jwtUtils.getUserIdFromToken(token);
+        if (userId == null) {
+            return ResponseResult.error(401, "无效的token");
+        }
+        StudyArchiveDTO result = userStatsService.getStudyArchive(userId);
+        return ResponseResult.success(result);
     }
 }

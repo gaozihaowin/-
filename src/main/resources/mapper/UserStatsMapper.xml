@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.daily.dailychineseculture.mapper.UserStatsMapper">
+
+    <select id="countEnrollments" resultType="int">
+        SELECT COUNT(*)
+        FROM t_camp_enrollment
+        WHERE user_id = #{userId}
+    </select>
+
+    <select id="countCertificates" resultType="int">
+        SELECT COUNT(*)
+        FROM t_certificate
+        WHERE user_id = #{userId}
+    </select>
+
+    <select id="avgCompletionRate" resultType="java.lang.Double">
+        SELECT AVG(completion_rate)
+        FROM t_user_daily_record
+        WHERE user_id = #{userId}
+    </select>
+
+    <select id="getRadarStats" resultType="com.daily.dailychineseculture.dto.RadarStatsDTO">
+        SELECT
+            ROUND(IFNULL(SUM(CASE WHEN UPPER(t.task_type) = 'READ' THEN 1 ELSE 0 END) * 100.0 / NULLIF((SELECT COUNT(*) FROM t_plan_task WHERE UPPER(task_type) = 'READ'), 0), 0)) AS `read`,
+            ROUND(IFNULL(SUM(CASE WHEN UPPER(t.task_type) = 'VIDEO' THEN 1 ELSE 0 END) * 100.0 / NULLIF((SELECT COUNT(*) FROM t_plan_task WHERE UPPER(task_type) = 'VIDEO'), 0), 0)) AS video,
+            ROUND(IFNULL(SUM(CASE WHEN UPPER(t.task_type) = 'HOMEWORK' THEN 1 ELSE 0 END) * 100.0 / NULLIF((SELECT COUNT(*) FROM t_plan_task WHERE UPPER(task_type) = 'HOMEWORK'), 0), 0)) AS homework,
+            ROUND(IFNULL(SUM(CASE WHEN UPPER(t.task_type) = 'EXTRA' THEN 1 ELSE 0 END) * 100.0 / NULLIF((SELECT COUNT(*) FROM t_plan_task WHERE UPPER(task_type) = 'EXTRA'), 0), 0)) AS extra
+        FROM t_user_task_record ut
+        LEFT JOIN t_plan_task t ON ut.task_id = t.task_id
+        WHERE ut.user_id = #{userId}
+          AND ut.is_done = 1
+    </select>
+
+</mapper>

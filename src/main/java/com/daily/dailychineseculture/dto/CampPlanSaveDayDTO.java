@@ -19,6 +19,17 @@ public class CampPlanSaveDayDTO {
     @Schema(description = "营期ID", example = "101")
     private Integer campId;
 
+    @NotNull(message = "模块索引不能为空")
+    @Schema(description = "模块索引（第几周）", example = "1")
+    private Integer moduleIndex;
+
+    @NotBlank(message = "模块名称不能为空")
+    @Schema(description = "模块名称", example = "知行合一")
+    private String moduleName;
+
+    @Schema(description = "讲师姓名", example = "王阳明")
+    private String teacherName;
+
     @Schema(description = "第几天", example = "1")
     private Integer dayNum;
 
