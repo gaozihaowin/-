@@ -1,0 +1,61 @@
+package com.daily.dailychineseculture.service;
+
+import com.daily.dailychineseculture.dto.DutyApplicationReviewDTO;
+import com.daily.dailychineseculture.vo.AdminDutyApplicationListItemVO;
+import com.daily.dailychineseculture.vo.AdminDutyApplicationStatsVO;
+import com.daily.dailychineseculture.vo.AdminListItemVO;
+import com.github.pagehelper.PageInfo;
+
+import java.util.List;
+
+/**
+ * 管理端权限申请服务接口
+ */
+public interface AdminDutyApplicationService {
+
+    /**
+     * 获取审批统计数据
+     * 实现数据隔离：非超级管理员只能看到自己角色权限范围内的申请
+     *
+     * @param currentRole 当前登录管理员角色
+     * @return 统计数据
+     */
+    AdminDutyApplicationStatsVO getStats(String currentRole);
+
+    /**
+     * 分页查询审批列表
+     * 实现数据隔离：非超级管理员只能看到自己角色权限范围内的申请
+     *
+     * @param currentRole 当前登录管理员角色
+     * @param page        页码
+     * @param size        每页条数
+     * @param status      状态过滤（可选）
+     * @param dutyType    权限类型过滤（可选，超级管理员使用）
+     * @return 分页列表
+     */
+    PageInfo<AdminDutyApplicationListItemVO> getApplicationList(
+            String currentRole,
+            Integer page,
+            Integer size,
+            Integer status,
+            String dutyType);
+
+    /**
+     * 审批流转（通过/拒绝）
+     * 包含数据隔离校验、状态防呆、事务控制
+     *
+     * @param reviewerId   当前审核人ID
+     * @param currentRole  当前审核人角色
+     * @param reviewDTO    审批请求DTO
+     */
+    void reviewApplication(Long reviewerId, String currentRole, DutyApplicationReviewDTO reviewDTO);
+
+    /**
+     * 查询管理人员列表
+     * 实现数据隔离：非超级管理员只能看到自己角色权限范围内的管理员
+     *
+     * @param currentRole 当前登录管理员角色
+     * @return 管理人员列表
+     */
+    List<AdminListItemVO> getAdminList(String currentRole);
+}
