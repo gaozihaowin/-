@@ -1,5 +1,6 @@
 package com.daily.dailychineseculture.mapper;
 
+import org.apache.ibatis.annotations.Delete;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
@@ -44,9 +45,11 @@ public interface ClassMapper {
             "COALESCE(u.gender, '未知') as gender, " +
             "COALESCE(u.profession, '未知职业') as profession, " +
             "COALESCE(u.phone, '未填写') as phone, " +
-            "ce.class_id " +
+            "ce.class_id, " +
+            "c.name as class_name " +
             "FROM t_camp_enrollment ce " +
             "JOIN t_user u ON ce.user_id = u.user_id " +
+            "LEFT JOIN t_class c ON ce.class_id = c.class_id " +
             "WHERE ce.camp_id = #{campId} " +
             "ORDER BY u.region ASC, u.user_id ASC")
     List<Map<String, Object>> getAuditPassStudents(@Param("campId") Integer campId);
@@ -60,9 +63,11 @@ public interface ClassMapper {
             "COALESCE(u.gender, '未知') as gender, " +
             "COALESCE(u.profession, '未知职业') as profession, " +
             "COALESCE(u.phone, '未填写') as phone, " +
-            "ce.class_id " +
+            "ce.class_id, " +
+            "c.name as class_name " +
             "FROM t_camp_enrollment ce " +
             "JOIN t_user u ON ce.user_id = u.user_id " +
+            "LEFT JOIN t_class c ON ce.class_id = c.class_id " +
             "WHERE ce.camp_id = #{campId} AND ce.class_id = #{classId} " +
             "ORDER BY u.region ASC")
     List<Map<String, Object>> getStudentsByClassId(@Param("campId") Integer campId, @Param("classId") Integer classId);
@@ -90,6 +95,11 @@ public interface ClassMapper {
     List<Map<String, Object>> getClassesByCampId(@Param("campId") Integer campId);
 
     @Insert("INSERT INTO t_class (camp_id, name) VALUES (#{campId}, #{className})")
-    @SelectKey(statement = "SELECT LAST_INSERT_ID()", keyProperty = "classId", resultType = Integer.class, before = false)
-    Integer insertClassAndReturnId(@Param("campId") Integer campId, @Param("className") String className);
+    int insertClass(@Param("campId") Integer campId, @Param("className") String className);
+
+    @Select("SELECT LAST_INSERT_ID()")
+    Integer getLastInsertId();
+
+    @Delete("DELETE FROM t_class WHERE camp_id = #{campId}")
+    int deleteClassesByCampId(@Param("campId") Integer campId);
 }

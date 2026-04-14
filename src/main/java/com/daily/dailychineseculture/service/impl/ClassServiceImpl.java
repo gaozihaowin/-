@@ -92,7 +92,7 @@ public class ClassServiceImpl implements ClassService {
             int classId = 1;
             for (List<Map<String, Object>> cls : classes) {
                 for (Map<String, Object> student : cls) {
-                    Integer userId = (Integer) student.get("user_id");
+                    Integer userId = ((Number) student.get("user_id")).intValue();
                     classMapper.updateStudentClassId(userId, classId, campId);
                 }
                 classId++;
@@ -147,6 +147,8 @@ public class ClassServiceImpl implements ClassService {
             if (classCount == null || classCount <= 0) {
                 return Result.error("班级数量必须大于0");
             }
+            classMapper.resetStudentClassId(campId);
+            classMapper.deleteClassesByCampId(campId);
             List<Map<String, Object>> unassignedStudents = getUnassignedStudents(campId);
             if (unassignedStudents.isEmpty()) {
                 return Result.error("暂无待分班学员");
@@ -171,13 +173,14 @@ public class ClassServiceImpl implements ClassService {
                     continue;
                 }
                 String className = "第" + (i + 1) + "班";
-                Integer generatedClassId = classMapper.insertClassAndReturnId(campId, className);
+                classMapper.insertClass(campId, className);
+                Integer generatedClassId = classMapper.getLastInsertId();
                 if (generatedClassId == null) {
                     continue;
                 }
                 List<ClassAssignResultDTO.StudentInfo> studentInfos = new ArrayList<>();
                 for (Map<String, Object> s : bucket) {
-                    Integer userId = (Integer) s.get("user_id");
+                    Integer userId = ((Number) s.get("user_id")).intValue();
                     classMapper.updateStudentClassId(userId, generatedClassId, campId);
                     ClassAssignResultDTO.StudentInfo info = new ClassAssignResultDTO.StudentInfo();
                     info.setUserId(((Number) s.get("user_id")).longValue());
@@ -256,7 +259,8 @@ public class ClassServiceImpl implements ClassService {
                 detail.put("phone", student.get("phone") != null ? student.get("phone") : "");
                 detail.put("classId", student.get("class_id"));
                 if (student.get("class_id") != null) {
-                    String className = classMapper.getClassNameById((Integer) student.get("class_id"));
+                    Integer classId = ((Number) student.get("class_id")).intValue();
+                    String className = classMapper.getClassNameById(classId);
                     detail.put("className", className != null ? className : "");
                 } else {
                     detail.put("className", "未分班");
@@ -274,7 +278,8 @@ public class ClassServiceImpl implements ClassService {
             if (campId == null || campId <= 0) {
                 return Result.error("营期ID无效");
             }
-            int rows = classMapper.resetStudentClassId(campId);
+            classMapper.resetStudentClassId(campId);
+            classMapper.deleteClassesByCampId(campId);
             return Result.success((Void) null);
         } catch (Exception e) {
             e.printStackTrace();

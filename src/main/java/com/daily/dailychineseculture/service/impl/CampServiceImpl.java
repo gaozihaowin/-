@@ -9,6 +9,8 @@ import com.daily.dailychineseculture.dto.RecentCampDTO;
 import com.daily.dailychineseculture.entity.Camp;
 import com.daily.dailychineseculture.mapper.CampEnrollmentMapper;
 import com.daily.dailychineseculture.mapper.CampMapper;
+import com.daily.dailychineseculture.mapper.CampTypeMapper;
+import com.daily.dailychineseculture.mapper.CertificateMapper;
 import com.daily.dailychineseculture.service.CampService;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,6 +34,12 @@ public class CampServiceImpl implements CampService {
 
     @Autowired
     private CampEnrollmentMapper campEnrollmentMapper;
+
+    @Autowired
+    private CampTypeMapper campTypeMapper;
+
+    @Autowired
+    private CertificateMapper certificateMapper;
     
     @Override
     public List<Camp> getHotCamps() {
@@ -220,6 +228,19 @@ public class CampServiceImpl implements CampService {
         }
         if (camp.getEndTime() != null && new Date().after(camp.getEndTime())) {
             throw new IllegalArgumentException("当前营期已结束，不可报名");
+        }
+
+        if (camp.getTypeId() != null) {
+            com.daily.dailychineseculture.dto.CampTypeDTO campType = campTypeMapper.selectCampTypeById(camp.getTypeId());
+            if (campType != null && campType.getLevel() != null) {
+                com.daily.dailychineseculture.dto.CampTypeDTO previousType = campTypeMapper.selectPreviousCampType(campType.getLevel());
+                if (previousType != null) {
+                    int certCount = certificateMapper.countByUserIdAndType(userId, previousType.getLevelName());
+                    if (certCount <= 0) {
+                        throw new IllegalArgumentException("报名" + campType.getLevelName() + "需要先获得" + previousType.getLevelName() + "的结业证书");
+                    }
+                }
+            }
         }
 
         Integer count = campEnrollmentMapper.countByUserIdAndCampId(userId, campId);

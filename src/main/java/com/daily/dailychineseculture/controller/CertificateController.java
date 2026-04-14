@@ -42,4 +42,16 @@ public class CertificateController {
         List<Certificate> certList = certificateService.getMyCertificates(userId);
         return Result.success(certList);
     }
+
+    @GetMapping("/user")
+    public Result<List<Certificate>> getUserCertificates(HttpServletRequest request) {
+        String authHeader = request.getHeader("Authorization");
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            return Result.error("请先登录");
+        }
+        String token = authHeader.replace("Bearer ", "");
+        Long userId = jwtUtils.getUserIdFromToken(token);
+        List<Certificate> certList = certificateService.getMyCertificates(userId);
+        return Result.success(certList);
+    }
 }

@@ -9,6 +9,7 @@ import com.daily.dailychineseculture.entity.Camp;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
+import org.apache.ibatis.annotations.Update;
 
 import java.util.List;
 
@@ -65,6 +66,6 @@ public interface CampMapper {
     @Select("SELECT * FROM t_camp WHERE camp_id = #{campId}")
     Camp selectCampForEnroll(@Param("campId") Integer campId);
 
-    @Select("UPDATE t_camp SET enroll_count = enroll_count + 1 WHERE camp_id = #{campId}")
+    @Update("UPDATE t_camp SET enroll_count = enroll_count + 1 WHERE camp_id = #{campId}")
     int incrementEnrollCount(@Param("campId") Integer campId);
 }

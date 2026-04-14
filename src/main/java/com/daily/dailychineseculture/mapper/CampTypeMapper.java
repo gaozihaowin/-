@@ -21,4 +21,6 @@ public interface CampTypeMapper {
     int deleteCampType(@Param("typeId") Integer typeId);
 
     CampTypeDTO selectNextPromotionType(@Param("level") String level);
+
+    CampTypeDTO selectPreviousCampType(@Param("level") String level);
 }

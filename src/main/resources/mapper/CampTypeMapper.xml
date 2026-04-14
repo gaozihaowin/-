@@ -62,8 +62,20 @@
             level,
             level_name
         FROM t_camp_type
-        WHERE level > #{level}
+        WHERE level <![CDATA[>]]> #{level}
         ORDER BY type_id ASC
+        LIMIT 1
+    </select>
+
+    <!-- 查询上一营期类型（根据当前 level 找更小的 level） -->
+    <select id="selectPreviousCampType" resultMap="CampTypeResultMap">
+        SELECT
+            type_id,
+            level,
+            level_name
+        FROM t_camp_type
+        WHERE level <![CDATA[<]]> #{level}
+        ORDER BY type_id DESC
         LIMIT 1
     </select>
 
