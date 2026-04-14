@@ -3,71 +3,31 @@
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.daily.dailychineseculture.mapper.HomeworkMapper">
 
-    <select id="selectMyHomeworkList"
-            resultType="com.daily.dailychineseculture.dto.MyHomeworkDTO">
-        SELECT
-            h.homework_id                 AS homeworkId,
-            c.name                        AS campName,
-            cp.title                      AS planTitle,
-            h.content                     AS content,
-            h.submit_time                 AS submitTime,
-            h.is_small_group_excellent    AS isSmallGroupExcellent,
-            h.is_big_group_excellent      AS isBigGroupExcellent
+    <select id="countTotalPlansByCamp" resultType="int">
+        SELECT COUNT(*)
+        FROM t_camp_plan
+        WHERE camp_id = #{campId}
+    </select>
+
+    <select id="countSubmittedHomeworkByUserAndCamp" resultType="int">
+        SELECT COUNT(DISTINCT h.plan_id)
         FROM t_homework h
-        LEFT JOIN t_camp_plan cp ON h.plan_id = cp.plan_id
-        LEFT JOIN t_camp c ON cp.camp_id = c.camp_id
+        JOIN t_camp_plan cp ON h.plan_id = cp.plan_id
         WHERE h.user_id = #{userId}
-        ORDER BY h.submit_time DESC
+          AND cp.camp_id = #{campId}
     </select>
 
-    <select id="selectExcellentShowcaseList"
-            resultType="com.daily.dailychineseculture.dto.ExcellentShowcaseDTO">
-        SELECT
-            h.homework_id                 AS homeworkId,
-            COALESCE(u.nickname, '匿名学友') AS authorName,
-            u.avatar                      AS avatar,
-            c.name                        AS campName,
-            cp.title                      AS planTitle,
-            h.content                     AS content,
-            h.submit_time                 AS submitTime
-        FROM t_homework h
-        LEFT JOIN t_user u ON h.user_id = u.user_id
-        LEFT JOIN t_camp_plan cp ON h.plan_id = cp.plan_id
-        LEFT JOIN t_camp c ON cp.camp_id = c.camp_id
-        WHERE h.is_big_group_excellent = 1
-        ORDER BY h.submit_time DESC
+    <select id="countMissedConsecutiveDays" resultType="int">
+        SELECT COUNT(DISTINCT cp.plan_date)
+        FROM t_camp_plan cp
+        LEFT JOIN t_homework h
+            ON h.plan_id = cp.plan_id
+            AND h.user_id = #{userId}
+        WHERE cp.camp_id = #{campId}
+          AND cp.plan_date &lt; CURDATE()
+          AND h.homework_id IS NULL
+        ORDER BY cp.plan_date DESC
+        LIMIT #{threshold}
     </select>
-
-    <select id="selectHomeworkIdByUserAndPlan" resultType="java.lang.Integer">
-        SELECT homework_id
-        FROM t_homework
-        WHERE user_id = #{userId}
-          AND plan_id = #{planId}
-        LIMIT 1
-    </select>
-
-    <update id="updateHomeworkContent">
-        UPDATE t_homework
-        SET task_id = #{taskId},
-            content = #{content},
-            submit_time = NOW()
-        WHERE homework_id = #{homeworkId}
-    </update>
-
-    <insert id="insertHomework" useGeneratedKeys="true" keyProperty="homeworkId">
-        INSERT INTO t_homework (
-            user_id,
-            plan_id,
-            task_id,
-            content,
-            submit_time
-        ) VALUES (
-            #{userId},
-            #{planId},
-            #{taskId},
-            #{content},
-            NOW()
-        )
-    </insert>
 
 </mapper>

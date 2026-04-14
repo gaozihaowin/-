@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.UUID;
 
 @Service
 public class CertificateServiceImpl implements CertificateService {
@@ -17,5 +18,18 @@ public class CertificateServiceImpl implements CertificateService {
     @Override
     public List<Certificate> getMyCertificates(Long userId) {
         return certificateMapper.selectByUserId(userId);
+    }
+
+    @Override
+    public void issueCompletionCertificate(Long userId, String levelName) {
+        Certificate cert = new Certificate();
+        cert.setUserId(userId);
+        cert.setType(levelName);
+        cert.setNumber(generateCertificateNumber());
+        certificateMapper.insert(cert);
+    }
+
+    private String generateCertificateNumber() {
+        return "CERT-" + System.currentTimeMillis() + "-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
     }
 }

@@ -1,12 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.daily.dailychineseculture.mapper.CampEnrollmentMapper">
-    <select id="countByUserIdAndCampId" resultType="int">
-        SELECT COUNT(1)
-        FROM t_camp_enrollment
-        WHERE user_id = #{userId}
-          AND camp_id = #{campId}
-    </select>
 
     <insert id="insertEnrollment">
         INSERT INTO t_camp_enrollment (
@@ -21,4 +15,54 @@
             0
         )
     </insert>
+
+    <select id="selectByUserIdAndCampId" resultType="com.daily.dailychineseculture.dto.CampEnrollmentDTO">
+        SELECT
+            ce.enroll_id          AS enrollId,
+            ce.user_id            AS userId,
+            ce.camp_id            AS campId,
+            COALESCE(u.nickname, u.account) AS nickname,
+            u.gender              AS gender,
+            COALESCE(u.region, '未知') AS region,
+            u.birthday            AS birthday,
+            ce.class_id           AS classId,
+            c.name                AS className,
+            ce.is_completed       AS isCompleted,
+            ce.progress           AS progress,
+            ce.create_time        AS createTime
+        FROM t_camp_enrollment ce
+        JOIN t_user u ON ce.user_id = u.user_id
+        LEFT JOIN t_class c ON ce.class_id = c.class_id
+        WHERE ce.user_id = #{userId}
+          AND ce.camp_id = #{campId}
+    </select>
+
+    <update id="updateCompletionStatus">
+        UPDATE t_camp_enrollment
+        SET is_completed = #{status}
+        WHERE user_id = #{userId}
+          AND camp_id = #{campId}
+    </update>
+
+    <select id="selectEnrollmentsByCampId" resultType="com.daily.dailychineseculture.dto.CampEnrollmentDTO">
+        SELECT
+            ce.enroll_id          AS enrollId,
+            ce.user_id            AS userId,
+            ce.camp_id            AS campId,
+            COALESCE(u.nickname, u.account) AS nickname,
+            u.gender              AS gender,
+            COALESCE(u.region, '未知') AS region,
+            u.birthday            AS birthday,
+            ce.class_id           AS classId,
+            c.name                AS className,
+            ce.is_completed       AS isCompleted,
+            ce.progress           AS progress,
+            ce.create_time        AS createTime
+        FROM t_camp_enrollment ce
+        JOIN t_user u ON ce.user_id = u.user_id
+        LEFT JOIN t_class c ON ce.class_id = c.class_id
+        WHERE ce.camp_id = #{campId}
+        ORDER BY ce.create_time ASC
+    </select>
+
 </mapper>

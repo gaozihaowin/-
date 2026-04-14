@@ -515,4 +515,10 @@ public interface HomeworkMapper {
         int updateHomeworkContent(@Param("homeworkId") Integer homeworkId, @Param("taskId") Integer taskId, @Param("content") String content);
 
         int insertHomework(com.daily.dailychineseculture.entity.Homework homework);
+
+        int countTotalPlansByCamp(@Param("campId") Integer campId);
+
+        int countSubmittedHomeworkByUserAndCamp(@Param("userId") Long userId, @Param("campId") Integer campId);
+
+        int countMissedConsecutiveDays(@Param("userId") Long userId, @Param("campId") Integer campId, @Param("threshold") int threshold);
 }

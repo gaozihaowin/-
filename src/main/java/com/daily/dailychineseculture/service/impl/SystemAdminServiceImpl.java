@@ -45,7 +45,7 @@ public class SystemAdminServiceImpl implements SystemAdminService {
         AdminUserDetailVO detail = new AdminUserDetailVO();
         detail.setUserInfo(userMapper.selectUserBaseInfo(userId));
         detail.setActiveRoles(systemAdminMapper.selectActiveRolesByUserId(userId));
-        detail.setApplicationHistory(adminDutyApplicationMapper.selectApplicationHistoryByUserId(userId));
+        detail.setApplicationHistory(adminDutyApplicationMapper.selectApplicationHistoryVOByUserId(userId));
         return detail;
     }
 

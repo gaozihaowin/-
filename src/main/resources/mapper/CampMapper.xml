@@ -158,16 +158,22 @@
         LIMIT 5
     </select>
 
-    <select id="selectCampForEnroll" resultType="com.daily.dailychineseculture.entity.Camp">
-        SELECT camp_id, start_time, end_time
+    <!-- 根据营期类型 ID 查询所有该类型的营期 -->
+    <select id="selectByTypeId" resultType="com.daily.dailychineseculture.entity.Camp">
+        SELECT
+            camp_id,
+            type_id,
+            term,
+            name,
+            intro,
+            start_time,
+            end_time,
+            tag,
+            enroll_count,
+            status
         FROM t_camp
-        WHERE camp_id = #{campId}
+        WHERE type_id = #{typeId}
+        ORDER BY start_time DESC
     </select>
 
-    <update id="incrementEnrollCount">
-        update t_camp
-        set enroll_count = enroll_count + 1
-        where camp_id = #{campId}
-    </update>
-    
 </mapper>

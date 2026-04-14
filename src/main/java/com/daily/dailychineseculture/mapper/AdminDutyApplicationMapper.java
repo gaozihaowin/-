@@ -2,26 +2,18 @@ package com.daily.dailychineseculture.mapper;
 
 import com.daily.dailychineseculture.vo.AdminDutyApplicationListItemVO;
 import com.daily.dailychineseculture.vo.AdminDutyApplicationStatsVO;
+import com.daily.dailychineseculture.vo.ApplicationHistoryVO;
+import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
 
+import java.util.Date;
 import java.util.List;
 
-/**
- * 管理端权限申请 Mapper
- * 所有 SQL 使用原生 MyBatis 注解编写
- */
 @Mapper
 public interface AdminDutyApplicationMapper {
 
-    /**
-     * 统计审批数据（支持角色数据隔离）
-     * 使用 CASE WHEN 聚合一次性查出各状态数量
-     *
-     * @param dutyTypeFilter 角色过滤条件（非 SUPER_ADMIN 时传入具体角色，SUPER_ADMIN 传 null）
-     * @return 统计结果
-     */
     @Select("<script>" +
             "SELECT " +
             "  COUNT(*) AS total, " +
@@ -29,22 +21,13 @@ public interface AdminDutyApplicationMapper {
             "  SUM(CASE WHEN status = 1 THEN 1 ELSE 0 END) AS passed, " +
             "  SUM(CASE WHEN status = 2 THEN 1 ELSE 0 END) AS rejected " +
             "FROM t_duty_application " +
-            "WHERE status != 3 " +  // 排除已撤销的
+            "WHERE status != 3 " +
             "<if test='dutyTypeFilter != null'>" +
             "  AND duty_type = #{dutyTypeFilter} " +
             "</if>" +
             "</script>")
     AdminDutyApplicationStatsVO selectStats(@Param("dutyTypeFilter") String dutyTypeFilter);
 
-    /**
-     * 分页查询审批列表（支持角色数据隔离）
-     * LEFT JOIN t_user 获取申请人姓名
-     *
-     * @param dutyTypeFilter   角色过滤条件（非 SUPER_ADMIN 时传入具体角色）
-     * @param status           状态过滤（可选）
-     * @param dutyType         权限类型过滤（可选，超级管理员用于筛选）
-     * @return 申请列表
-     */
     @Select("<script>" +
             "SELECT " +
             "  a.apply_id AS applyId, " +
@@ -72,4 +55,43 @@ public interface AdminDutyApplicationMapper {
             @Param("dutyTypeFilter") String dutyTypeFilter,
             @Param("status") Integer status,
             @Param("dutyType") String dutyType);
+
+    @Select("SELECT " +
+            "  a.apply_id AS applyId, " +
+            "  a.user_id AS userId, " +
+            "  u.nickname AS applicantName, " +
+            "  a.duty_type AS dutyType, " +
+            "  a.apply_reason AS applyReason, " +
+            "  a.status AS status, " +
+            "  a.create_time AS createTime " +
+            "FROM t_duty_application a " +
+            "LEFT JOIN t_user u ON a.user_id = u.user_id " +
+            "WHERE a.user_id = #{userId} " +
+            "ORDER BY a.create_time DESC")
+    List<AdminDutyApplicationListItemVO> selectApplicationHistoryByUserId(@Param("userId") Long userId);
+
+    @Select("SELECT " +
+            "  apply_id AS applyId, " +
+            "  duty_type AS dutyType, " +
+            "  apply_reason AS applyReason, " +
+            "  status, " +
+            "  create_time AS createTime, " +
+            "  review_time AS reviewTime, " +
+            "  audit_remark AS auditRemark " +
+            "FROM t_duty_application " +
+            "WHERE user_id = #{userId} " +
+            "ORDER BY create_time DESC")
+    List<ApplicationHistoryVO> selectApplicationHistoryVOByUserId(@Param("userId") Long userId);
+
+    @Insert("INSERT INTO t_duty_application " +
+            "(user_id, duty_type, apply_reason, status, reviewer_id, review_time, audit_remark, create_time) " +
+            "VALUES (#{userId}, #{dutyType}, #{applyReason}, #{status}, #{reviewerId}, #{reviewTime}, #{auditRemark}, #{createTime})")
+    int insertApplicationAudit(@Param("userId") Long userId,
+                                @Param("dutyType") String dutyType,
+                                @Param("applyReason") String applyReason,
+                                @Param("status") int status,
+                                @Param("reviewerId") Long reviewerId,
+                                @Param("reviewTime") Date reviewTime,
+                                @Param("auditRemark") String auditRemark,
+                                @Param("createTime") Date createTime);
 }
