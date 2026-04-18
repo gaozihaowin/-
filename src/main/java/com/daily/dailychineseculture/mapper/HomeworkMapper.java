@@ -521,4 +521,8 @@ public interface HomeworkMapper {
         int countSubmittedHomeworkByUserAndCamp(@Param("userId") Long userId, @Param("campId") Integer campId);
 
         int countMissedConsecutiveDays(@Param("userId") Long userId, @Param("campId") Integer campId, @Param("threshold") int threshold);
+
+        int countLateSubmissions(@Param("userId") Long userId, @Param("campId") Integer campId);
+
+        int countMissedSubmissions(@Param("userId") Long userId, @Param("campId") Integer campId);
 }

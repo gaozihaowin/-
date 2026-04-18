@@ -37,4 +37,39 @@ public class Certificate {
      * 颁发时间（对应 issue_time 字段）
      */
     private Date issueTime;
+
+    /**
+     * 奖项类型（优秀结业奖等）
+     */
+    private String awardType;
+
+    /**
+     * 营期ID
+     */
+    private Integer campId;
+
+    /**
+     * 班级ID
+     */
+    private Integer classId;
+
+    /**
+     * 班级名称
+     */
+    private String className;
+
+    /**
+     * 学员姓名
+     */
+    private String studentName;
+
+    /**
+     * 模板ID
+     */
+    private Integer templateId;
+
+    /**
+     * 是否已生成证书图片
+     */
+    private Integer isGenerated;
 }

@@ -57,4 +57,18 @@ public class PromotionController {
             return ResponseResult.error("批量检查失败: " + e.getMessage());
         }
     }
+
+    @PostMapping("/batch-promote-with-class")
+    public ResponseResult<Integer> batchPromoteWithClassPreservation(@RequestBody Map<String, Object> request) {
+        try {
+            Integer currentCampId = ((Number) request.get("currentCampId")).intValue();
+            Integer targetCampId = ((Number) request.get("targetCampId")).intValue();
+
+            int count = promotionService.batchPromoteWithClassPreservation(currentCampId, targetCampId);
+            return ResponseResult.success("批量升班完成，共转移" + count + "名学员到目标营期并保留班级结构", count);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseResult.error("批量升班失败: " + e.getMessage());
+        }
+    }
 }

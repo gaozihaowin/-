@@ -16,6 +16,8 @@ public interface CampEnrollmentMapper {
 
     int insertEnrollment(@Param("userId") Long userId, @Param("campId") Integer campId);
 
+    int insertEnrollmentWithClass(@Param("userId") Long userId, @Param("campId") Integer campId, @Param("classId") Integer classId);
+
     @Update("UPDATE t_camp_enrollment SET progress = #{progress} " +
             "WHERE user_id = #{userId} AND camp_id = #{campId}")
     int updateProgress(@Param("userId") Long userId,

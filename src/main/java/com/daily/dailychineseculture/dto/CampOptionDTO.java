@@ -11,6 +11,10 @@ public class CampOptionDTO {
 
     private Integer term;
 
+    private Integer typeId;
+
+    private String typeName;
+
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
     private java.time.LocalDateTime startTime;
 

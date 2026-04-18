@@ -16,6 +16,22 @@
         )
     </insert>
 
+    <insert id="insertEnrollmentWithClass">
+        INSERT INTO t_camp_enrollment (
+            user_id,
+            camp_id,
+            class_id,
+            is_completed,
+            progress
+        ) VALUES (
+            #{userId},
+            #{campId},
+            #{classId},
+            0,
+            0
+        )
+    </insert>
+
     <select id="selectByUserIdAndCampId" resultType="com.daily.dailychineseculture.dto.CampEnrollmentDTO">
         SELECT
             ce.enroll_id          AS enrollId,

@@ -9,4 +9,6 @@ public interface PromotionService {
     boolean promoteStudent(Long userId, Integer currentCampId, Integer targetCampId);
 
     int batchCheckAndMarkCompletion(Integer campId);
+
+    int batchPromoteWithClassPreservation(Integer currentCampId, Integer targetCampId);
 }

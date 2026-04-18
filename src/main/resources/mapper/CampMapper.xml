@@ -92,13 +92,16 @@
     <!-- 查询营期下拉选项 -->
     <select id="selectCampOptions" resultType="com.daily.dailychineseculture.dto.CampOptionDTO">
         SELECT
-            camp_id     AS campId,
-            name,
-            term,
-            start_time  AS startTime,
-            end_time    AS endTime
-        FROM t_camp
-        ORDER BY start_time DESC
+            c.camp_id     AS campId,
+            c.name,
+            c.term,
+            c.type_id     AS typeId,
+            t.level_name  AS typeName,
+            c.start_time  AS startTime,
+            c.end_time    AS endTime
+        FROM t_camp c
+        LEFT JOIN t_camp_type t ON c.type_id = t.type_id
+        ORDER BY c.start_time DESC
     </select>
     
     <!-- 新增营期 -->

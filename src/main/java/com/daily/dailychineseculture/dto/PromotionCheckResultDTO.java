@@ -18,6 +18,8 @@ public class PromotionCheckResultDTO {
     private Integer totalPlans;
     private Integer submittedHomework;
     private Integer missedConsecutive;
+    private Integer lateSubmissions;
+    private Integer missedSubmissions;
     private List<NextCampDTO> availableCamps;
 
     @Data

@@ -30,4 +30,22 @@
         LIMIT #{threshold}
     </select>
 
+    <select id="countLateSubmissions" resultType="int">
+        SELECT COUNT(DISTINCT cp.plan_id)
+        FROM t_camp_plan cp
+        JOIN t_homework h ON h.plan_id = cp.plan_id AND h.user_id = #{userId}
+        WHERE cp.camp_id = #{campId}
+          AND cp.plan_date &lt; CURDATE()
+          AND TIME(h.submit_time) > '18:30:00'
+    </select>
+
+    <select id="countMissedSubmissions" resultType="int">
+        SELECT COUNT(DISTINCT cp.plan_id)
+        FROM t_camp_plan cp
+        LEFT JOIN t_homework h ON h.plan_id = cp.plan_id AND h.user_id = #{userId}
+        WHERE cp.camp_id = #{campId}
+          AND cp.plan_date &lt; CURDATE()
+          AND h.homework_id IS NULL
+    </select>
+
 </mapper>
