@@ -1,7 +1,9 @@
 package com.daily.dailychineseculture.service.impl;
 
+import com.daily.dailychineseculture.dto.HomeworkDetailDTO;
 import com.daily.dailychineseculture.dto.MemberManageDTO;
 import com.daily.dailychineseculture.dto.DutyAssignmentDTO;
+import com.daily.dailychineseculture.mapper.HomeworkMapper;
 import com.daily.dailychineseculture.mapper.VolunteerManageMapper;
 import com.daily.dailychineseculture.service.VolunteerManageService;
 import com.daily.dailychineseculture.mapper.UserMapper;
@@ -27,6 +29,9 @@ public class VolunteerManageServiceImpl implements VolunteerManageService {
     @Autowired
     private UserMapper userMapper;
 
+    @Autowired
+    private HomeworkMapper homeworkMapper;
+
     @Override
     public List<Map<String, Object>> getManagementScopes(Long userId) {
         return volunteerManageMapper.getManagementScope(userId);
@@ -35,7 +40,8 @@ public class VolunteerManageServiceImpl implements VolunteerManageService {
     @Override
     public MemberManageDTO getMemberManageInfo(Long userId, Integer assignmentId, Integer smallGroupId) {
         MemberManageDTO result = new MemberManageDTO();
-        System.out.println("获取成员信息 - userId: " + userId + ", assignmentId: " + assignmentId + ", smallGroupId: " + smallGroupId);
+        System.out.println(
+                "获取成员信息 - userId: " + userId + ", assignmentId: " + assignmentId + ", smallGroupId: " + smallGroupId);
 
         if (smallGroupId != null) {
             List<Map<String, Object>> smallGroupMembers = volunteerManageMapper.getSmallGroupMembers(smallGroupId);
@@ -182,42 +188,57 @@ public class VolunteerManageServiceImpl implements VolunteerManageService {
                                 Integer bigGroupId = getSafeInteger(bg, "targetId");
                                 String bigGroupName = getSafeString(bg, "targetName");
 
-                                List<Map<String, Object>> xueweiVolunteers = volunteerManageMapper.getCurrentVolunteers("big_group", bigGroupId);
+                                List<Map<String, Object>> xueweiVolunteers = volunteerManageMapper
+                                        .getCurrentVolunteers("big_group", bigGroupId);
                                 Map<String, Object> xuewei = xueweiVolunteers != null ? xueweiVolunteers.stream()
                                         .filter(v -> "学委".equals(v.get("dutyType")))
                                         .findFirst().orElse(null) : null;
 
-                                List<Map<String, Object>> jianweiVolunteers = volunteerManageMapper.getCurrentVolunteers("big_group", bigGroupId);
+                                List<Map<String, Object>> jianweiVolunteers = volunteerManageMapper
+                                        .getCurrentVolunteers("big_group", bigGroupId);
                                 Map<String, Object> jianwei = jianweiVolunteers != null ? jianweiVolunteers.stream()
                                         .filter(v -> "检委".equals(v.get("dutyType")))
                                         .findFirst().orElse(null) : null;
 
-                                List<Map<String, Object>> smallGroups = volunteerManageMapper.getAssignableSmallGroups(bigGroupId);
-                                List<DutyAssignmentDTO.AssignableDuty> smallGroupDuties = smallGroups != null ? smallGroups.stream()
-                                        .flatMap(sg -> {
-                                            Integer smallGroupId = getSafeInteger(sg, "targetId");
-                                            String smallGroupName = getSafeString(sg, "targetName");
+                                List<Map<String, Object>> smallGroups = volunteerManageMapper
+                                        .getAssignableSmallGroups(bigGroupId);
+                                List<DutyAssignmentDTO.AssignableDuty> smallGroupDuties = smallGroups != null
+                                        ? smallGroups.stream()
+                                                .flatMap(sg -> {
+                                                    Integer smallGroupId = getSafeInteger(sg, "targetId");
+                                                    String smallGroupName = getSafeString(sg, "targetName");
 
-                                            List<Map<String, Object>> xuezuVolunteers = volunteerManageMapper.getCurrentVolunteers("small_group", smallGroupId);
-                                            Map<String, Object> xuezu = xuezuVolunteers != null ? xuezuVolunteers.stream()
-                                                    .filter(v -> "学组".equals(v.get("dutyType")))
-                                                    .findFirst().orElse(null) : null;
+                                                    List<Map<String, Object>> xuezuVolunteers = volunteerManageMapper
+                                                            .getCurrentVolunteers("small_group", smallGroupId);
+                                                    Map<String, Object> xuezu = xuezuVolunteers != null
+                                                            ? xuezuVolunteers.stream()
+                                                                    .filter(v -> "学组".equals(v.get("dutyType")))
+                                                                    .findFirst().orElse(null)
+                                                            : null;
 
-                                            List<Map<String, Object>> jianzuVolunteers = volunteerManageMapper.getCurrentVolunteers("small_group", smallGroupId);
-                                            Map<String, Object> jianzu = jianzuVolunteers != null ? jianzuVolunteers.stream()
-                                                    .filter(v -> "检组".equals(v.get("dutyType")))
-                                                    .findFirst().orElse(null) : null;
-                                            String fullSmallGroupName = bigGroupName + " - " + smallGroupName;
-                                            return List.of(
-                                                    createAssignableDuty("small_group", smallGroupId, fullSmallGroupName, "学组", xuezu),
-                                                    createAssignableDuty("small_group", smallGroupId, fullSmallGroupName, "检组", jianzu)
-                                            ).stream();
-                                        })
-                                        .collect(Collectors.toList()) : List.of();
+                                                    List<Map<String, Object>> jianzuVolunteers = volunteerManageMapper
+                                                            .getCurrentVolunteers("small_group", smallGroupId);
+                                                    Map<String, Object> jianzu = jianzuVolunteers != null
+                                                            ? jianzuVolunteers.stream()
+                                                                    .filter(v -> "检组".equals(v.get("dutyType")))
+                                                                    .findFirst().orElse(null)
+                                                            : null;
+                                                    String fullSmallGroupName = bigGroupName + " - " + smallGroupName;
+                                                    return List.of(
+                                                            createAssignableDuty("small_group", smallGroupId,
+                                                                    fullSmallGroupName, "学组", xuezu),
+                                                            createAssignableDuty("small_group", smallGroupId,
+                                                                    fullSmallGroupName, "检组", jianzu))
+                                                            .stream();
+                                                })
+                                                .collect(Collectors.toList())
+                                        : List.of();
 
                                 List<DutyAssignmentDTO.AssignableDuty> allDuties = new ArrayList<>();
-                                allDuties.add(createAssignableDuty("big_group", bigGroupId, bigGroupName, "学委", xuewei));
-                                allDuties.add(createAssignableDuty("big_group", bigGroupId, bigGroupName, "检委", jianwei));
+                                allDuties
+                                        .add(createAssignableDuty("big_group", bigGroupId, bigGroupName, "学委", xuewei));
+                                allDuties.add(
+                                        createAssignableDuty("big_group", bigGroupId, bigGroupName, "检委", jianwei));
                                 allDuties.addAll(smallGroupDuties);
 
                                 return allDuties.stream();
@@ -227,8 +248,7 @@ public class VolunteerManageServiceImpl implements VolunteerManageService {
                     result.setAssignableDuties(assignableDuties);
                 }
             }
-        }
-        else if ("学委".equals(dutyType) || "检委".equals(dutyType)) {
+        } else if ("学委".equals(dutyType) || "检委".equals(dutyType)) {
             Integer bigGroupId = getSafeInteger(targetScope, "bigGroupId");
             if (bigGroupId != null) {
                 List<Map<String, Object>> smallGroups = volunteerManageMapper.getAssignableSmallGroups(bigGroupId);
@@ -238,19 +258,23 @@ public class VolunteerManageServiceImpl implements VolunteerManageService {
                             .flatMap(sg -> {
                                 Integer smallGroupId = getSafeInteger(sg, "targetId");
                                 String smallGroupName = getSafeString(sg, "targetName");
-                                List<Map<String, Object>> xuezuVolunteers = volunteerManageMapper.getCurrentVolunteers("small_group", smallGroupId);
+                                List<Map<String, Object>> xuezuVolunteers = volunteerManageMapper
+                                        .getCurrentVolunteers("small_group", smallGroupId);
                                 Map<String, Object> xuezu = xuezuVolunteers != null ? xuezuVolunteers.stream()
                                         .filter(v -> "学组".equals(v.get("dutyType")))
                                         .findFirst().orElse(null) : null;
-                                List<Map<String, Object>> jianzuVolunteers = volunteerManageMapper.getCurrentVolunteers("small_group", smallGroupId);
+                                List<Map<String, Object>> jianzuVolunteers = volunteerManageMapper
+                                        .getCurrentVolunteers("small_group", smallGroupId);
                                 Map<String, Object> jianzu = jianzuVolunteers != null ? jianzuVolunteers.stream()
                                         .filter(v -> "检组".equals(v.get("dutyType")))
                                         .findFirst().orElse(null) : null;
                                 String fullSmallGroupName = bigGroupName + " - " + smallGroupName;
                                 return List.of(
-                                        createAssignableDuty("small_group", smallGroupId, fullSmallGroupName, "学组", xuezu),
-                                        createAssignableDuty("small_group", smallGroupId, fullSmallGroupName, "检组", jianzu)
-                                ).stream();
+                                        createAssignableDuty("small_group", smallGroupId, fullSmallGroupName, "学组",
+                                                xuezu),
+                                        createAssignableDuty("small_group", smallGroupId, fullSmallGroupName, "检组",
+                                                jianzu))
+                                        .stream();
                             })
                             .collect(Collectors.toList());
                     result.setAssignableDuties(assignableDuties);
@@ -263,7 +287,7 @@ public class VolunteerManageServiceImpl implements VolunteerManageService {
 
     @Override
     public boolean assignDuty(Long managerUserId, Long targetUserId, String targetType,
-                              Integer targetId, String dutyType) {
+            Integer targetId, String dutyType) {
         try {
             System.out.println("分配岗位参数:");
             System.out.println("managerUserId: " + managerUserId);
@@ -296,11 +320,9 @@ public class VolunteerManageServiceImpl implements VolunteerManageService {
                 // 超级管理员可以分配任何岗位
                 if ("volunteer_admin".equals(scopeDutyType)) {
                     return true;
-                }
-                else if ("class".equals(scopeTargetType)) {
+                } else if ("class".equals(scopeTargetType)) {
                     return true;
-                }
-                else if ("big_group".equals(scopeTargetType) && "small_group".equals(targetType)) {
+                } else if ("big_group".equals(scopeTargetType) && "small_group".equals(targetType)) {
                     return true;
                 }
                 return false;
@@ -389,8 +411,8 @@ public class VolunteerManageServiceImpl implements VolunteerManageService {
     }
 
     private DutyAssignmentDTO.AssignableDuty createAssignableDuty(String targetType, Integer targetId,
-                                                                  String targetName, String dutyType,
-                                                                  Map<String, Object> currentVolunteer) {
+            String targetName, String dutyType,
+            Map<String, Object> currentVolunteer) {
         DutyAssignmentDTO.AssignableDuty duty = new DutyAssignmentDTO.AssignableDuty();
         duty.setTargetType(targetType);
         duty.setTargetId(targetId);
@@ -400,7 +422,9 @@ public class VolunteerManageServiceImpl implements VolunteerManageService {
         duty.setIsVacant(currentVolunteer == null);
 
         if (currentVolunteer != null) {
-            duty.setCurrentUserId(getSafeInteger(currentVolunteer, "userId") != null ? getSafeInteger(currentVolunteer, "userId").longValue() : null);
+            duty.setCurrentUserId(getSafeInteger(currentVolunteer, "userId") != null
+                    ? getSafeInteger(currentVolunteer, "userId").longValue()
+                    : null);
             String username = getSafeString(currentVolunteer, "username");
             String account = getSafeString(currentVolunteer, "account");
             duty.setCurrentUsername(username.isEmpty() ? account : username);
@@ -412,7 +436,8 @@ public class VolunteerManageServiceImpl implements VolunteerManageService {
 
     private void buildClassHierarchy(MemberManageDTO result, Map<String, Object> targetScope) {
         Integer classId = getSafeInteger(targetScope, "classId");
-        if (classId == null) return;
+        if (classId == null)
+            return;
 
         List<MemberManageDTO.HierarchyItem> hierarchyList = new ArrayList<>();
 
@@ -457,7 +482,10 @@ public class VolunteerManageServiceImpl implements VolunteerManageService {
                             for (Map<String, Object> member : members) {
                                 MemberManageDTO.HierarchyItem memberNode = new MemberManageDTO.HierarchyItem();
                                 memberNode.setId(getSafeString(member, "account").hashCode() * 1000L);
-                                memberNode.setName(getSafeString(member, "nickname") != null && !getSafeString(member, "nickname").isEmpty() ? getSafeString(member, "nickname") : getSafeString(member, "account"));
+                                memberNode.setName(getSafeString(member, "nickname") != null
+                                        && !getSafeString(member, "nickname").isEmpty()
+                                                ? getSafeString(member, "nickname")
+                                                : getSafeString(member, "account"));
                                 memberNode.setType("member");
                                 memberNode.setParentId(smallGroupId.longValue());
                                 memberNode.setExpandable(false);
@@ -481,7 +509,8 @@ public class VolunteerManageServiceImpl implements VolunteerManageService {
 
     private void buildBigGroupHierarchy(MemberManageDTO result, Map<String, Object> targetScope) {
         Integer bigGroupId = getSafeInteger(targetScope, "bigGroupId");
-        if (bigGroupId == null) return;
+        if (bigGroupId == null)
+            return;
 
         List<MemberManageDTO.HierarchyItem> hierarchyList = new ArrayList<>();
 
@@ -512,7 +541,9 @@ public class VolunteerManageServiceImpl implements VolunteerManageService {
                     for (Map<String, Object> member : members) {
                         MemberManageDTO.HierarchyItem memberNode = new MemberManageDTO.HierarchyItem();
                         memberNode.setId(getSafeString(member, "account").hashCode() * 1000L);
-                        memberNode.setName(getSafeString(member, "nickname") != null && !getSafeString(member, "nickname").isEmpty() ? getSafeString(member, "nickname") : getSafeString(member, "account"));
+                        memberNode.setName(getSafeString(member, "nickname") != null
+                                && !getSafeString(member, "nickname").isEmpty() ? getSafeString(member, "nickname")
+                                        : getSafeString(member, "account"));
                         memberNode.setType("member");
                         memberNode.setParentId(smallGroupId.longValue());
                         memberNode.setExpandable(false);
@@ -532,7 +563,8 @@ public class VolunteerManageServiceImpl implements VolunteerManageService {
 
     private void buildSmallGroupHierarchy(MemberManageDTO result, Map<String, Object> targetScope) {
         Integer smallGroupId = getSafeInteger(targetScope, "smallGroupId");
-        if (smallGroupId == null) return;
+        if (smallGroupId == null)
+            return;
 
         List<MemberManageDTO.HierarchyItem> hierarchyList = new ArrayList<>();
 
@@ -549,7 +581,10 @@ public class VolunteerManageServiceImpl implements VolunteerManageService {
             for (Map<String, Object> member : members) {
                 MemberManageDTO.HierarchyItem memberNode = new MemberManageDTO.HierarchyItem();
                 memberNode.setId(getSafeString(member, "account").hashCode() * 1000L);
-                memberNode.setName(getSafeString(member, "nickname") != null && !getSafeString(member, "nickname").isEmpty() ? getSafeString(member, "nickname") : getSafeString(member, "account"));
+                memberNode.setName(
+                        getSafeString(member, "nickname") != null && !getSafeString(member, "nickname").isEmpty()
+                                ? getSafeString(member, "nickname")
+                                : getSafeString(member, "account"));
                 memberNode.setType("member");
                 memberNode.setParentId(smallGroupId.longValue());
                 memberNode.setExpandable(false);
@@ -582,7 +617,7 @@ public class VolunteerManageServiceImpl implements VolunteerManageService {
             for (Map<String, Object> cert : certificates) {
                 String certType = getSafeString(cert, "type");
                 String certNumber = getSafeString(cert, "number");
-                String position = getMatchingPositionByCertType(certType, certNumber, duties);
+                String position = getMatchingPositionByCertType(cert, certType, certNumber, duties);
                 cert.put("camp_class_info", position);
             }
             return certificates;
@@ -592,8 +627,15 @@ public class VolunteerManageServiceImpl implements VolunteerManageService {
         }
     }
 
-    private String getMatchingPositionByCertType(String certType, String certNumber, List<Map<String, Object>> duties) {
-        if (duties == null || duties.isEmpty()) return "服务期间";
+    private String getMatchingPositionByCertType(Map<String, Object> cert, String certType, String certNumber,
+            List<Map<String, Object>> duties) {
+        // 学员证书识别：homeworkId 不为空
+        Object homeworkId = cert.get("homework_id");
+        if (homeworkId != null) {
+            return getStudentCertPosition(certNumber);
+        }
+        if (duties == null || duties.isEmpty())
+            return "服务期间";
 
         Integer targetAssignmentId = null;
         Integer targetCampId = null;
@@ -604,13 +646,15 @@ public class VolunteerManageServiceImpl implements VolunteerManageService {
                 try {
                     targetCampId = Integer.parseInt(parts[1]);
                     targetAssignmentId = Integer.parseInt(parts[2]);
-                } catch (Exception ignored) {}
+                } catch (Exception ignored) {
+                }
             }
 
             else if (parts.length == 3) {
                 try {
                     targetCampId = Integer.parseInt(parts[1]);
-                } catch (Exception ignored) {}
+                } catch (Exception ignored) {
+                }
             }
         }
 
@@ -644,12 +688,16 @@ public class VolunteerManageServiceImpl implements VolunteerManageService {
                     String small = getSafeString(d, "small_group_name");
 
                     StringBuilder sb = new StringBuilder();
-                    if (!camp.isEmpty()) sb.append(camp);
-                    if (!cls.isEmpty()) sb.append("-").append(cls);
+                    if (!camp.isEmpty())
+                        sb.append(camp);
+                    if (!cls.isEmpty())
+                        sb.append("-").append(cls);
 
                     if (!"优秀班长".equals(certType)) {
-                        if (!big.isEmpty()) sb.append("-").append(big);
-                        if (needFullPath && !small.isEmpty()) sb.append("-").append(small);
+                        if (!big.isEmpty())
+                            sb.append("-").append(big);
+                        if (needFullPath && !small.isEmpty())
+                            sb.append("-").append(small);
                     }
 
                     return sb.length() > 0 ? sb.toString() : "服务期间";
@@ -666,13 +714,15 @@ public class VolunteerManageServiceImpl implements VolunteerManageService {
             }
 
             String dt = getSafeString(d, "duty_type");
-            if (dt == null) dt = getSafeString(d, "dutyType");
+            if (dt == null)
+                dt = getSafeString(d, "dutyType");
             if (targetDuties.contains(dt)) {
                 candidates.add(d);
             }
         }
 
-        if (candidates.isEmpty()) candidates = duties;
+        if (candidates.isEmpty())
+            candidates = duties;
         Map<String, Object> best = candidates.get(0);
 
         if ("优秀班长".equals(certType)) {
@@ -708,21 +758,82 @@ public class VolunteerManageServiceImpl implements VolunteerManageService {
         String small = getSafeString(best, "small_group_name");
 
         StringBuilder sb = new StringBuilder();
-        if (!camp.isEmpty()) sb.append(camp);
-        if (!cls.isEmpty()) sb.append("-").append(cls);
+        if (!camp.isEmpty())
+            sb.append(camp);
+        if (!cls.isEmpty())
+            sb.append("-").append(cls);
 
         if (!"优秀班长".equals(certType)) {
-            if (!big.isEmpty()) sb.append("-").append(big);
-            if (needFullPath && !small.isEmpty()) sb.append("-").append(small);
+            if (!big.isEmpty())
+                sb.append("-").append(big);
+            if (needFullPath && !small.isEmpty())
+                sb.append("-").append(small);
         }
 
         return sb.length() > 0 ? sb.toString() : "服务期间";
     }
 
+    private String getStudentCertPosition(String certNumber) {
+        // 从证书编号中提取 homeworkId（OTHER-0-0-作业ID-序号 格式）
+        Integer homeworkId = null;
+        if (certNumber != null && certNumber.contains("-")) {
+            String[] parts = certNumber.split("-");
+            if (parts.length >= 4) {
+                try {
+                    homeworkId = Integer.parseInt(parts[3]);
+                    System.out.println("=== 学员证书 === 从编号中解析出 homeworkId: " + homeworkId);
+                } catch (Exception e) {
+                    System.out.println("解析 homeworkId 失败: " + e.getMessage());
+                }
+            }
+        }
+
+        if (homeworkId == null) {
+            System.out.println("homeworkId 为空，返回 '学习期间'");
+            return "学习期间";
+        }
+
+        try {
+            System.out.println("尝试获取作业详情，homeworkId: " + homeworkId);
+            Map<String, Object> homeworkDetail = homeworkMapper.getHomeworkDetail(homeworkId);
+            if (homeworkDetail != null) {
+                System.out.println("获取作业详情成功，keys: " + homeworkDetail.keySet());
+
+                // 构建学习位置信息
+                String campName = (String) homeworkDetail.get("campName");
+                String className = (String) homeworkDetail.get("className");
+                String bigGroupName = (String) homeworkDetail.get("bigGroupName");
+                String smallGroupName = (String) homeworkDetail.get("smallGroupName");
+
+                StringBuilder sb = new StringBuilder();
+                if (campName != null && !campName.isEmpty()) sb.append(campName);
+                if (className != null && !className.isEmpty()) sb.append("-").append(className);
+                if (bigGroupName != null && !bigGroupName.isEmpty()) sb.append("-").append(bigGroupName);
+                if (smallGroupName != null && !smallGroupName.isEmpty()) sb.append("-").append(smallGroupName);
+
+                String position = sb.toString();
+                if (!position.isEmpty()) {
+                    System.out.println("构建的学习位置: " + position);
+                    return position;
+                } else {
+                    System.out.println("构建的学习位置为空");
+                }
+            } else {
+                System.out.println("作业详情为空");
+            }
+        } catch (Exception e) {
+            System.out.println("获取作业详情失败: " + e.getMessage());
+        }
+
+        System.out.println("返回 '学习期间'");
+        return "学习期间";
+    }
+
     @Override
     public boolean issueCertificate(Long volunteerId, String certificateType, Integer assignmentId, Long homeworkId) {
         try {
-            int count = volunteerManageMapper.checkCertificateIssued(volunteerId, certificateType, assignmentId, homeworkId);
+            int count = volunteerManageMapper.checkCertificateIssued(volunteerId, certificateType, assignmentId,
+                    homeworkId);
             if (count > 0) {
                 return false;
             }
@@ -740,8 +851,9 @@ public class VolunteerManageServiceImpl implements VolunteerManageService {
             } else if (!duties.isEmpty()) {
                 campId = getSafeInteger(duties.get(0), "camp_id");
             }
-            String certNumber = generateCertificateNumber(certificateType, campId, assignmentId);
-            int result = volunteerManageMapper.issueCertificate(volunteerId, certificateType, certNumber, assignmentId, homeworkId);
+            String certNumber = generateCertificateNumber(certificateType, campId, assignmentId, homeworkId);
+            int result = volunteerManageMapper.issueCertificate(volunteerId, certificateType, certNumber, assignmentId,
+                    homeworkId);
             return result > 0;
         } catch (Exception e) {
             e.printStackTrace();
@@ -752,7 +864,8 @@ public class VolunteerManageServiceImpl implements VolunteerManageService {
     @Override
     public boolean cancelCertificate(Long volunteerId, String certificateType, Integer assignmentId, Long homeworkId) {
         try {
-            int result = volunteerManageMapper.cancelCertificate(volunteerId, certificateType, assignmentId, homeworkId);
+            int result = volunteerManageMapper.cancelCertificate(volunteerId, certificateType, assignmentId,
+                    homeworkId);
             return result > 0;
         } catch (Exception e) {
             e.printStackTrace();
@@ -761,9 +874,11 @@ public class VolunteerManageServiceImpl implements VolunteerManageService {
     }
 
     @Override
-    public boolean checkCertificateIssued(Long volunteerId, String certificateType, Integer assignmentId, Long homeworkId) {
+    public boolean checkCertificateIssued(Long volunteerId, String certificateType, Integer assignmentId,
+            Long homeworkId) {
         try {
-            int count = volunteerManageMapper.checkCertificateIssued(volunteerId, certificateType, assignmentId, homeworkId);
+            int count = volunteerManageMapper.checkCertificateIssued(volunteerId, certificateType, assignmentId,
+                    homeworkId);
             return count > 0;
         } catch (Exception e) {
             e.printStackTrace();
@@ -834,7 +949,8 @@ public class VolunteerManageServiceImpl implements VolunteerManageService {
         } else if ("学班".equals(dutyType) || "检班".equals(dutyType)) {
             Integer classId = getSafeInteger(scope, "classId");
             if (classId != null) {
-                List<Map<String, Object>> committeeMembers = volunteerManageMapper.getCommitteeMembersByClassId(classId);
+                List<Map<String, Object>> committeeMembers = volunteerManageMapper
+                        .getCommitteeMembersByClassId(classId);
                 for (Map<String, Object> volunteer : committeeMembers) {
                     processVolunteerInfo(volunteer);
                 }
@@ -860,14 +976,16 @@ public class VolunteerManageServiceImpl implements VolunteerManageService {
             Date endTime = null;
             if (startTimeObj != null) {
                 if (startTimeObj instanceof java.time.LocalDateTime) {
-                    startTime = Date.from(((java.time.LocalDateTime) startTimeObj).atZone(java.time.ZoneId.systemDefault()).toInstant());
+                    startTime = Date.from(((java.time.LocalDateTime) startTimeObj)
+                            .atZone(java.time.ZoneId.systemDefault()).toInstant());
                 } else if (startTimeObj instanceof Date) {
                     startTime = (Date) startTimeObj;
                 }
             }
             if (endTimeObj != null) {
                 if (endTimeObj instanceof java.time.LocalDateTime) {
-                    endTime = Date.from(((java.time.LocalDateTime) endTimeObj).atZone(java.time.ZoneId.systemDefault()).toInstant());
+                    endTime = Date.from(((java.time.LocalDateTime) endTimeObj).atZone(java.time.ZoneId.systemDefault())
+                            .toInstant());
                 } else if (endTimeObj instanceof Date) {
                     endTime = (Date) endTimeObj;
                 }
@@ -909,7 +1027,9 @@ public class VolunteerManageServiceImpl implements VolunteerManageService {
             List<String> validDutyTypes = List.of("学委", "检委", "学班", "检班", "学组", "检组");
 
             for (Map<String, Object> assignment : assignments) {
-                Integer assignmentId = assignment.get("assignment_id") != null ? ((Number) assignment.get("assignment_id")).intValue() : null;
+                Integer assignmentId = assignment.get("assignment_id") != null
+                        ? ((Number) assignment.get("assignment_id")).intValue()
+                        : null;
                 String dutyType = (String) assignment.get("duty_type");
 
                 if (dutyType == null || !validDutyTypes.contains(dutyType)) {
@@ -923,7 +1043,8 @@ public class VolunteerManageServiceImpl implements VolunteerManageService {
 
                 if (startTimeObj != null) {
                     if (startTimeObj instanceof java.time.LocalDateTime) {
-                        startTime = Date.from(((java.time.LocalDateTime) startTimeObj).atZone(java.time.ZoneId.systemDefault()).toInstant());
+                        startTime = Date.from(((java.time.LocalDateTime) startTimeObj)
+                                .atZone(java.time.ZoneId.systemDefault()).toInstant());
                     } else if (startTimeObj instanceof Date) {
                         startTime = (Date) startTimeObj;
                     }
@@ -931,7 +1052,8 @@ public class VolunteerManageServiceImpl implements VolunteerManageService {
 
                 if (endTimeObj != null) {
                     if (endTimeObj instanceof java.time.LocalDateTime) {
-                        endTime = Date.from(((java.time.LocalDateTime) endTimeObj).atZone(java.time.ZoneId.systemDefault()).toInstant());
+                        endTime = Date.from(((java.time.LocalDateTime) endTimeObj)
+                                .atZone(java.time.ZoneId.systemDefault()).toInstant());
                     } else if (endTimeObj instanceof Date) {
                         endTime = (Date) endTimeObj;
                     }
@@ -981,7 +1103,8 @@ public class VolunteerManageServiceImpl implements VolunteerManageService {
         }
     }
 
-    private String generateCertificateNumber(String certificateType, Integer campId, Integer assignmentId) {
+    private String generateCertificateNumber(String certificateType, Integer campId, Integer assignmentId,
+            Long homeworkId) {
         try {
             Integer maxId = volunteerManageMapper.getMaxCertificateId();
             maxId = maxId == null ? 0 : maxId;
@@ -1007,12 +1130,18 @@ public class VolunteerManageServiceImpl implements VolunteerManageService {
                     typeCode = "OTHER";
             }
 
-            if (campId == null) campId = 0;
-            if (assignmentId == null) assignmentId = 0;
-            return typeCode + "-" + campId + "-" + assignmentId + "-" + String.format("%06d", maxId + 1);
+            if (campId == null)
+                campId = 0;
+            if (assignmentId == null)
+                assignmentId = 0;
+            if (homeworkId == null)
+                homeworkId = 0L;
+
+            return typeCode + "-" + campId + "-" + assignmentId + "-" + homeworkId + "-"
+                    + String.format("%06d", maxId + 1);
         } catch (Exception e) {
             e.printStackTrace();
-            return "OTHER-0-0-000001";
+            return "OTHER-0-0-0-000001";
         }
     }
 
@@ -1080,7 +1209,9 @@ public class VolunteerManageServiceImpl implements VolunteerManageService {
                 String startTime = getSafeString(monitor, "startTime");
                 String endTime = getSafeString(monitor, "endTime");
                 String timeRange = startTime != null && !startTime.isEmpty()
-                        ? (endTime != null && !endTime.isEmpty() ? startTime.substring(0, 10) + " ~ " + endTime.substring(0, 10) : startTime.substring(0, 10) + " ~ 至今")
+                        ? (endTime != null && !endTime.isEmpty()
+                                ? startTime.substring(0, 10) + " ~ " + endTime.substring(0, 10)
+                                : startTime.substring(0, 10) + " ~ 至今")
                         : "未知";
                 monitor.put("timeRange", timeRange);
 
@@ -1105,7 +1236,7 @@ public class VolunteerManageServiceImpl implements VolunteerManageService {
             for (Map<String, Object> cert : certificates) {
                 String certType = getSafeString(cert, "type");
                 String certNumber = getSafeString(cert, "number");
-                String position = getMatchingPositionByCertType(certType, certNumber, duties);
+                String position = getMatchingPositionByCertType(cert, certType, certNumber, duties);
                 cert.put("camp_class_info", position);
             }
             return certificates;
