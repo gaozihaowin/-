@@ -9,12 +9,12 @@ import com.daily.dailychineseculture.mapper.GroupChatMapper;
 import com.daily.dailychineseculture.mapper.ClassMapper;
 import com.daily.dailychineseculture.mapper.VolunteerManageMapper;
 import com.daily.dailychineseculture.service.GroupChatService;
+import com.daily.dailychineseculture.websocket.GroupChatWebSocketHandler;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -32,7 +32,8 @@ public class GroupChatServiceImpl implements GroupChatService {
     @Autowired
     private VolunteerManageMapper volunteerManageMapper;
 
-
+    @Autowired
+    private GroupChatWebSocketHandler webSocketHandler;
 
     @Override
     public Result<Map<String, Object>> getAvailableMembers(Integer chatId, Long userId) {
@@ -210,7 +211,7 @@ public class GroupChatServiceImpl implements GroupChatService {
                 return Result.error("获取群ID失败");
             }
             Integer chatId = groupChat.getChatId();
-
+            groupChatMapper.updateClassChatId(classId, chatId);
             Set<Long> adminUserIds = new HashSet<>();
             List<Map<String, Object>> classManagers = volunteerManageMapper.getCurrentVolunteers("class", classId);
             if (classManagers != null && !classManagers.isEmpty()) {
@@ -224,7 +225,8 @@ public class GroupChatServiceImpl implements GroupChatService {
             if (bigGroups != null && !bigGroups.isEmpty()) {
                 for (Map<String, Object> bg : bigGroups) {
                     Integer bgId = (Integer) bg.get("targetId");
-                    List<Map<String, Object>> bgManagers = volunteerManageMapper.getCurrentVolunteers("big_group", bgId);
+                    List<Map<String, Object>> bgManagers = volunteerManageMapper.getCurrentVolunteers("big_group",
+                            bgId);
                     if (bgManagers != null && !bgManagers.isEmpty()) {
                         for (Map<String, Object> m : bgManagers) {
                             Long uid = ((Number) m.get("userId")).longValue();
@@ -236,7 +238,8 @@ public class GroupChatServiceImpl implements GroupChatService {
                     if (smallGroups != null && !smallGroups.isEmpty()) {
                         for (Map<String, Object> sg : smallGroups) {
                             Integer sgId = (Integer) sg.get("targetId");
-                            List<Map<String, Object>> sgManagers = volunteerManageMapper.getCurrentVolunteers("small_group", sgId);
+                            List<Map<String, Object>> sgManagers = volunteerManageMapper
+                                    .getCurrentVolunteers("small_group", sgId);
                             if (sgManagers != null && !sgManagers.isEmpty()) {
                                 for (Map<String, Object> m : sgManagers) {
                                     Long uid = ((Number) m.get("userId")).longValue();
@@ -252,8 +255,10 @@ public class GroupChatServiceImpl implements GroupChatService {
             if (students != null && !students.isEmpty()) {
                 for (Map<String, Object> student : students) {
                     Object uidObj = student.get("userId");
-                    if (uidObj == null) uidObj = student.get("user_id");
-                    if (uidObj == null) continue;
+                    if (uidObj == null)
+                        uidObj = student.get("user_id");
+                    if (uidObj == null)
+                        continue;
                     Long uid = ((Number) uidObj).longValue();
                     if (groupChatMapper.checkMemberExists(chatId, uid) == 0) {
                         String role = adminUserIds.contains(uid) ? "admin" : "member";
@@ -276,7 +281,8 @@ public class GroupChatServiceImpl implements GroupChatService {
     }
 
     @Override
-    public Result createBigGroupChat(Integer campId, Integer classId, Integer bigGroupId, String bigGroupName, Long userId) {
+    public Result createBigGroupChat(Integer campId, Integer classId, Integer bigGroupId, String bigGroupName,
+            Long userId) {
         try {
             if (!checkCreateBigGroupPermission(userId, bigGroupId, classId)) {
                 return Result.error("无权限");
@@ -287,9 +293,10 @@ public class GroupChatServiceImpl implements GroupChatService {
 
             groupChatMapper.createGroupChat(bigGroupName, "大组群", "大组群聊", campId, classId, bigGroupId, null);
             GroupChat groupChat = groupChatMapper.getGroupChatByTypeAndIds("大组群", classId, bigGroupId, null);
-            if (groupChat == null) return Result.error("获取群ID失败");
+            if (groupChat == null)
+                return Result.error("获取群ID失败");
             Integer chatId = groupChat.getChatId();
-
+            groupChatMapper.updateBigGroupChatId(bigGroupId, chatId);
             Set<Long> adminUserIds = new HashSet<>();
             List<Map<String, Object>> bgManagers = volunteerManageMapper.getCurrentVolunteers("big_group", bigGroupId);
             for (Map<String, Object> m : bgManagers) {
@@ -315,7 +322,8 @@ public class GroupChatServiceImpl implements GroupChatService {
             if (students != null && !students.isEmpty()) {
                 for (Map<String, Object> s : students) {
                     Object uidObj = s.get("userId");
-                    if (uidObj == null) continue;
+                    if (uidObj == null)
+                        continue;
                     Long uid = ((Number) uidObj).longValue();
                     if (groupChatMapper.checkMemberExists(chatId, uid) == 0) {
                         String role = adminUserIds.contains(uid) ? "admin" : "member";
@@ -338,7 +346,8 @@ public class GroupChatServiceImpl implements GroupChatService {
     }
 
     @Override
-    public Result createSmallGroupChat(Integer campId, Integer classId, Integer bigGroupId, Integer smallGroupId, String smallGroupName, Long userId) {
+    public Result createSmallGroupChat(Integer campId, Integer classId, Integer bigGroupId, Integer smallGroupId,
+            String smallGroupName, Long userId) {
         try {
             if (!checkCreateSmallGroupPermission(userId, smallGroupId, bigGroupId, classId)) {
                 return Result.error("无权限");
@@ -357,11 +366,13 @@ public class GroupChatServiceImpl implements GroupChatService {
 
             groupChatMapper.createGroupChat(smallGroupName, "小组群", "小组群聊", campId, classId, bigGroupId, smallGroupId);
             GroupChat groupChat = groupChatMapper.getGroupChatByTypeAndIds("小组群", classId, bigGroupId, smallGroupId);
-            if (groupChat == null) return Result.error("获取群ID失败");
+            if (groupChat == null)
+                return Result.error("获取群ID失败");
             Integer chatId = groupChat.getChatId();
-
+            groupChatMapper.updateSmallGroupChatId(smallGroupId, chatId);
             Set<Long> adminUserIds = new HashSet<>();
-            List<Map<String, Object>> sgManagers = volunteerManageMapper.getCurrentVolunteers("small_group", smallGroupId);
+            List<Map<String, Object>> sgManagers = volunteerManageMapper.getCurrentVolunteers("small_group",
+                    smallGroupId);
             for (Map<String, Object> m : sgManagers) {
                 Long uid = ((Number) m.get("userId")).longValue();
                 adminUserIds.add(uid);
@@ -381,7 +392,8 @@ public class GroupChatServiceImpl implements GroupChatService {
             if (students != null && !students.isEmpty()) {
                 for (Map<String, Object> s : students) {
                     Object uidObj = s.get("userId");
-                    if (uidObj == null) continue;
+                    if (uidObj == null)
+                        continue;
                     Long uid = ((Number) uidObj).longValue();
                     if (groupChatMapper.checkMemberExists(chatId, uid) == 0) {
                         String role = adminUserIds.contains(uid) ? "admin" : "member";
@@ -405,13 +417,16 @@ public class GroupChatServiceImpl implements GroupChatService {
 
     private void addManagersToChat(Integer chatId, String type, Integer targetId) {
         try {
-            if (chatId == null || targetId == null) return;
+            if (chatId == null || targetId == null)
+                return;
             List<Map<String, Object>> managers = volunteerManageMapper.getCurrentVolunteers(type, targetId);
-            if (managers == null || managers.isEmpty()) return;
+            if (managers == null || managers.isEmpty())
+                return;
 
             for (Map<String, Object> m : managers) {
                 Object uidObj = m.get("userId");
-                if (uidObj == null) continue;
+                if (uidObj == null)
+                    continue;
                 Long uid = ((Number) uidObj).longValue();
                 if (groupChatMapper.checkMemberExists(chatId, uid) == 0) {
                     groupChatMapper.addGroupMember(chatId, uid, "admin");
@@ -428,7 +443,8 @@ public class GroupChatServiceImpl implements GroupChatService {
             if ("学班".equals(dutyType) || "检班".equals(dutyType)) {
                 Integer classId = targetId;
                 String className = classMapper.getClassNameById(classId);
-                if (className == null) return Result.error("班级不存在");
+                if (className == null)
+                    return Result.error("班级不存在");
 
                 if (!groupChatMapper.existsClassGroup(classId))
                     createClassGroupChat(campId, classId, className, userId);
@@ -451,7 +467,8 @@ public class GroupChatServiceImpl implements GroupChatService {
             } else if ("学委".equals(dutyType) || "检委".equals(dutyType)) {
                 Integer bgId = targetId;
                 Map<String, Object> info = volunteerManageMapper.getBigGroupInfo(bgId);
-                if (info == null) return Result.error("大组不存在");
+                if (info == null)
+                    return Result.error("大组不存在");
                 Integer classId = (Integer) info.get("class_id");
                 String name = (String) info.get("bigGroupName");
 
@@ -468,7 +485,8 @@ public class GroupChatServiceImpl implements GroupChatService {
             } else if ("学组".equals(dutyType) || "检组".equals(dutyType)) {
                 Integer sgId = targetId;
                 Map<String, Object> info = volunteerManageMapper.getSmallGroupInfo(sgId);
-                if (info == null) return Result.error("小组不存在");
+                if (info == null)
+                    return Result.error("小组不存在");
                 Integer bgId = (Integer) info.get("big_group_id");
                 Integer classId = (Integer) info.get("class_id");
                 String name = (String) info.get("smallGroupName");
@@ -505,7 +523,8 @@ public class GroupChatServiceImpl implements GroupChatService {
         if (!groupChatMapper.isGroupAdmin(chatId, currentUserId)) {
             return Result.error("无权限，只有管理员可以添加群成员");
         }
-        if (groupChatMapper.checkMemberExists(chatId, userId) > 0) return Result.error("已存在");
+        if (groupChatMapper.checkMemberExists(chatId, userId) > 0)
+            return Result.error("已存在");
         groupChatMapper.addGroupMember(chatId, userId, role);
         return Result.success("添加成功");
     }
@@ -529,24 +548,44 @@ public class GroupChatServiceImpl implements GroupChatService {
     }
 
     @Override
-    public Result sendMessage(Integer chatId, Long senderId, String content, String recipientType, Long recipientId) {
+    public Result sendMessage(Integer chatId, Long senderId, String content, String messageType,
+                              String voiceUrl, Integer voiceDuration, String recipientType, Long recipientId) {
+
+        if ("voice".equals(messageType) && voiceDuration != null && voiceDuration > 60) {
+            return Result.error("语音最长60秒");
+        }
+
         String realType = "all".equals(recipientType) ? "group" : "private";
         Long recv = "group".equals(realType) ? null : recipientId;
-        groupChatMapper.sendMessage(chatId, senderId, recv, content);
-        List<MessageDTO> messages = groupChatMapper.getGroupMessages(chatId, senderId, 100, 0);
+
+        groupChatMapper.sendMessage(chatId, senderId, recv, content, messageType, voiceUrl, voiceDuration);
+
+        try {
+            List<MessageDTO> messages = groupChatMapper.getGroupMessages(chatId, senderId, 1, 0);
+            if (!messages.isEmpty()) {
+                MessageDTO message = messages.get(0);
+                Map<String, Object> response = new HashMap<>();
+                response.put("type", "message");
+                response.put("message", message);
+
+                if ("group".equals(realType)) {
+                    webSocketHandler.broadcastMessage(chatId, response);
+                } else {
+                    webSocketHandler.sendToUser(recipientId, response);
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return Result.success("发送成功");
+    }
+
+    @Override
+    public Result getMessageHistory(Integer chatId, Long userId, Integer page, Integer limit) {
+        int offset = (page - 1) * limit;
+        List<MessageDTO> messages = groupChatMapper.getGroupMessages(chatId, userId, limit, offset);
         return Result.success(messages);
-    }
-
-    @Override
-    public Result markMessageAsRead(Integer messageId, Long userId) {
-        groupChatMapper.markMessageAsRead(messageId, userId);
-        return Result.success("已读");
-    }
-
-    @Override
-    public Result markGroupMessageAsRead(Integer chatId, Long userId) {
-        groupChatMapper.markGroupMessageAsRead(chatId, userId);
-        return Result.success("已读");
     }
 
     @Override
@@ -566,12 +605,6 @@ public class GroupChatServiceImpl implements GroupChatService {
     }
 
     @Override
-    public Result deleteGroupChat(Integer chatId, Long userId) {
-        groupChatMapper.deleteGroupChat(chatId);
-        return Result.success("删除成功");
-    }
-
-    @Override
     public Result<GroupChatDTO> getGroupInfo(Integer chatId) {
         return Result.success(groupChatMapper.getGroupInfo(chatId));
     }
@@ -583,7 +616,43 @@ public class GroupChatServiceImpl implements GroupChatService {
 
     @Override
     public Result<Integer> getUnreadMessageCount(Integer chatId, Long userId) {
-        return Result.success(groupChatMapper.getUnreadMessageCount(chatId, userId));
+        try {
+            int count = groupChatMapper.getUnreadMessageCount(chatId, userId);
+            return Result.success(count);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return Result.error("获取未读消息数失败");
+        }
+    }
+
+    @Override
+    public Result markAllMessagesAsRead(Integer chatId, Long userId) {
+        try {
+            int result = groupChatMapper.markGroupMessageAsRead(chatId, userId);
+            if (result > 0) {
+                return Result.success("标记所有消息已读成功");
+            } else {
+                return Result.success("没有未读消息");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return Result.error("标记已读失败");
+        }
+    }
+
+    @Override
+    public Result markMessageAsRead(Integer messageId, Long userId) {
+        try {
+            int result = groupChatMapper.markMessageAsRead(messageId, userId);
+            if (result > 0) {
+                return Result.success("标记已读成功");
+            } else {
+                return Result.error("标记已读失败");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return Result.error("标记已读失败");
+        }
     }
 
     @Override
@@ -601,9 +670,34 @@ public class GroupChatServiceImpl implements GroupChatService {
         return groupChatMapper.existsSmallGroup(smallGroupId);
     }
 
-    public boolean checkMemberManagePermission(Long userId) { return true; }
-    public boolean checkGroupManagePermission(Long userId, Integer chatId) { return true; }
-    public boolean checkCreateClassGroupPermission(Long userId, Integer classId) { return true; }
-    public boolean checkCreateBigGroupPermission(Long userId, Integer bigGroupId, Integer classId) { return true; }
-    public boolean checkCreateSmallGroupPermission(Long userId, Integer smallGroupId, Integer bigGroupId, Integer classId) { return true; }
+    public boolean checkMemberManagePermission(Long userId) {
+        return true;
+    }
+
+    public boolean checkGroupManagePermission(Long userId, Integer chatId) {
+        return true;
+    }
+
+    public boolean checkCreateClassGroupPermission(Long userId, Integer classId) {
+        return true;
+    }
+
+    public boolean checkCreateBigGroupPermission(Long userId, Integer bigGroupId, Integer classId) {
+        return true;
+    }
+
+    public boolean checkCreateSmallGroupPermission(Long userId, Integer smallGroupId, Integer bigGroupId,
+            Integer classId) {
+        return true;
+    }
+    @Override
+    public Result revokeMessage(Integer messageId, Long userId) {
+        // 调用mapper方法撤回消息
+        int result = groupChatMapper.revokeMessage(messageId, userId);
+        if (result > 0) {
+            return Result.success("撤回成功");
+        } else {
+            return Result.error("撤回失败，可能无权限或消息不存在");
+        }
+    }
 }

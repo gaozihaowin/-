@@ -13,6 +13,7 @@ public class Message {
     private Date sendTime; // 发送时间
     private String recipientType; // 接收者类型: 所有人/特定人
     private Long recipientId; // 接收者ID(当recipient_type为特定人时)
+    private Integer status; // 消息状态: 0-未读, 1-已读
 
     // Getter和Setter方法
     public Long getMessageId() {
@@ -69,5 +70,13 @@ public class Message {
 
     public void setRecipientId(Long recipientId) {
         this.recipientId = recipientId;
+    }
+
+    public Integer getStatus() {
+        return status;
+    }
+
+    public void setStatus(Integer status) {
+        this.status = status;
     }
 }

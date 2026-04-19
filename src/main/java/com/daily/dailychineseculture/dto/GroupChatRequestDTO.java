@@ -1,29 +1,28 @@
 package com.daily.dailychineseculture.dto;
 
-/**
- * 群聊请求DTO
- */
 public class GroupChatRequestDTO {
     private Integer campId;
     private Integer classId;
-    private String className;
     private Integer bigGroupId;
-    private String bigGroupName;
     private Integer smallGroupId;
+    private String className;
+    private String bigGroupName;
     private String smallGroupName;
-    private Integer targetId;
-    private String dutyType;
     private Integer chatId;
     private Long userId;
     private String role;
     private String content;
+    private String messageType;
+    private String voiceUrl;
+    private Integer voiceDuration;
     private String recipientType;
     private Long recipientId;
-    private Integer page;
-    private Integer size;
+    private String dutyType;
+    private Integer targetId;
+    private Integer quotedMessageId;
     private Integer messageId;
 
-    // getters and setters
+    // Getters and Setters
     public Integer getCampId() {
         return campId;
     }
@@ -40,28 +39,12 @@ public class GroupChatRequestDTO {
         this.classId = classId;
     }
 
-    public String getClassName() {
-        return className;
-    }
-
-    public void setClassName(String className) {
-        this.className = className;
-    }
-
     public Integer getBigGroupId() {
         return bigGroupId;
     }
 
     public void setBigGroupId(Integer bigGroupId) {
         this.bigGroupId = bigGroupId;
-    }
-
-    public String getBigGroupName() {
-        return bigGroupName;
-    }
-
-    public void setBigGroupName(String bigGroupName) {
-        this.bigGroupName = bigGroupName;
     }
 
     public Integer getSmallGroupId() {
@@ -72,28 +55,28 @@ public class GroupChatRequestDTO {
         this.smallGroupId = smallGroupId;
     }
 
+    public String getClassName() {
+        return className;
+    }
+
+    public void setClassName(String className) {
+        this.className = className;
+    }
+
+    public String getBigGroupName() {
+        return bigGroupName;
+    }
+
+    public void setBigGroupName(String bigGroupName) {
+        this.bigGroupName = bigGroupName;
+    }
+
     public String getSmallGroupName() {
         return smallGroupName;
     }
 
     public void setSmallGroupName(String smallGroupName) {
         this.smallGroupName = smallGroupName;
-    }
-
-    public Integer getTargetId() {
-        return targetId;
-    }
-
-    public void setTargetId(Integer targetId) {
-        this.targetId = targetId;
-    }
-
-    public String getDutyType() {
-        return dutyType;
-    }
-
-    public void setDutyType(String dutyType) {
-        this.dutyType = dutyType;
     }
 
     public Integer getChatId() {
@@ -128,6 +111,30 @@ public class GroupChatRequestDTO {
         this.content = content;
     }
 
+    public String getMessageType() {
+        return messageType;
+    }
+
+    public void setMessageType(String messageType) {
+        this.messageType = messageType;
+    }
+
+    public String getVoiceUrl() {
+        return voiceUrl;
+    }
+
+    public void setVoiceUrl(String voiceUrl) {
+        this.voiceUrl = voiceUrl;
+    }
+
+    public Integer getVoiceDuration() {
+        return voiceDuration;
+    }
+
+    public void setVoiceDuration(Integer voiceDuration) {
+        this.voiceDuration = voiceDuration;
+    }
+
     public String getRecipientType() {
         return recipientType;
     }
@@ -144,20 +151,28 @@ public class GroupChatRequestDTO {
         this.recipientId = recipientId;
     }
 
-    public Integer getPage() {
-        return page;
+    public String getDutyType() {
+        return dutyType;
     }
 
-    public void setPage(Integer page) {
-        this.page = page;
+    public void setDutyType(String dutyType) {
+        this.dutyType = dutyType;
     }
 
-    public Integer getSize() {
-        return size;
+    public Integer getTargetId() {
+        return targetId;
     }
 
-    public void setSize(Integer size) {
-        this.size = size;
+    public void setTargetId(Integer targetId) {
+        this.targetId = targetId;
+    }
+
+    public Integer getQuotedMessageId() {
+        return quotedMessageId;
+    }
+
+    public void setQuotedMessageId(Integer quotedMessageId) {
+        this.quotedMessageId = quotedMessageId;
     }
 
     public Integer getMessageId() {
