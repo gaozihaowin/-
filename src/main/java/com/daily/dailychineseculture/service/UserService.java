@@ -949,14 +949,18 @@ public class UserService {
         try {
             // 查询用户在该营期的报名信息
             Map<String, Object> enrollmentInfo = userMapper.getCampEnrollmentInfo(userId, campId);
+            System.out.println("查询到的报名信息: " + enrollmentInfo);
+
             if (enrollmentInfo == null) {
+                System.out.println("未查询到报名信息，返回null");
+                System.out.println("=====================================");
                 return null;
             }
 
             // 从报名信息中提取小组信息
-            Integer smallGroupId = enrollmentInfo.get("smallGroupId") != null ? ((Number) enrollmentInfo.get("smallGroupId")).intValue() : null;
-            Integer bigGroupId = enrollmentInfo.get("bigGroupId") != null ? ((Number) enrollmentInfo.get("bigGroupId")).intValue() : null;
-            Integer classId = enrollmentInfo.get("classId") != null ? ((Number) enrollmentInfo.get("classId")).intValue() : null;
+            Integer smallGroupId = getSafeInteger(enrollmentInfo.get("smallGroupId"));
+            Integer bigGroupId = getSafeInteger(enrollmentInfo.get("bigGroupId"));
+            Integer classId = getSafeInteger(enrollmentInfo.get("classId"));
 
             // 构建返回结果
             Map<String, Object> result = new HashMap<>();
@@ -968,18 +972,55 @@ public class UserService {
             result.put("className", enrollmentInfo.get("className"));
             result.put("campId", campId);
             result.put("campName", enrollmentInfo.get("campName"));
+
             // 获取小组对应的群聊信息
             if (smallGroupId != null) {
+                System.out.println("开始查询群聊信息，smallGroupId: " + smallGroupId);
                 Map<String, Object> groupChatInfo = userMapper.getGroupChatBySmallGroupId(smallGroupId);
+                System.out.println("查询到的群聊信息: " + groupChatInfo);
+
+                // 判断所有字段都不为null，再进行匹配
                 if (groupChatInfo != null) {
-                    result.put("chatId", groupChatInfo.get("chatId"));
-                    result.put("chatName", groupChatInfo.get("name"));
+                    Integer chatCampId = getSafeInteger(groupChatInfo.get("campId"));
+                    Integer chatClassId = getSafeInteger(groupChatInfo.get("classId"));
+                    Integer chatBigGroupId = getSafeInteger(groupChatInfo.get("bigGroupId"));
+                    Integer chatSmallGroupId = getSafeInteger(groupChatInfo.get("smallGroupId"));
+
+                    // 必须全部匹配才设置
+                    boolean match = campId.equals(chatCampId)
+                            && classId.equals(chatClassId)
+                            && bigGroupId.equals(chatBigGroupId)
+                            && smallGroupId.equals(chatSmallGroupId);
+                    System.out.println("群聊信息匹配结果: " + match);
+
+                    if (match) {
+                        System.out.println("群聊信息匹配成功");
+                        result.put("chatId", groupChatInfo.get("chatId"));
+                        result.put("chatName", groupChatInfo.get("name"));
+                    } else {
+                        System.out.println("群聊信息匹配失败");
+                    }
+                } else {
+                    System.out.println("未查询到群聊信息");
                 }
+            } else {
+                System.out.println("smallGroupId为null，跳过群聊信息查询");
             }
+
+            System.out.println("最终返回结果: " + result);
             return result;
         } catch (Exception e) {
+            System.err.println("获取小组信息异常:");
             e.printStackTrace();
             return null;
         }
+    }
+
+    // 安全转换工具方法（加在这里即可）
+    private Integer getSafeInteger(Object obj) {
+        if (obj instanceof Number) {
+            return ((Number) obj).intValue();
+        }
+        return null;
     }
 }

@@ -81,10 +81,9 @@ public interface UserMapper {
         @Select("SELECT DISTINCT " +
                 "da.assignment_id AS assignmentId, " +
                 "c.camp_id AS campId, " +
-                "IFNULL(c.name, '未知营期') AS campName, " +
+                "IFNULL(ct.level_name, '未知营期类型') AS campName, " +
                 "da.start_time AS rawStartTime, " +
-                "IFNULL(DATE_FORMAT(da.start_time, '%Y.%m.%d %H:%i:%s'), '未设置') AS actualStartTime, "
-                +
+                "IFNULL(DATE_FORMAT(da.start_time, '%Y.%m.%d %H:%i:%s'), '未设置') AS actualStartTime, " +
                 "IFNULL(DATE_FORMAT(c.end_time, '%Y.%m.%d %H:%i:%s'), '未设置') AS campEndTime, " +
                 "UNIX_TIMESTAMP(c.end_time) AS rawCampEndTime, " +
                 "IFNULL(DATE_FORMAT(da.end_time, '%Y.%m.%d %H:%i:%s'), '未设置') AS quitTime, " +
@@ -92,19 +91,19 @@ public interface UserMapper {
                 "IFNULL(da.duty_type, '志愿者') AS dutyName, " +
                 "CASE " +
                 "    WHEN ds.target_type = 'class' THEN CONCAT( " +
-                "        IFNULL(CONCAT('第', c.term, '期', c.name), '未知营期'), " +
+                "        IFNULL(CONCAT('第', c.term, '期', ct.level_name), '未知营期'), " +
                 "        ' - ', " +
                 "        IFNULL(cl.name, '未知班级') " +
                 "    ) " +
                 "    WHEN ds.target_type = 'big_group' THEN CONCAT( " +
-                "        IFNULL(CONCAT('第', c.term, '期', c.name), '未知营期'), " +
+                "        IFNULL(CONCAT('第', c.term, '期', ct.level_name), '未知营期'), " +
                 "        ' - ', " +
                 "        IFNULL(cl_bg.name, '未知班级'), " +
                 "        ' - ', " +
                 "        IFNULL(bg.name, '未知大组') " +
                 "    ) " +
                 "    WHEN ds.target_type = 'small_group' THEN CONCAT( " +
-                "        IFNULL(CONCAT('第', c.term, '期', c.name), '未知营期'), " +
+                "        IFNULL(CONCAT('第', c.term, '期', ct.level_name), '未知营期'), " +
                 "        ' - ', " +
                 "        IFNULL(cl_sg.name, '未知班级'), " +
                 "        ' - ', " +
@@ -112,17 +111,18 @@ public interface UserMapper {
                 "        ' - ', " +
                 "        IFNULL(sg.name, '未知小组') " +
                 "    ) " +
-                "    WHEN ds.target_type = 'camp' THEN IFNULL(CONCAT('第', c.term, '期【', c.name, '】'), '未知营期') " +
-                "    ELSE '未知职责范围' " +
+                "    WHEN ds.target_type = 'camp' THEN IFNULL(CONCAT('第', c.term, '期【', ct.level_name, '】'), '未知营期') " +
                 "END AS fullTargetName " +
                 "FROM t_duty_assignment da " +
                 "LEFT JOIN t_duty_scope ds ON da.assignment_id = ds.assignment_id " +
                 "LEFT JOIN t_camp c ON da.camp_id = c.camp_id " +
+
+                "LEFT JOIN t_camp_type ct ON c.type_id = ct.type_id " +
+
                 "LEFT JOIN t_class cl ON ds.target_type = 'class' AND ds.target_id = cl.class_id " +
                 "LEFT JOIN t_big_group bg ON ds.target_type = 'big_group' AND ds.target_id = bg.big_group_id " +
                 "LEFT JOIN t_class cl_bg ON bg.class_id = cl_bg.class_id " +
-                "LEFT JOIN t_small_group sg ON ds.target_type = 'small_group' AND ds.target_id = sg.small_group_id "
-                +
+                "LEFT JOIN t_small_group sg ON ds.target_type = 'small_group' AND ds.target_id = sg.small_group_id " +
                 "LEFT JOIN t_big_group bg_sg ON sg.big_group_id = bg_sg.big_group_id " +
                 "LEFT JOIN t_class cl_sg ON bg_sg.class_id = cl_sg.class_id " +
                 "WHERE da.user_id = #{userId} " +
@@ -173,7 +173,7 @@ public interface UserMapper {
         /**
          * 根据小组ID获取对应的群聊信息
          */
-        @Select("SELECT chat_id AS chatId, name FROM t_group_chat WHERE type = '小组群' AND small_group_id = #{smallGroupId}")
+        @Select("SELECT chat_id AS chatId, name, camp_id AS campId, class_id AS classId, big_group_id AS bigGroupId, small_group_id AS smallGroupId FROM t_group_chat WHERE type = '小组群' AND small_group_id = #{smallGroupId}")
         Map<String, Object> getGroupChatBySmallGroupId(@Param("smallGroupId") Integer smallGroupId);
 
         /**
