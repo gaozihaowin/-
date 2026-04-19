@@ -96,48 +96,48 @@ public interface HomeworkMapper {
          * 获取作业列表
          */
         @Select("<script>" +
-                        "SELECT h.homework_id as homeworkId, h.user_id as userId, " +
-                        "       COALESCE(u.nickname, u.account, CONCAT('学员', h.user_id)) as name, " +
-                        "       h.is_small_group_excellent as isSmallGroupExcellent, " +
-                        "       h.is_big_group_excellent as isBigGroupExcellent, " +
-                        "       h.submit_time as submitTime, " +
-                        "       c.name as className, " +
-                        "       bg.name as bigGroupName, " +
-                        "       sg.name as smallGroupName, " +
-                        "       ct.level_name as campName " +
-                        "FROM t_homework h " +
-                        "INNER JOIN t_user u ON h.user_id = u.user_id " +
-                        "INNER JOIN t_camp_plan cp ON h.plan_id = cp.plan_id " +
-                        "INNER JOIN t_camp camp ON cp.camp_id = camp.camp_id " +
-                        "INNER JOIN t_camp_type ct ON camp.type_id = ct.type_id " +
-                        "INNER JOIN t_camp_enrollment ce ON h.user_id = ce.user_id AND ce.camp_id = camp.camp_id " +
-                        "INNER JOIN t_class c ON ce.class_id = c.class_id " +
-                        "INNER JOIN t_big_group bg ON ce.big_group_id = bg.big_group_id AND bg.class_id = c.class_id " +
-                        "INNER JOIN t_small_group sg ON ce.small_group_id = sg.small_group_id AND sg.big_group_id = bg.big_group_id "
-                        +
-                        "WHERE ce.is_completed = 0 " +
-                        "<choose>" +
-                        "    <when test='type == \"class\"'>" +
-                        "        AND ce.class_id = #{id} " +
-                        "    </when>" +
-                        "    <when test='type == \"bigGroup\" or type == \"big_group\"'>" +
-                        "        AND ce.big_group_id = #{id} " +
-                        "    </when>" +
-                        "    <when test='type == \"smallGroup\" or type == \"small_group\"'>" +
-                        "        AND ce.small_group_id = #{id} " +
-                        "    </when>" +
-                        "</choose>" +
-                        "<if test='date != null and date != \"\"'> AND DATE(cp.plan_date) = #{date}</if>" +
-                        "<if test='status == \"excellent\"'> AND (h.is_small_group_excellent = 1 OR h.is_big_group_excellent = 1)</if>"
-                        +
-                        "<if test='status == \"small_group_excellent\"'> AND h.is_small_group_excellent = 1</if>" +
-                        "<if test='status == \"big_group_excellent\"'> AND h.is_big_group_excellent = 1</if>" +
-                        "ORDER BY h.submit_time DESC" +
-                        "</script>")
+                "SELECT h.homework_id as homeworkId, h.user_id as userId, " +
+                "       COALESCE(u.nickname, u.account, CONCAT('学员', h.user_id)) as name, " +
+                "       h.is_small_group_excellent as isSmallGroupExcellent, " +
+                "       h.is_big_group_excellent as isBigGroupExcellent, " +
+                "       h.submit_time as submitTime, " +
+                "       c.name as className, " +
+                "       bg.name as bigGroupName, " +
+                "       sg.name as smallGroupName, " +
+                "       CONCAT('第', camp.term, '期', ct.level_name) as campName " +
+                "FROM t_homework h " +
+                "INNER JOIN t_user u ON h.user_id = u.user_id " +
+                "INNER JOIN t_camp_plan cp ON h.plan_id = cp.plan_id " +
+                "INNER JOIN t_camp camp ON cp.camp_id = camp.camp_id " +
+                "INNER JOIN t_camp_type ct ON camp.type_id = ct.type_id " +
+                "INNER JOIN t_camp_enrollment ce ON h.user_id = ce.user_id AND ce.camp_id = camp.camp_id " +
+                "INNER JOIN t_class c ON ce.class_id = c.class_id " +
+                "INNER JOIN t_big_group bg ON ce.big_group_id = bg.big_group_id AND bg.class_id = c.class_id " +
+                "INNER JOIN t_small_group sg ON ce.small_group_id = sg.small_group_id AND sg.big_group_id = bg.big_group_id "
+                +
+                "WHERE ce.is_completed = 0 " +
+                "<choose>" +
+                "    <when test='type == \"class\"'>" +
+                "        AND ce.class_id = #{id} " +
+                "    </when>" +
+                "    <when test='type == \"bigGroup\" or type == \"big_group\"'>" +
+                "        AND ce.big_group_id = #{id} " +
+                "    </when>" +
+                "    <when test='type == \"smallGroup\" or type == \"small_group\"'>" +
+                "        AND ce.small_group_id = #{id} " +
+                "    </when>" +
+                "</choose>" +
+                "<if test='date != null and date != \"\"'> AND DATE(cp.plan_date) = #{date}</if>" +
+                "<if test='status == \"excellent\"'> AND (h.is_small_group_excellent = 1 OR h.is_big_group_excellent = 1)</if>"
+                +
+                "<if test='status == \"small_group_excellent\"'> AND h.is_small_group_excellent = 1</if>" +
+                "<if test='status == \"big_group_excellent\"'> AND h.is_big_group_excellent = 1</if>" +
+                "ORDER BY h.submit_time DESC" +
+                "</script>")
         List<Map<String, Object>> getHomeworkList(@Param("status") String status,
-                        @Param("date") String date,
-                        @Param("type") String type,
-                        @Param("id") Integer id);
+                                                  @Param("date") String date,
+                                                  @Param("type") String type,
+                                                  @Param("id") Integer id);
 
         /**
          * 标记小组优秀作业
@@ -222,22 +222,23 @@ public interface HomeworkMapper {
          * 获取作业详情
          */
         @Select("SELECT h.homework_id as homeworkId, h.user_id as userId, h.content, h.submit_time as submitTime, " +
-                        "h.is_small_group_excellent as isSmallGroupExcellent, " +
-                        "h.is_big_group_excellent as isBigGroupExcellent, " +
-                        "       COALESCE(u.nickname, u.account) as name, " +
-                        "       c.name as className, bg.name as bigGroupName, sg.name as smallGroupName, " +
-                        "       CONCAT('第', camp.term, '期', camp.name) as campName, " +
-                        "       camp.camp_id as campId, cp.plan_id as planId " +
-                        "FROM t_homework h " +
-                        "INNER JOIN t_user u ON h.user_id = u.user_id " +
-                        "INNER JOIN t_camp_plan cp ON h.plan_id = cp.plan_id " +
-                        "INNER JOIN t_camp camp ON cp.camp_id = camp.camp_id " +
-                        "INNER JOIN t_camp_enrollment ce ON h.user_id = ce.user_id AND ce.camp_id = camp.camp_id " +
-                        "INNER JOIN t_class c ON ce.class_id = c.class_id " +
-                        "INNER JOIN t_big_group bg ON ce.big_group_id = bg.big_group_id AND bg.class_id = c.class_id " +
-                        "INNER JOIN t_small_group sg ON ce.small_group_id = sg.small_group_id AND sg.big_group_id = bg.big_group_id "
-                        +
-                        "WHERE h.homework_id = #{homeworkId}")
+                "h.is_small_group_excellent as isSmallGroupExcellent, " +
+                "h.is_big_group_excellent as isBigGroupExcellent, " +
+                "       COALESCE(u.nickname, u.account) as name, " +
+                "       c.name as className, bg.name as bigGroupName, sg.name as smallGroupName, " +
+                "       CONCAT('第', camp.term, '期', ct.level_name) as campName, " +
+                "       camp.camp_id as campId, cp.plan_id as planId " +
+                "FROM t_homework h " +
+                "INNER JOIN t_user u ON h.user_id = u.user_id " +
+                "INNER JOIN t_camp_plan cp ON h.plan_id = cp.plan_id " +
+                "INNER JOIN t_camp camp ON cp.camp_id = camp.camp_id " +
+                "INNER JOIN t_camp_type ct ON camp.type_id = ct.type_id " +
+                "INNER JOIN t_camp_enrollment ce ON h.user_id = ce.user_id AND ce.camp_id = camp.camp_id " +
+                "INNER JOIN t_class c ON ce.class_id = c.class_id " +
+                "INNER JOIN t_big_group bg ON ce.big_group_id = bg.big_group_id AND bg.class_id = c.class_id " +
+                "INNER JOIN t_small_group sg ON ce.small_group_id = sg.small_group_id AND sg.big_group_id = bg.big_group_id "
+                +
+                "WHERE h.homework_id = #{homeworkId}")
         Map<String, Object> getHomeworkDetail(@Param("homeworkId") Integer homeworkId);
 
         /**
