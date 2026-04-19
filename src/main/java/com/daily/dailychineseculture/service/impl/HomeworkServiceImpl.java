@@ -969,12 +969,16 @@ public class HomeworkServiceImpl implements HomeworkService {
         Integer existingId = homeworkMapper.selectHomeworkIdByUserAndPlan(userId, dto.getPlanId());
         if (existingId != null) {
             homeworkMapper.updateHomeworkContent(existingId, dto.getTaskId(), dto.getContent());
+
         } else {
             Homework homework = new Homework();
             homework.setUserId(userId);
             homework.setPlanId(dto.getPlanId());
             homework.setTaskId(dto.getTaskId());
             homework.setContent(dto.getContent());
+            homework.setSubmitTime(java.time.LocalDateTime.now());
+            homework.setIsSmallGroupExcellent(0);
+            homework.setIsBigGroupExcellent(0);
             homeworkMapper.insertHomework(homework);
         }
         userTaskRecordMapper.upsertDoneRecord(userId, dto.getPlanId(), dto.getTaskId());

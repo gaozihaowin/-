@@ -11,4 +11,6 @@ public class Homework {
     private Integer taskId;
     private String content;
     private LocalDateTime submitTime;
+    private Integer isSmallGroupExcellent;
+    private Integer isBigGroupExcellent;
 }

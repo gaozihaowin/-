@@ -48,4 +48,17 @@
           AND h.homework_id IS NULL
     </select>
 
+    <select id="selectHomeworkIdByUserAndPlan" resultType="int">
+        SELECT homework_id
+        FROM t_homework
+        WHERE user_id = #{userId}
+        AND plan_id = #{planId}
+        LIMIT 1
+    </select>
+
+    <insert id="insertHomework" parameterType="com.daily.dailychineseculture.entity.Homework">
+        INSERT INTO t_homework (user_id, plan_id, content, submit_time, is_small_group_excellent, is_big_group_excellent)
+        VALUES (#{userId}, #{planId}, #{content}, #{submitTime}, #{isSmallGroupExcellent}, #{isBigGroupExcellent})
+    </insert>
+
 </mapper>
