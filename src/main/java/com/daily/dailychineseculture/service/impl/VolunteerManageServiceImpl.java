@@ -318,7 +318,7 @@ public class VolunteerManageServiceImpl implements VolunteerManageService {
                 String scopeTargetType = getSafeString(scope, "targetType");
                 Integer scopeTargetId = getSafeInteger(scope, scopeTargetType + "Id");
                 // 超级管理员可以分配任何岗位
-                if ("volunteer_admin".equals(scopeDutyType)) {
+                if ("SUPER_ADMIN".equals(scopeDutyType)) {
                     return true;
                 } else if ("class".equals(scopeTargetType)) {
                     return true;
@@ -338,7 +338,7 @@ public class VolunteerManageServiceImpl implements VolunteerManageService {
             // 如果是超级管理员，根据targetId查询营期ID
             if (campId == null) {
                 String scopeDutyType = getSafeString(managerScopes.get(0), "dutyType");
-                if ("volunteer_admin".equals(scopeDutyType)) {
+                if ("SUPER_ADMIN".equals(scopeDutyType)) {
                     if ("class".equals(targetType)) {
                         campId = volunteerManageMapper.getCampIdByClassId(targetId);
                         System.out.println("通过班级ID查询营期ID: " + campId);

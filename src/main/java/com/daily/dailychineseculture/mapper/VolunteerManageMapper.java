@@ -35,10 +35,10 @@ public interface VolunteerManageMapper {
                         "LEFT JOIN t_big_group sg_big ON sg.big_group_id = sg_big.big_group_id " +
                         "LEFT JOIN t_class sg_big_class ON sg_big.class_id = sg_big_class.class_id " +
                         "WHERE da.user_id = #{userId} " +
-                        "AND (da.duty_type IN ('检组', '学组', '检委', '学委', '学班', '检班') OR da.duty_type = 'volunteer_admin') "
+                        "AND (da.duty_type IN ('检组', '学组', '检委', '学委', '学班', '检班') OR da.duty_type = 'SUPER_ADMIN') "
                         +
                         "AND da.end_time IS NULL " +
-                        "AND (c.end_time > NOW() OR da.duty_type = 'volunteer_admin') " +
+                        "AND (c.end_time > NOW() OR da.duty_type = 'SUPER_ADMIN') " +
                         "ORDER BY da.duty_type, ds.target_type" +
                         "</script>")
         List<Map<String, Object>> getManagementScope(@Param("userId") Long userId);
@@ -360,7 +360,7 @@ public interface VolunteerManageMapper {
         @Select("SELECT u.user_id as userId, u.nickname, u.phone, u.account, da.duty_type as dutyType, da.assignment_id as assignmentId, CONCAT('第', c.term, '期', ct.level_name) as campName, cl.name as className, da.start_time as startTime, da.end_time as endTime FROM t_duty_assignment da JOIN t_user u ON da.user_id = u.user_id JOIN t_duty_scope ds ON da.assignment_id = ds.assignment_id JOIN t_class cl ON ds.target_id = cl.class_id JOIN t_camp c ON cl.camp_id = c.camp_id LEFT JOIN t_camp_type ct ON c.type_id = ct.type_id WHERE c.camp_id = #{campId} AND da.duty_type IN ('学班', '检班') AND da.end_time IS NULL")
         List<Map<String, Object>> getMonitorsByCampId(@Param("campId") Integer campId);
 
-        @Select("SELECT COUNT(*) FROM t_duty_assignment WHERE user_id = #{userId} AND duty_type = 'volunteer_admin' AND end_time IS NULL")
+        @Select("SELECT COUNT(*) FROM t_duty_assignment WHERE user_id = #{userId} AND duty_type = 'SUPER_ADMIN' AND end_time IS NULL")
         Integer checkAdminRole(@Param("userId") Long userId);
 
         /**
