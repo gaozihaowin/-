@@ -61,4 +61,22 @@
         VALUES (#{userId}, #{planId}, #{content}, #{submitTime}, #{isSmallGroupExcellent}, #{isBigGroupExcellent})
     </insert>
 
+    <select id="selectExcellentShowcaseList" resultType="com.daily.dailychineseculture.dto.ExcellentShowcaseDTO">
+        SELECT
+            h.homework_id as homeworkId,
+            COALESCE(u.nickname, u.account, CONCAT('学员', h.user_id)) as authorName,
+            u.avatar as avatar,
+            CONCAT('第', camp.term, '期', ct.level_name) as campName,
+            cp.title as planTitle,
+            h.content as content,
+            h.submit_time as submitTime
+        FROM t_homework h
+        INNER JOIN t_user u ON h.user_id = u.user_id
+        INNER JOIN t_camp_plan cp ON h.plan_id = cp.plan_id
+        INNER JOIN t_camp camp ON cp.camp_id = camp.camp_id
+        INNER JOIN t_camp_type ct ON camp.type_id = ct.type_id
+        WHERE (h.is_small_group_excellent = 1 OR h.is_big_group_excellent = 1)
+        ORDER BY h.submit_time DESC
+    </select>
+
 </mapper>

@@ -23,7 +23,7 @@ public interface UserDailyRecordMapper {
      */
     @Select("SELECT record_id, user_id, camp_id, plan_id, completion_rate, is_all_completed FROM t_user_daily_record WHERE user_id = #{userId} AND plan_id = #{planId}")
     UserDailyRecord selectByUserIdAndPlanId(@Param("userId") Long userId, @Param("planId") Integer planId);
-    
+
     /**
      * 根据用户 ID 和营期 ID 查询所有打卡记录
      */

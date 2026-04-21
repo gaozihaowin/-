@@ -27,7 +27,7 @@ public class UserDailyRecord {
      * 计划 ID
      */
     private Integer planId;
-    
+
     /**
      * 完成率 (0-100)
      */
