@@ -79,4 +79,21 @@
         ORDER BY h.submit_time DESC
     </select>
 
+    <select id="selectMyHomeworkList" resultType="com.daily.dailychineseculture.dto.MyHomeworkDTO">
+        SELECT
+            h.homework_id as homeworkId,
+            CONCAT('第', camp.term, '期', ct.level_name) as campName,
+            cp.title as planTitle,
+            h.content as content,
+            h.submit_time as submitTime,
+            h.is_small_group_excellent as isSmallGroupExcellent,
+            h.is_big_group_excellent as isBigGroupExcellent
+        FROM t_homework h
+        INNER JOIN t_camp_plan cp ON h.plan_id = cp.plan_id
+        INNER JOIN t_camp camp ON cp.camp_id = camp.camp_id
+        INNER JOIN t_camp_type ct ON camp.type_id = ct.type_id
+        WHERE h.user_id = #{userId}
+        ORDER BY h.submit_time DESC
+    </select>
+
 </mapper>
